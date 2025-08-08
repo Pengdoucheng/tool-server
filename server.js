@@ -20,7 +20,7 @@ app.get('/health', (req, res) => {
 });
 
 // 處理 AI 分析的 POST 請求
-app.post('/analyze', async (req, res) => {
+app.post('/api/analyze', async (req, res) => {
   try {
     const { prompt } = req.body;
 
