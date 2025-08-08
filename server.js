@@ -3,20 +3,24 @@ const path = require('path');
 const axios = require('axios');
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 10000; // 建議加 fallback
 
-// 讓 Express 能解析 JSON 請求
 app.use(express.json());
 
-// 提供 public 資料夾中的靜態檔案（例如 tool.html、js、css）
+// 提供 public 資料夾中的靜態檔案
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 根路徑導向 tool.html
+// 根路由對應到 tool.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tool.html'));
 });
 
-// 處理前端送來的 AI 請求
+// ✅ 新增健康檢查路由
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// AI 請求處理
 app.post('/chat', async (req, res) => {
   const prompt = req.body.prompt;
   const apiKey = process.env.OPENAI_API_KEY;
@@ -35,17 +39,14 @@ app.post('/chat', async (req, res) => {
         },
       }
     );
-
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
+    res.json(response.data);
   } catch (error) {
-    console.error('❌ AI 回應錯誤:', error.message);
-    res.status(500).json({ error: 'AI 無法回應，請稍後再試' });
+    console.error('Error from OpenAI API:', error.message);
+    res.status(500).json({ error: 'API 請求失敗' });
   }
 });
 
-// 啟動伺服器
+// ✅ 啟動伺服器
 app.listen(port, () => {
   console.log(`✅ Server is running on port ${port}`);
 });
-
