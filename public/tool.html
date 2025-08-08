@@ -183,7 +183,8 @@
           body: JSON.stringify({ prompt })
         });
         const data = await res.json();
-        resultBox.textContent = data.reply || "⚠️ 沒有收到 AI 回覆，請重試。";
+        resultBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆，請重試。";
+
       } catch (err) {
         resultBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
       }
@@ -212,7 +213,8 @@
           body: JSON.stringify({ prompt })
         });
         const data = await res.json();
-        costBox.textContent = data.reply || "⚠️ 沒有收到 AI 回覆。";
+        costBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆。";
+
       } catch (err) {
         costBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
       }
