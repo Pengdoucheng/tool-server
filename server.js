@@ -1,9 +1,6 @@
 const express = require('express');
 const path = require('path');
-const dotenv = require('dotenv');
 const axios = require('axios');
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 10000;
@@ -17,41 +14,36 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tool.html'));
 });
 
-// Health check（Render 用來確認網站有活著）
+// Health check（給 Render 平台確認應用是否活著）
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// AI 回應路由
-app.post('/api/chat', async (req, res) => {
-  const userMessage = req.body.message;
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-  if (!OPENAI_API_KEY) {
-    return res.status(500).json({ error: '未設定 OpenAI API 金鑰' });
-  }
-
+// 處理從前端來的 POST 請求
+app.post('/analyze', async (req, res) => {
   try {
+    const { prompt } = req.body;
+
+    // 呼叫 OpenAI API
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
         model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: userMessage }],
-        temperature: 0.7,
+        messages: [{ role: 'user', content: prompt }],
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         },
       }
     );
 
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
+    const result = response.data.choices[0].message.content;
+    res.json({ result });
   } catch (error) {
-    console.error('OpenAI API 錯誤：', error.message);
-    res.status(500).json({ error: 'AI 無法回應，請稍後再試' });
+    console.error('Error calling OpenAI API:', error.message);
+    res.status(500).json({ error: 'AI 無法回覆，請稍後再試。' });
   }
 });
 
