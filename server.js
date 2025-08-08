@@ -3,7 +3,7 @@ const path = require('path');
 const axios = require('axios');
 
 const app = express();
-const port = process.env.PORT || 10000;
+const port = process.env.PORT || 3000;
 
 // Middlewares
 app.use(express.static(path.join(__dirname, 'public')));
@@ -24,7 +24,6 @@ app.post('/analyze', async (req, res) => {
   try {
     const { prompt } = req.body;
 
-    // 呼叫 OpenAI API
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -47,7 +46,8 @@ app.post('/analyze', async (req, res) => {
   }
 });
 
-// 啟動 server
+// 啟動伺服器
 app.listen(port, () => {
   console.log(`✅ Server is running on port ${port}`);
 });
+
