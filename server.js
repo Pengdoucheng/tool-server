@@ -37,6 +37,8 @@ app.post('/api/analyze', async (req, res) => {
         },
       }
     );
+    
+    console.log('🧪 FULL OpenAI response:', JSON.stringify(response.data, null, 2));
 
     const result = response.data.choices[0].message.content;
     res.json({ result });
