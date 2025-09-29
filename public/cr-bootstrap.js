@@ -1,6 +1,9 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 644576c (feat: achievements system stable version)
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (s) => document.querySelector(s);
   const setBtn = $("#crSetWeeklyGoals");
@@ -12,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   const quick = $("#crQuickDone");
   if (quick) quick.addEventListener("click", () => { window.cr && window.cr.updateToday({completedDelta:1,totalDelta:1}); });
+<<<<<<< HEAD
 =======
 document.addEventListener("DOMContentLoaded",()=>{
   const setBtn=document.getElementById("crSetWeeklyGoals");
@@ -30,4 +34,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   const quick=document.getElementById("crQuickDone");
   if(quick)quick.onclick=()=>{window.cr.updateToday({completedDelta:1,totalDelta:1});};
 >>>>>>> 6c78f29 (feat: achievements system stable version)
+=======
+>>>>>>> 644576c (feat: achievements system stable version)
 });

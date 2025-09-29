@@ -2,6 +2,9 @@
 (function(){
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 644576c (feat: achievements system stable version)
   const LS_KEY = "crProgressV1";
   const todayStr = () => new Date().toISOString().slice(0,10);
   const defaultState = () => ({version:1,days:{},streak:0,goals:{weekISO:"",items:[]},badges:{}});
@@ -25,6 +28,7 @@
   function render(){ const st=load(); const now=new Date(); const m=cr.getMonthlyStats(now.getFullYear(), now.getMonth()); const bar=document.querySelector('[data-cr-progress-bar]'); const label=document.querySelector('[data-cr-progress-label]'); if(bar) bar.style.width=m.rate+"%"; if(label) label.textContent=`${m.rate}%（${m.completed}/${m.total}）`; const streakEl=document.querySelector('[data-cr-streak]'); if(streakEl) streakEl.textContent=st.streak+" 天"; const badgeWrap=document.querySelector('[data-cr-badges]'); if(badgeWrap){ badgeWrap.innerHTML=""; const defs={ firstBlood:"完成第一個任務", tenDone:"累積完成 10 個任務", fiftyDone:"累積完成 50 個任務", hundredDone:"累積完成 100 個任務", streak3:"連續 3 天完成任務", streak7:"連續 7 天完成任務", streak21:"連續 21 天完成任務", month80:"本月完成率 ≧ 80%", month95:"本月完成率 ≧ 95%"}; Object.keys(defs).forEach(key=>{ const active=!!st.badges[key]; const div=document.createElement("div"); div.className="cr-badge"+(active?" is-active":""); div.textContent=defs[key]; badgeWrap.appendChild(div); }); } const goalsList=document.querySelector('[data-cr-goals]'); if(goalsList){ goalsList.innerHTML=""; st.goals.items.forEach((g,i)=>{ const li=document.createElement("li"); li.className="cr-goal"; const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!g.done; cb.addEventListener("change", ()=> cr.toggleGoal(i, cb.checked)); const span=document.createElement("span"); span.textContent=g.text; li.appendChild(cb); li.appendChild(span); goalsList.appendChild(li); }); } }
   document.addEventListener("cr:progress-updated", render); document.addEventListener("DOMContentLoaded", render);
   window.cr.__debugAdd = function(){ cr.updateToday({completedDelta:1,totalDelta:1}); };
+<<<<<<< HEAD
 })();// ===== 使用者教學小卡 =====
 document.addEventListener("DOMContentLoaded", () => {
   const onboardKey = "crOnboardingDone";
@@ -94,3 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("cr:progress-updated",render);document.addEventListener("DOMContentLoaded",render);
 })();
 >>>>>>> 6c78f29 (feat: achievements system stable version)
+=======
+})();
+>>>>>>> 644576c (feat: achievements system stable version)

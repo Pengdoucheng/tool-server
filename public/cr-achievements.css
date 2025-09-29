@@ -1,6 +1,9 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 644576c (feat: achievements system stable version)
 .cr-card{ background: #0f0f10; color: #e9e9ea; border: 1px solid #2a2a2e; border-radius: 16px; padding: 16px; box-shadow: 0 10px 20px rgba(0,0,0,.25); }
 .cr-title{ font-size: 18px; font-weight: 700; letter-spacing: .5px; margin-bottom: 10px; }
 .cr-sub{ font-size: 13px; color: #a8abb2; margin-bottom: 14px; }
@@ -16,6 +19,7 @@
 .cr-goal input[type="checkbox"]{ transform: scale(1.1); }
 .cr-actions{ display:flex; gap:10px; flex-wrap:wrap; }
 .cr-btn{ background:#15171b; color:#e9e9ea; padding:8px 12px; border:1px solid #2b2d31; border-radius:10px; cursor:pointer; }
+<<<<<<< HEAD
 .cr-btn:hover{ background:#1b1d22; }/* ===== 使用者教學小卡樣式 ===== */
 .cr-onboard {
   position: fixed;
@@ -100,3 +104,6 @@ body{ margin-left:332px;}
 .cr-btn{background:#15171b;color:#e9e9ea;padding:8px 12px;border:1px solid #2b2d31;border-radius:10px;cursor:pointer;}
 .cr-btn:hover{background:#1b1d22;}
 >>>>>>> 6c78f29 (feat: achievements system stable version)
+=======
+.cr-btn:hover{ background:#1b1d22; }
+>>>>>>> 644576c (feat: achievements system stable version)
