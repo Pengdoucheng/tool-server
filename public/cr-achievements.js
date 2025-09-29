@@ -1,6 +1,7 @@
 
 (function(){
 <<<<<<< HEAD
+<<<<<<< HEAD
   const LS_KEY = "crProgressV1";
   const todayStr = () => new Date().toISOString().slice(0,10);
   const defaultState = () => ({version:1,days:{},streak:0,goals:{weekISO:"",items:[]},badges:{}});
@@ -56,3 +57,40 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("cr:progress-updated",render);document.addEventListener("DOMContentLoaded",render);
 })();
 >>>>>>> 93764f6 (feat: add achievements system and weekly goals)
+=======
+  const LS_KEY="crProgress";
+  const todayStr=()=>new Date().toISOString().slice(0,10);
+  const defaultState=()=>({days:{},streak:0,goals:{items:[]},badges:{}});
+  function load(){try{return JSON.parse(localStorage.getItem(LS_KEY))||defaultState();}catch(e){return defaultState();}}
+  function save(st){localStorage.setItem(LS_KEY,JSON.stringify(st));document.dispatchEvent(new CustomEvent("cr:progress-updated",{detail:st}));}
+  const cr=window.cr=window.cr||{};
+  cr.updateToday=function({completedDelta=0,totalDelta=0}){
+    const st=load();const key=todayStr();
+    if(!st.days[key])st.days[key]={completed:0,total:0};
+    st.days[key].completed+=completedDelta;
+    st.days[key].total+=totalDelta;
+    if(st.days[key].completed<0)st.days[key].completed=0;
+    if(st.days[key].total<0)st.days[key].total=0;
+    if(st.days[key].completed>0){st.streak=(st.streak||0)+1;}
+    checkBadges(st);save(st);return st;
+  };
+  cr.setWeeklyGoals=function(arr){const st=load();st.goals.items=(arr||[]).map(t=>({text:t,done:false}));save(st);return st;};
+  cr.toggleGoal=function(i,done){const st=load();if(st.goals.items[i])st.goals.items[i].done=done;save(st);return st;};
+  function checkBadges(st){const total=Object.values(st.days).reduce((a,d)=>a+(d.completed||0),0);
+    if(total>=1)st.badges["first"]=true;
+    if(total>=10)st.badges["ten"]=true;
+    if(st.streak>=3)st.badges["streak3"]=true;}
+  function render(){const st=load();const today=st.days[todayStr()]||{completed:0,total:0};
+    const percent=today.total>0?Math.round(today.completed/today.total*100):0;
+    const bar=document.querySelector("[data-cr-progress-bar]");if(bar)bar.style.width=percent+"%";
+    const lbl=document.querySelector("[data-cr-progress-label]");if(lbl)lbl.textContent=percent+"%";
+    const goals=document.querySelector("[data-cr-goals]");if(goals){goals.innerHTML="";st.goals.items.forEach((g,i)=>{
+      const li=document.createElement("li");li.className="cr-goal";const cb=document.createElement("input");cb.type="checkbox";cb.checked=g.done;
+      cb.addEventListener("change",()=>cr.toggleGoal(i,cb.checked));const span=document.createElement("span");span.textContent=g.text;
+      li.appendChild(cb);li.appendChild(span);goals.appendChild(li);});}
+    const badgeWrap=document.querySelector("[data-cr-badges]");if(badgeWrap){badgeWrap.innerHTML="";Object.keys(st.badges).forEach(k=>{
+      const div=document.createElement("div");div.className="cr-badge is-active";div.textContent=k;badgeWrap.appendChild(div);});}
+  }
+  document.addEventListener("cr:progress-updated",render);document.addEventListener("DOMContentLoaded",render);
+})();
+>>>>>>> 6c78f29 (feat: achievements system stable version)
