@@ -1,5 +1,4 @@
 
-
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (s) => document.querySelector(s);
   const setBtn = $("#crSetWeeklyGoals");

@@ -1,5 +1,4 @@
 
-
 (function(){
   const LS_KEY = "crProgressV1";
   const todayStr = () => new Date().toISOString().slice(0,10);
