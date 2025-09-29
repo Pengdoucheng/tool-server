@@ -23,4 +23,70 @@
   function render(){ const st=load(); const now=new Date(); const m=cr.getMonthlyStats(now.getFullYear(), now.getMonth()); const bar=document.querySelector('[data-cr-progress-bar]'); const label=document.querySelector('[data-cr-progress-label]'); if(bar) bar.style.width=m.rate+"%"; if(label) label.textContent=`${m.rate}%（${m.completed}/${m.total}）`; const streakEl=document.querySelector('[data-cr-streak]'); if(streakEl) streakEl.textContent=st.streak+" 天"; const badgeWrap=document.querySelector('[data-cr-badges]'); if(badgeWrap){ badgeWrap.innerHTML=""; const defs={ firstBlood:"完成第一個任務", tenDone:"累積完成 10 個任務", fiftyDone:"累積完成 50 個任務", hundredDone:"累積完成 100 個任務", streak3:"連續 3 天完成任務", streak7:"連續 7 天完成任務", streak21:"連續 21 天完成任務", month80:"本月完成率 ≧ 80%", month95:"本月完成率 ≧ 95%"}; Object.keys(defs).forEach(key=>{ const active=!!st.badges[key]; const div=document.createElement("div"); div.className="cr-badge"+(active?" is-active":""); div.textContent=defs[key]; badgeWrap.appendChild(div); }); } const goalsList=document.querySelector('[data-cr-goals]'); if(goalsList){ goalsList.innerHTML=""; st.goals.items.forEach((g,i)=>{ const li=document.createElement("li"); li.className="cr-goal"; const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!g.done; cb.addEventListener("change", ()=> cr.toggleGoal(i, cb.checked)); const span=document.createElement("span"); span.textContent=g.text; li.appendChild(cb); li.appendChild(span); goalsList.appendChild(li); }); } }
   document.addEventListener("cr:progress-updated", render); document.addEventListener("DOMContentLoaded", render);
   window.cr.__debugAdd = function(){ cr.updateToday({completedDelta:1,totalDelta:1}); };
-})();
+})();// 紀錄面板控制
+const historyBtn = document.getElementById("history-toggle");
+const historyPanel = document.getElementById("history-panel");
+const closeHistory = document.getElementById("close-history");
+const historyRate = document.getElementById("history-rate");
+const historyDays = document.getElementById("history-days");
+const historyModeBtns = document.querySelectorAll(".history-mode button");
+
+let historyMode = "week"; // 預設模式
+
+historyBtn.addEventListener("click", () => {
+  historyPanel.classList.add("active");
+  renderHistory();
+});
+
+closeHistory.addEventListener("click", () => {
+  historyPanel.classList.remove("active");
+});
+
+// 切換週/月
+historyModeBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    historyMode = btn.dataset.mode;
+    renderHistory();
+  });
+});
+
+function renderHistory() {
+  const tasksData = JSON.parse(localStorage.getItem("tasksData")) || {};
+  const today = new Date();
+  let startDate;
+
+  if (historyMode === "week") {
+    const dayOfWeek = today.getDay(); // 0(日)~6(六)
+    startDate = new Date(today);
+    startDate.setDate(today.getDate() - dayOfWeek); 
+  } else {
+    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  }
+
+  historyDays.innerHTML = "";
+  let total = 0, done = 0;
+
+  const loopDate = new Date(startDate);
+  while (loopDate <= today) {
+    const dateKey = loopDate.toISOString().split("T")[0];
+    const tasks = tasksData[dateKey] || [];
+    const finished = tasks.filter(t => t.completed).length;
+    const rate = tasks.length ? Math.round((finished / tasks.length) * 100) : 0;
+
+    // 累計
+    total += tasks.length;
+    done += finished;
+
+    // 加入列表
+    const div = document.createElement("div");
+    div.className = "history-day";
+    div.textContent = `${dateKey} - 完成率 ${rate}% (${finished}/${tasks.length})`;
+    historyDays.appendChild(div);
+
+    loopDate.setDate(loopDate.getDate() + 1);
+  }
+
+  const totalRate = total ? Math.round((done / total) * 100) : 0;
+  historyRate.textContent = totalRate + "%";
+}
+
