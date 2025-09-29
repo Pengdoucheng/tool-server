@@ -109,5 +109,24 @@
 .history-day:hover {
   background: #f9f9f9;
 }
+/* ====== 時間工具（左側面板） ====== */
+.tools-btn{position:fixed;left:16px;top:120px;background:#ffb300;color:#111;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;z-index:60;box-shadow:0 6px 16px rgba(0,0,0,.2);}
+.tools-panel{position:fixed;left:-340px;top:16px;bottom:16px;width:320px;background:#0e1013;border:1px solid #2b2d31;border-radius:16px;padding:14px;overflow:auto;z-index:59;box-shadow:0 12px 24px rgba(0,0,0,.35);transition:left .25s ease;}
+.tools-panel.is-open{left:16px;}
+.tools-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.tools-title{font-size:18px;font-weight:800;color:#e9e9ea;}
+.tools-close{background:#16181d;color:#cfd2d8;border:1px solid #2a2d33;border-radius:8px;padding:4px 8px;cursor:pointer;}
+.tools-tabs{display:flex;gap:8px;margin-bottom:8px;}
+.tools-tab{background:#15171b;color:#cfd2d8;border:1px solid #2b2d31;border-radius:10px;padding:6px 10px;cursor:pointer;}
+.tools-tab.is-active{background:#1d2129;color:#fff;}
+.tools-row{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:8px;align-items:center;margin:8px 0;}
+.tools-row input{background:#121417;color:#e9e9ea;border:1px solid #2b2d31;border-radius:8px;padding:6px;}
+.tools-timer{font-size:42px;font-weight:800;letter-spacing:1px;text-align:center;margin:8px 0 12px;color:#e9e9ea;}
+.tools-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.tools-btn-primary{background:#2b7fff;color:white;border:1px solid #3a6fe0;border-radius:10px;padding:8px 12px;cursor:pointer;}
+.tools-actions button{background:#15171b;color:#e9e9ea;border:1px solid #2b2d31;border-radius:10px;padding:8px 12px;cursor:pointer;}
+.tools-inline{display:flex;align-items:center;gap:6px;color:#cfd2d8;}
+.tools-sub{font-size:12px;color:#9da3ae;margin:6px 0;}
+.tools-laps{list-style:decimal;padding-left:20px;color:#cfd2d8;}
 
 

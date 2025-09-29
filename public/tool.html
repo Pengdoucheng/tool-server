@@ -307,7 +307,71 @@
         </div>
       </div>
     </section>
-    \n<script src="cr-achievements.js"></script>\n<script src="cr-bootstrap.js"></script>\n</body>
+    \n<script src="cr-achievements.js"></script>\n<script src="cr-bootstrap.js"></script>\n
+  <!-- ⌛ 時間工具：浮動按鈕 -->
+<div id="tools-toggle" class="tools-btn">⌛ 時間工具</div>
+
+<!-- ⌛ 時間工具：左側面板 -->
+<aside id="tools-panel" class="tools-panel">
+  <div class="tools-head">
+    <div class="tools-title">時間工具</div>
+    <button id="tools-close" class="tools-close">✕</button>
+  </div>
+
+  <div class="tools-tabs">
+    <button class="tools-tab is-active" data-tab="pomodoro">蕃茄時鐘</button>
+    <button class="tools-tab" data-tab="countdown">倒數</button>
+    <button class="tools-tab" data-tab="stopwatch">碼錶</button>
+  </div>
+
+  <!-- 蕃茄時鐘 -->
+  <section class="tools-pane" id="pane-pomodoro" style="display:block;">
+    <div class="tools-row">
+      <label>專注(分)</label><input id="pomo-focus" type="number" min="1" value="25">
+      <label>休息(分)</label><input id="pomo-break" type="number" min="1" value="5">
+      <label>長休(分)</label><input id="pomo-long" type="number" min="1" value="15">
+      <label>循環</label><input id="pomo-rounds" type="number" min="1" value="4">
+    </div>
+    <div class="tools-timer" id="pomo-display">25:00</div>
+    <div class="tools-actions">
+      <button id="pomo-start" class="tools-btn-primary">開始</button>
+      <button id="pomo-pause">暫停</button>
+      <button id="pomo-reset">重設</button>
+      <button id="pomo-skip">跳過階段</button>
+      <label class="tools-inline"><input id="pomo-autonext" type="checkbox" checked> 自動進下一階段</label>
+    </div>
+    <div class="tools-sub">模式：<span id="pomo-mode">專注</span>｜完成循環：<span id="pomo-done">0</span></div>
+    <div class="tools-sub">今日完成番茄數：<span id="pomo-today">0</span></div>
+  </section>
+
+  <!-- 倒數 -->
+  <section class="tools-pane" id="pane-countdown">
+    <div class="tools-row">
+      <label>倒數分鐘</label><input id="cd-min" type="number" min="0" value="10">
+      <label>秒</label><input id="cd-sec" type="number" min="0" max="59" value="0">
+    </div>
+    <div class="tools-timer" id="cd-display">10:00</div>
+    <div class="tools-actions">
+      <button id="cd-start" class="tools-btn-primary">開始</button>
+      <button id="cd-pause">暫停</button>
+      <button id="cd-reset">重設</button>
+    </div>
+  </section>
+
+  <!-- 碼錶 -->
+  <section class="tools-pane" id="pane-stopwatch">
+    <div class="tools-timer" id="sw-display">00:00.0</div>
+    <div class="tools-actions">
+      <button id="sw-start" class="tools-btn-primary">開始</button>
+      <button id="sw-lap">圈數</button>
+      <button id="sw-pause">暫停</button>
+      <button id="sw-reset">重設</button>
+    </div>
+    <ol id="sw-laps" class="tools-laps"></ol>
+  </section>
+</aside>
+
+  </body>
 </html>
 
 
