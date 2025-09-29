@@ -1,12 +1,5 @@
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 644576c (feat: achievements system stable version)
->>>>>>> 270ec61c303edf0061847542e50f6a97ff5b7817
+
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (s) => document.querySelector(s);
   const setBtn = $("#crSetWeeklyGoals");
@@ -18,28 +11,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   const quick = $("#crQuickDone");
   if (quick) quick.addEventListener("click", () => { window.cr && window.cr.updateToday({completedDelta:1,totalDelta:1}); });
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
-document.addEventListener("DOMContentLoaded",()=>{
-  const setBtn=document.getElementById("crSetWeeklyGoals");
-  if(setBtn)setBtn.onclick=()=>{const raw=prompt("輸入本週目標（逗號分隔）");if(!raw)return;window.cr&& (window.cr.setWeeklyGoals?window.cr.setWeeklyGoals(raw.split(",").map(s=>s.trim())):null);};
-  const quick=document.getElementById("crQuickDone");
-  if(quick)quick.onclick=()=>{window.cr&&window.cr.addTaskToday("(快速測試)",true);};
->>>>>>> 93764f6 (feat: add achievements system and weekly goals)
-=======
-document.addEventListener("DOMContentLoaded",()=>{
-  const setBtn=document.getElementById("crSetWeeklyGoals");
-  if(setBtn)setBtn.onclick=()=>{
-    const raw=prompt("輸入本週目標（用逗號分隔）");
-    if(!raw)return;
-    window.cr.setWeeklyGoals(raw.split(",").map(s=>s.trim()));
-  };
-  const quick=document.getElementById("crQuickDone");
-  if(quick)quick.onclick=()=>{window.cr.updateToday({completedDelta:1,totalDelta:1});};
->>>>>>> 6c78f29 (feat: achievements system stable version)
-=======
->>>>>>> 644576c (feat: achievements system stable version)
->>>>>>> 270ec61c303edf0061847542e50f6a97ff5b7817
 });
