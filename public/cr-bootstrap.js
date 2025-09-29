@@ -10,4 +10,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   const quick = $("#crQuickDone");
   if (quick) quick.addEventListener("click", () => { window.cr && window.cr.updateToday({completedDelta:1,totalDelta:1}); });
+});// ===== 使用者教學小卡 =====
+document.addEventListener("DOMContentLoaded", () => {
+  const onboardKey = "crOnboardingDone";
+  const onboardEl = document.getElementById("crOnboarding");
+  const btn = document.getElementById("crOnboardBtn");
+
+  if (!localStorage.getItem(onboardKey) && onboardEl && btn) {
+    onboardEl.style.display = "flex"; // 顯示小卡
+    btn.addEventListener("click", () => {
+      onboardEl.style.display = "none";
+      localStorage.setItem(onboardKey, "1"); // 確保下次不再顯示
+    });
+  } else if (onboardEl) {
+    onboardEl.style.display = "none";
+  }
 });
+
