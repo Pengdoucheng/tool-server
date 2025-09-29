@@ -1,5 +1,6 @@
 
 (function(){
+<<<<<<< HEAD
   const LS_KEY = "crProgressV1";
   const todayStr = () => new Date().toISOString().slice(0,10);
   const defaultState = () => ({version:1,days:{},streak:0,goals:{weekISO:"",items:[]},badges:{}});
@@ -40,3 +41,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+=======
+  const LS_KEY="crProgressV2";
+  const todayStr=()=>new Date().toISOString().slice(0,10);
+  const defaultState=()=>({version:2,days:{},streak:0,goals:{items:[]},badges:{}});
+  function load(){try{return JSON.parse(localStorage.getItem(LS_KEY))||defaultState();}catch(e){return defaultState();}}
+  function save(st){localStorage.setItem(LS_KEY,JSON.stringify(st));document.dispatchEvent(new CustomEvent("cr:progress-updated",{detail:st}));}
+  const cr=window.cr=window.cr||{};
+  cr.addTaskToday=function(text,done=false){const st=load();const key=todayStr();if(!st.days[key])st.days[key]={tasks:[],completed:0,total:0};st.days[key].tasks.push({text,done});st.days[key].total++;if(done)st.days[key].completed++;save(st);return st;};
+  cr.toggleTask=function(date,i,done){const st=load();if(st.days[date]&&st.days[date].tasks[i]){const t=st.days[date].tasks[i];if(t.done!==done){t.done=done;st.days[date].completed+=done?1:-1;save(st);}}return st;};
+  cr.getDay=function(date){const st=load();return st.days[date]||{tasks:[],completed:0,total:0};};
+  cr.getStats=function(mode){const st=load();const base=new Date();let start,end;if(mode==="week"){const d=(base.getDay()+6)%7;start=new Date(base);start.setDate(start.getDate()-d);end=new Date(start);end.setDate(start.getDate()+6);}else{start=new Date(base.getFullYear(),base.getMonth(),1);end=new Date(base.getFullYear(),base.getMonth()+1,0);}const list=[];for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){const key=d.toISOString().slice(0,10);const rec=st.days[key];if(rec)list.push({date:key,completed:rec.completed,total:rec.total});}const sum=list.reduce((a,v)=>{a.c+=v.completed;a.t+=v.total;return a;},{c:0,t:0});return{completed:sum.c,total:sum.t,rate:sum.t?Math.round(sum.c/sum.t*100):0,days:list};};
+  function render(){const st=load();const m=cr.getStats("month");const bar=document.querySelector('[data-cr-progress-bar]');if(bar)bar.style.width=m.rate+"%";const lbl=document.querySelector('[data-cr-progress-label]');if(lbl)lbl.textContent=`${m.rate}%（${m.completed}/${m.total}）`;const goals=document.querySelector('[data-cr-goals]');if(goals){goals.innerHTML="";st.goals.items.forEach((g,i)=>{const li=document.createElement("li");li.className="cr-goal";const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!g.done;cb.onchange=()=>{g.done=cb.checked;save(st);};const span=document.createElement("span");span.textContent=g.text;li.appendChild(cb);li.appendChild(span);goals.appendChild(li);});}};
+  document.addEventListener("cr:progress-updated",render);document.addEventListener("DOMContentLoaded",render);
+})();
+>>>>>>> 93764f6 (feat: add achievements system and weekly goals)

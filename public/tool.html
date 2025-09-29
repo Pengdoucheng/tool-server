@@ -65,7 +65,12 @@
       color: #333;
     }
   </style>
+<<<<<<< HEAD
   <link rel="stylesheet" href="cr-achievements.css">\n</head>
+=======
+  <link rel="stylesheet" href="cr-achievements.css">
+</head>
+>>>>>>> 93764f6 (feat: add achievements system and weekly goals)
 <body>
   <!-- ===== 使用者教學小卡 ===== -->
 <div id="crOnboarding" class="cr-onboard">
@@ -261,6 +266,7 @@
     }
   </script>
 
+<<<<<<< HEAD
     <section class="cr-card" style="margin:24px 0;">
       <div class="cr-title">本月完成率</div>
       <div class="cr-sub">以本月已建立的任務為基礎計算，完成越多越亮眼。</div>
@@ -284,6 +290,21 @@
       </div>
     </section>
     \n<script src="cr-achievements.js"></script>\n<script src="cr-bootstrap.js"></script>\n</body>
+=======
+<section class="cr-card" style="margin:24px 0;">
+  <div class="cr-title">本月完成率</div>
+  <div class="cr-progress"><div class="cr-progress-bar cr-gradient" data-cr-progress-bar></div></div>
+  <div class="cr-sub">目前：<span data-cr-progress-label>0%</span></div>
+  <div class="cr-grid" style="margin-top:16px;">
+    <div><div class="cr-title" style="font-size:16px;">成就徽章</div><div class="cr-badges" data-cr-badges></div></div>
+    <div><div class="cr-title" style="font-size:16px;">本週目標</div><ul class="cr-goals" data-cr-goals></ul>
+      <div class="cr-actions"><button class="cr-btn" id="crSetWeeklyGoals">設定本週目標</button><button class="cr-btn" id="crQuickDone">快速+1</button></div></div>
+  </div>
+</section>
+<script src="cr-achievements.js"></script>
+<script src="cr-bootstrap.js"></script>
+</body>
+>>>>>>> 93764f6 (feat: add achievements system and weekly goals)
 </html>
 
 
