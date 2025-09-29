@@ -65,7 +65,7 @@
       color: #333;
     }
   </style>
-</head>
+  <link rel="stylesheet" href="cr-achievements.css">\n</head>
 <body>
   <nav class="navbar navbar-light bg-white shadow-sm mb-4">
     <div class="container-fluid">
@@ -246,7 +246,30 @@
       });
     }
   </script>
-</body>
+
+    <section class="cr-card" style="margin:24px 0;">
+      <div class="cr-title">本月完成率</div>
+      <div class="cr-sub">以本月已建立的任務為基礎計算，完成越多越亮眼。</div>
+      <div class="cr-progress">
+        <div class="cr-progress-bar cr-gradient" data-cr-progress-bar></div>
+      </div>
+      <div class="cr-sub" style="margin-top:8px;">目前：<span data-cr-progress-label>0%</span>｜連續完成：<span data-cr-streak>0 天</span></div>
+      <div class="cr-grid" style="margin-top:16px;">
+        <div>
+          <div class="cr-title" style="font-size:16px;">成就徽章</div>
+          <div class="cr-badges" data-cr-badges></div>
+        </div>
+        <div>
+          <div class="cr-title" style="font-size:16px;">本週目標</div>
+          <ul class="cr-goals" data-cr-goals></ul>
+          <div class="cr-actions" style="margin-top:10px;">
+            <button class="cr-btn" id="crSetWeeklyGoals">設定本週目標</button>
+            <button class="cr-btn" id="crQuickDone">快速+1（測試）</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    \n<script src="cr-achievements.js"></script>\n<script src="cr-bootstrap.js"></script>\n</body>
 </html>
 
 
