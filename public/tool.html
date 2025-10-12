@@ -370,6 +370,250 @@
     <ol id="sw-laps" class="tools-laps"></ol>
   </section>
 </aside>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ✅ 和登入頁同一組專案參數（你可以直接沿用這兩個）
+  const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // 你目前本機進度用的 key（cr-achievements.js 已在用）
+  const LS_KEY = "crProgressV1";
+
+  // 沒登入就導回登入頁（放你的 GitHub Pages 登入檔網址）
+  const LOGIN_PAGE = "https://你的GitHub帳號.github.io/supabase-test.html";
+
+  // --- 啟動：檢查登入，灌雲端資料，綁定同步 ---
+  document.addEventListener("DOMContentLoaded", async () => {
+    const { data } = await sb.auth.getUser();
+    const user = data.user;
+    if (!user) {
+      alert("請先登入");
+      window.location.href = LOGIN_PAGE;
+      return;
+    }
+
+    // 1) 先把雲端的進度灌回本機（若有）
+    const hadCloud = await hydrateFromCloud(user);
+
+    // 2) 如果雲端沒有，而本機有舊資料 → 主動上傳一次，建立第一份雲端備份
+    if (!hadCloud) {
+      const local = safeParse(localStorage.getItem(LS_KEY));
+      if (local) {
+        await upsertProgress(user, local);
+      }
+    }
+
+    // 3) 監聽你原本程式每次更新進度時拋出的事件 → 上傳到雲端
+    attachCloudSync(user);
+  });
+
+  // 下載雲端 → 灌本機（成功回傳 true，否則 false）
+  async function hydrateFromCloud(user){
+    try {
+      const { data, error } = await sb.from("cr_progress")
+        .select("progress, updated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data || !data.progress) return false;
+
+      // 如果你未存本機或雲端較新 → 覆蓋本機
+      const local = safeParse(localStorage.getItem(LS_KEY));
+      const cloudNewer = newer(data.updated_at, local?.updated_at);
+      if (!local || cloudNewer) {
+        localStorage.setItem(LS_KEY, JSON.stringify(data.progress));
+        // 通知現有 UI 重算/重畫（你原本程式有在聽這個事件）
+        try {
+          window.dispatchEvent(new CustomEvent("cr:progress-updated", { detail: data.progress }));
+        } catch {}
+      }
+      return true;
+    } catch (e) {
+      console.warn("讀取雲端進度失敗：", e);
+      return false;
+    }
+  }
+
+  function newer(cloudTs, localTs){
+    if (!cloudTs) return false;
+    if (!localTs) return true;
+    return new Date(cloudTs).getTime() > new Date(localTs).getTime();
+  }
+
+  function safeParse(s){ try { return JSON.parse(s || ""); } catch { return null; } }
+
+  async function upsertProgress(user, progress){
+    try {
+      // 你本機 JSON 若沒有 updated_at，我們在這裡補一個時間戳
+      if (typeof progress === "object" && progress) {
+        if (!progress.updated_at) progress.updated_at = new Date().toISOString();
+      }
+      const { error } = await sb.from("cr_progress").upsert({
+        user_id: user.id,
+        progress,
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      // console.log("✅ 已同步雲端");
+    } catch (e) {
+      console.warn("同步雲端失敗：", e);
+    }
+  }
+
+  function attachCloudSync(user){
+    // 你的 cr-achievements.js 每次儲存後會丟出這個事件
+    window.addEventListener("cr:progress-updated", async (ev) => {
+      const progress = ev?.detail || safeParse(localStorage.getItem(LS_KEY)) || {};
+      await upsertProgress(user, progress);
+    });
+  }
+</script>
+
+<script>
+  // 若前面已有 sb、getUser()，可刪這兩個重複的實作
+  // const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
+
+  // 時間工具：字串<->分鐘
+  function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60 + (m||0); }
+  function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`; }
+  function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+
+  // CRUD 封裝
+  async function addSchedule({ date, startHHMM, endHHMM, title }){
+    const u = await getUser(); if(!u) throw new Error("尚未登入");
+    const start_min = toMin(startHHMM), end_min = toMin(endHHMM);
+    if (end_min <= start_min) throw new Error("結束時間需大於開始時間");
+    const { data, error } = await sb.from("schedules").insert([{
+      user_id: u.id, date, start_min, end_min, title
+    }]).select().single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function loadSchedulesByDate(date){
+    const u = await getUser(); if(!u) throw new Error("尚未登入");
+    const { data, error } = await sb.from("schedules")
+      .select("*")
+      .eq("user_id", u.id)
+      .eq("date", date)
+      .order("start_min", { ascending: true });
+    if (error) throw error;
+    return data;
+  }
+
+  async function updateSchedule(id, patch){ // patch: { startHHMM?, endHHMM?, title? }
+    const upd = {};
+    if (patch.startHHMM) upd.start_min = toMin(patch.startHHMM);
+    if (patch.endHHMM)   upd.end_min   = toMin(patch.endHHMM);
+    if (patch.title != null) upd.title = patch.title;
+    upd.updated_at = new Date().toISOString();
+    const { data, error } = await sb.from("schedules").update(upd).eq("id", id).select().single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function deleteSchedule(id){
+    const { error } = await sb.from("schedules").delete().eq("id", id);
+    if (error) throw error;
+  }
+
+  // 臨時面板的 UI 綁定（驗證用）
+  document.addEventListener("DOMContentLoaded", async () => {
+    const user = await getUser();
+    if (!user) return; // 你前面的登入檢查會導回登入頁
+
+    const $date = document.querySelector("#sch-date");
+    const $start = document.querySelector("#sch-start");
+    const $end = document.querySelector("#sch-end");
+    const $title = document.querySelector("#sch-title");
+    const $add = document.querySelector("#sch-add");
+    const $reload = document.querySelector("#sch-reload");
+    const $list = document.querySelector("#sch-list");
+
+    if ($date) $date.value = todayStr();
+
+    async function render(){
+      if (!$date) return;
+      const rows = await loadSchedulesByDate($date.value);
+      $list.innerHTML = rows.map(r => `
+        <li style="display:flex;gap:8px;align-items:center;border:1px solid #eee;border-radius:8px;padding:8px 12px">
+          <b>${r.title}</b>
+          <span style="color:#666">${toHHMM(r.start_min)}–${toHHMM(r.end_min)}</span>
+          <span style="margin-left:auto;display:flex;gap:6px">
+            <button data-id="${r.id}" class="sch-edit">編輯</button>
+            <button data-id="${r.id}" class="sch-del">刪除</button>
+          </span>
+        </li>
+      `).join(rows.length ? "" : "<li style='color:#666'>這天還沒有排程</li>");
+    }
+
+    if ($add) $add.addEventListener("click", async () => {
+      try{
+        const row = await addSchedule({
+          date: $date.value,
+          startHHMM: $start.value,
+          endHHMM: $end.value,
+          title: $title.value.trim() || "未命名"
+        });
+        $title.value = "";
+        await render();
+      }catch(e){ alert(e.message || e); }
+    });
+
+    if ($reload) $reload.addEventListener("click", render);
+
+    // 刪除 / 編輯（簡單示例）
+    if ($list) $list.addEventListener("click", async (ev) => {
+      const id = ev.target?.dataset?.id;
+      if (!id) return;
+      if (ev.target.classList.contains("sch-del")) {
+        if (confirm("確定刪除？")) { await deleteSchedule(id); await render(); }
+      } else if (ev.target.classList.contains("sch-edit")) {
+        const newTitle = prompt("新標題？（留空不改）");
+        const newStart = prompt("新開始時間？(HH:MM，留空不改)");
+        const newEnd   = prompt("新結束時間？(HH:MM，留空不改)");
+        try{
+          await updateSchedule(id, {
+            title: newTitle === "" ? undefined : newTitle,
+            startHHMM: newStart || undefined,
+            endHHMM: newEnd || undefined
+          });
+          await render();
+        }catch(e){ alert(e.message || e); }
+      }
+    });
+
+    // 初次載入
+    await render();
+
+    // （可選）Realtime：多人/多裝置時自動刷新
+    sb.channel('schedules-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
+        if (document.hasFocus()) await render();
+      })
+      .subscribe();
+  });
+</script>
+
+
+<!-- 臨時：排程面板（先驗證功能，之後可移除或換成你的時間格 UI） -->
+<section id="sched-dev-panel" style="margin:24px 0;padding:12px;border:1px solid #eee;border-radius:8px">
+  <h3 style="margin:0 0 12px">今日排程（雲端同步）</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <label>日期 <input id="sch-date" type="date"></label>
+    <label>開始 <input id="sch-start" type="time" step="1800" value="08:00"></label>
+    <label>結束 <input id="sch-end" type="time" step="1800" value="08:30"></label>
+    <input id="sch-title" placeholder="標題，如：英文閱讀" style="flex:1;min-width:200px">
+    <button id="sch-add">新增排程</button>
+    <button id="sch-reload">重新載入</button>
+  </div>
+  <ul id="sch-list" style="list-style:none;padding:0;margin-top:12px;display:grid;gap:8px"></ul>
+</section>
+
+
 
   </body>
 </html>
