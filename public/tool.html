@@ -1,12 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI 時間排程與成本分析</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI 時間排程與成本分析</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
     body {
       background-color: #f2f4f7;
       font-family: 'Noto Sans TC', sans-serif;
@@ -65,557 +66,296 @@
       color: #333;
     }
   </style>
-  <link rel="stylesheet" href="cr-achievements.css">\n</head>
+<link href="cr-achievements.css" rel="stylesheet"/>\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+// Supabase config (同登入頁)
+const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const LOGIN_PAGE = "https://pengdoucheng.github.io/supabase-test.html";
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try{
+    const { data } = await sb.auth.getUser();
+    if (!data.user) {
+      alert("請先登入");
+      location.href = LOGIN_PAGE;
+    } else {
+      // 將使用者 email 顯示於 console 方便檢查
+      console.log("Signed in as:", data.user.email);
+    }
+  }catch(e){ console.warn(e); }
+});
+</script></head>
 <body>
-  <!-- 左側紀錄面板按鈕 -->
-<div id="history-toggle" class="history-btn">📅 紀錄</div>
-
+<!-- 左側紀錄面板按鈕 -->
+<div class="history-btn" id="history-toggle">📅 紀錄</div>
 <!-- 左側紀錄面板 -->
-<div id="history-panel" class="history-panel">
-  <div class="history-header">
-    <h3>任務完成紀錄</h3>
-    <button id="close-history">✖</button>
-  </div>
-
-  <div class="history-mode">
-    <button data-mode="week">本週</button>
-    <button data-mode="month">本月</button>
-  </div>
-
-  <div id="history-summary" class="history-summary">
-    <p>完成率：<span id="history-rate">0%</span></p>
-  </div>
-
-  <div id="history-days" class="history-days">
-    <!-- 動態插入每天的紀錄 -->
-  </div>
+<div class="history-panel" id="history-panel">
+<div class="history-header">
+<h3>任務完成紀錄</h3>
+<button id="close-history">✖</button>
 </div>
-
-  <!-- ===== 使用者教學小卡 ===== -->
-<div id="crOnboarding" class="cr-onboard">
-  <div class="cr-onboard-card">
-    <h2>🎯 歡迎來到自律控肉飯！</h2>
-    <p>這裡有三個小技巧，幫助你更自律：</p>
-    <ol>
-      <li>✅ <b>完成任務</b> → 自動更新完成率</li>
-      <li>🏆 <b>連續完成</b> → 解鎖成就徽章</li>
-      <li>📅 <b>設定週目標</b> → 幫助養成好習慣</li>
-    </ol>
-    <button id="crOnboardBtn">開始挑戰 🚀</button>
-  </div>
+<div class="history-mode">
+<button data-mode="week">本週</button>
+<button data-mode="month">本月</button>
 </div>
+<div class="history-summary" id="history-summary">
+<p>完成率：<span id="history-rate">0%</span></p>
+</div>
+<div class="history-days" id="history-days">
+<!-- 動態插入每天的紀錄 -->
+</div>
+</div>
+<!-- ===== 使用者教學小卡 ===== -->
+<div class="cr-onboard" id="crOnboarding">
+<div class="cr-onboard-card">
+<h2>🎯 歡迎來到自律控肉飯！</h2>
+<p>這裡有三個小技巧，幫助你更自律：</p>
+<ol>
+<li>✅ <b>完成任務</b> → 自動更新完成率</li>
+<li>🏆 <b>連續完成</b> → 解鎖成就徽章</li>
+<li>📅 <b>設定週目標</b> → 幫助養成好習慣</li>
+</ol>
+<button id="crOnboardBtn">開始挑戰 🚀</button>
+</div>
+</div>
+<nav class="navbar navbar-light bg-white shadow-sm mb-4">
+<div class="container-fluid">
+<span class="navbar-brand mb-0 h4">🧠 自律控肉飯 · 時間管家</span>
+</div>
+</nav>
+<div class="container">
+<div class="row">
+<div class="col-md-6">
+<div class="card-ui">
+<h5>📅 今日任務排程</h5>
+<div class="time-grid" id="timeGrid"></div>
+</div>
+<div class="card-ui">
+<h5>🎯 本週目標設定</h5>
+<textarea class="form-control" id="goalInput" placeholder="輸入你的本週目標，例如：運動3次、完成報告、閱讀一本書..." rows="4"></textarea>
+</div>
+<button class="btn btn-success w-100 mb-2" onclick="analyzeByAI()">🔍 分析目前排程</button>
+<button class="btn btn-outline-secondary w-100 mb-2" onclick="reviewDay()">📌 填寫完成情況</button>
+<button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
+</div>
+<div class="col-md-6">
+<div class="card-ui">
+<h5>🤖 AI 時間建議</h5>
+<div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
+</div>
+<div class="card-ui">
+<h5>📌 今日完成情況</h5>
+<div class="mb-2" id="reviewArea"></div>
+</div>
+<div class="card-ui">
+<h5>💸 成本分析回饋</h5>
+<div class="text-danger" id="costResult" style="white-space: pre-wrap; min-height: 100px;"></div>
+</div>
+<div class="card-ui">
+<h5>📈 任務完成率統計</h5>
+<canvas height="200" id="statChart" width="400"></canvas>
+</div>
+</div>
+</div>
+</div>
+<script>
+// ======= 時間格 + Supabase 同步 =======
+const timeGrid = document.getElementById("timeGrid");
+const timeStart = 8 * 60, timeEnd = 22 * 60, interval = 30;
+const todayStr = () => new Date().toISOString().slice(0,10);
+let currentDate = todayStr();
 
-  <nav class="navbar navbar-light bg-white shadow-sm mb-4">
-    <div class="container-fluid">
-      <span class="navbar-brand mb-0 h4">🧠 自律控肉飯 · 時間管家</span>
-    </div>
-  </nav>
+function toHHMM(min){ const h=String(Math.floor(min/60)).padStart(2,'0'); const m=String(min%60).padStart(2,'0'); return `${h}:${m}`; }
 
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <div class="card-ui">
-          <h5>📅 今日任務排程</h5>
-          <div id="timeGrid" class="time-grid"></div>
-        </div>
-        <div class="card-ui">
-          <h5>🎯 本週目標設定</h5>
-          <textarea class="form-control" id="goalInput" rows="4" placeholder="輸入你的本週目標，例如：運動3次、完成報告、閱讀一本書..."></textarea>
-        </div>
-        <button class="btn btn-success w-100 mb-2" onclick="analyzeByAI()">🔍 分析目前排程</button>
-        <button class="btn btn-outline-secondary w-100 mb-2" onclick="reviewDay()">📌 填寫完成情況</button>
-        <button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
-      </div>
-      <div class="col-md-6">
-        <div class="card-ui">
-          <h5>🤖 AI 時間建議</h5>
-          <div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
-        </div>
-        <div class="card-ui">
-          <h5>📌 今日完成情況</h5>
-          <div id="reviewArea" class="mb-2"></div>
-        </div>
-        <div class="card-ui">
-          <h5>💸 成本分析回饋</h5>
-          <div id="costResult" class="text-danger" style="white-space: pre-wrap; min-height: 100px;"></div>
-        </div>
-        <div class="card-ui">
-          <h5>📈 任務完成率統計</h5>
-          <canvas id="statChart" width="400" height="200"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
+async function getUser(){ return (await sb.auth.getUser()).data.user; }
 
-  <script>
-    const timeGrid = document.getElementById("timeGrid");
-    const timeStart = 8 * 60, timeEnd = 22 * 60, interval = 30;
+async function addSchedule({ date, start_min, end_min, title }){
+  const u = await getUser(); if(!u) throw new Error("未登入");
+  const { data, error } = await sb.from("schedules").insert([{ user_id:u.id, date, start_min, end_min, title }]).select("*").single();
+  if (error) throw error;
+  return data;
+}
+async function loadSchedulesByDate(dateStr){
+  const u = await getUser(); if(!u) return [];
+  const { data, error } = await sb.from("schedules").select("*").eq("user_id", u.id).eq("date", dateStr).order("start_min", { ascending:true });
+  if (error) throw error;
+  return data || [];
+}
+async function updateSchedule(id, patch){
+  const { error } = await sb.from("schedules").update(patch).eq("id", id);
+  if (error) throw error;
+}
+async function deleteSchedule(id){
+  const { error } = await sb.from("schedules").delete().eq("id", id);
+  if (error) throw error;
+}
 
-    for (let t = timeStart; t < timeEnd; t += interval) {
-      const row = document.createElement("div");
-      row.className = "time-row";
-      const h = Math.floor(t / 60).toString().padStart(2, '0');
-      const m = (t % 60).toString().padStart(2, '0');
+// Build grid
+function buildGrid(){
+  timeGrid.innerHTML = "";
+  for (let t = timeStart; t < timeEnd; t += interval){
+    const row = document.createElement("div"); row.className="time-row";
+    const label = document.createElement("div"); label.className="time-label align-self-center"; label.textContent=toHHMM(t);
+    const cell  = document.createElement("div"); cell.className="time-cell"; cell.dataset.startMin=t; cell.dataset.endMin=t+interval;
 
-      const label = document.createElement("div");
-      label.className = "time-label align-self-center";
-      label.textContent = `${h}:${m}`;
-
-      const cell = document.createElement("div");
-      cell.className = "time-cell";
-      cell.dataset.time = `${h}:${m}`;
-      cell.onclick = () => {
-        if (cell.classList.contains("active")) {
-          cell.classList.remove("active");
-          cell.textContent = "";
-        } else {
-          const activity = prompt("請輸入活動內容：");
-          if (activity) {
-            cell.classList.add("active");
-            const span = document.createElement("span");
-            span.className = "cell-label";
-            span.textContent = activity;
-            cell.textContent = "";
-            cell.appendChild(span);
-          }
+    cell.onclick = async () => {
+      try{
+        if (cell.classList.contains("active") && cell.dataset.id){
+          await deleteSchedule(cell.dataset.id);
+          cell.classList.remove("active"); cell.textContent=""; delete cell.dataset.id;
+          await updateChecksum();
+          return;
         }
-      };
+        const activity = prompt("請輸入活動內容：");
+        if (!activity) return;
+        const row = await addSchedule({ date: currentDate, start_min: Number(cell.dataset.startMin), end_min: Number(cell.dataset.endMin), title: activity });
+        cell.classList.add("active"); cell.dataset.id=row.id; cell.textContent=""; const span=document.createElement("span"); span.className="cell-label"; span.textContent=activity; cell.appendChild(span);
+        await updateChecksum();
+      }catch(e){ alert(e.message||"操作失敗"); console.error(e); }
+    };
 
-      row.appendChild(label);
-      row.appendChild(cell);
-      timeGrid.appendChild(row);
-    }
+    row.appendChild(label); row.appendChild(cell); timeGrid.appendChild(row);
+  }
+}
 
-    function reviewDay() {
-      const reviewArea = document.getElementById("reviewArea");
-      const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
-      if (activeCells.length === 0) {
-        alert("⚠️ 尚未填寫任何任務！");
-        return;
-      }
-      reviewArea.innerHTML = activeCells.map((cell, i) => {
-        const time = cell.dataset.time;
-        const content = cell.textContent.trim();
-        return `
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" id="review${i}" data-time="${time}" data-content="${content}" checked>
-          <label class="form-check-label" for="review${i}">${time} - ${content}</label>
-        </div>`;
-      }).join("");
-    }
+// Render a date
+async function renderDay(dateStr){
+  currentDate = dateStr;
+  buildGrid();
+  const rows = await loadSchedulesByDate(dateStr);
+  const cells = Array.from(document.querySelectorAll(".time-cell"));
 
-    async function analyzeByAI() {
-      const resultBox = document.getElementById("aiResult");
-      const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
-      if (activeCells.length === 0) {
-        resultBox.textContent = "⚠️ 請先填入一些行程內容再分析喔！";
-        return;
-      }
-      const summary = activeCells.map(cell => `- ${cell.dataset.time} ${cell.textContent.trim()}`).join("\n");
-      const prompt = `以下是我的今日排程：\n${summary}\n\n請你檢查這樣的時間分配是否合理，有沒有安排過度密集、空檔過長、缺乏休息等問題，並提供優化建議。`;
-      resultBox.textContent = "AI 分析中...";
-      try {
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        resultBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆，請重試。";
+  rows.forEach(r => {
+    const cell = cells.find(c => Number(c.dataset.startMin)===r.start_min && Number(c.dataset.endMin)===r.end_min);
+    if (!cell) return;
+    cell.classList.add("active"); cell.dataset.id=r.id; cell.textContent=""; const span=document.createElement("span"); span.className="cell-label"; span.textContent=r.title; cell.appendChild(span);
+  });
+  await updateChecksum(rows);
+}
 
-      } catch (err) {
-        resultBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
-      }
-    }
+// 今日排程 checksum，顯示在右下角，也同步到 cr_progress 方便跨裝置比對
+async function updateChecksum(preloadedRows){
+  try {
+    const rows = preloadedRows || await loadSchedulesByDate(todayStr());
+    const keyRows = rows
+      .filter(r => r.date === todayStr())
+      .map(r => ({s:r.start_min,e:r.end_min,t:r.title}))
+      .sort((a,b)=> a.s-b.s || a.e-b.e || a.t.localeCompare(b.t));
+    const json = JSON.stringify(keyRows);
+    const digest = await sha1(json);
+    localStorage.setItem("schedTodayChecksum", digest);
+    const badge = document.getElementById("syncBadge");
+    badge.textContent = `今日排程簽章：${digest.slice(0,8)}（${keyRows.length} 筆）`;
 
-    async function submitReviewAndAnalyzeCost() {
-      const checkboxes = Array.from(document.querySelectorAll('#reviewArea input[type="checkbox"]'));
-      const incomplete = checkboxes.filter(cb => !cb.checked);
-      const costBox = document.getElementById("costResult");
+    // upsert 到 cr_progress.progress.sched_today_checksum
+    const u = await getUser(); if (!u) return;
+    const { error } = await sb.from("cr_progress").upsert({
+      user_id: u.id,
+      progress: { sched_today_checksum: digest },
+      updated_at: new Date().toISOString()
+    });
+    if (error) console.warn("upsert checksum failed", error);
+  } catch (e) {
+    console.warn("checksum error", e);
+  }
+}
 
-      if (incomplete.length === 0) {
-        costBox.textContent = "✅ 今天任務全部完成，讚讚！";
-        updateChart(checkboxes.length, 0);
-        return;
-      }
+// 小工具：SHA-1（瀏覽器版）
+async function sha1(message){
+  const msgUint8 = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
 
-      const incompleteList = incomplete.map(cb => `- ${cb.dataset.time} ${cb.dataset.content}`);
-      const prompt = `以下是我今天沒有完成的任務：\n${incompleteList.join("\n")}\n\n請你推估這些未完成項目可能造成的時間與金錢成本，以及如何改善，並給我一點人性化的鼓勵或建議。`;
-
-      costBox.textContent = "AI 分析中...";
-
-      try {
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        costBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆。";
-
-      } catch (err) {
-        costBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
-      }
-
-      updateChart(checkboxes.length, incomplete.length);
-    }
-
-    function updateChart(total, uncompleted) {
-      const completed = total - uncompleted;
-      const ctx = document.getElementById('statChart').getContext('2d');
-      if (window.taskChart) window.taskChart.destroy();
-      window.taskChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['完成', '未完成'],
-          datasets: [{
-            data: [completed, uncompleted],
-            backgroundColor: ['#198754', '#dc3545']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            }
-          }
-        }
-      });
-    }
-  </script>
-
-    <section class="cr-card" style="margin:24px 0;">
-      <div class="cr-title">本月完成率</div>
-      <div class="cr-sub">以本月已建立的任務為基礎計算，完成越多越亮眼。</div>
-      <div class="cr-progress">
-        <div class="cr-progress-bar cr-gradient" data-cr-progress-bar></div>
-      </div>
-      <div class="cr-sub" style="margin-top:8px;">目前：<span data-cr-progress-label>0%</span>｜連續完成：<span data-cr-streak>0 天</span></div>
-      <div class="cr-grid" style="margin-top:16px;">
-        <div>
-          <div class="cr-title" style="font-size:16px;">成就徽章</div>
-          <div class="cr-badges" data-cr-badges></div>
-        </div>
-        <div>
-          <div class="cr-title" style="font-size:16px;">本週目標</div>
-          <ul class="cr-goals" data-cr-goals></ul>
-          <div class="cr-actions" style="margin-top:10px;">
-            <button class="cr-btn" id="crSetWeeklyGoals">設定本週目標</button>
-            <button class="cr-btn" id="crQuickDone">快速+1（測試）</button>
-          </div>
-        </div>
-      </div>
-    </section>
+document.addEventListener("DOMContentLoaded", () => {
+  renderDay(todayStr());
+});
+</script>
+<section class="cr-card" style="margin:24px 0;">
+<div class="cr-title">本月完成率</div>
+<div class="cr-sub">以本月已建立的任務為基礎計算，完成越多越亮眼。</div>
+<div class="cr-progress">
+<div class="cr-progress-bar cr-gradient" data-cr-progress-bar=""></div>
+</div>
+<div class="cr-sub" style="margin-top:8px;">目前：<span data-cr-progress-label="">0%</span>｜連續完成：<span data-cr-streak="">0 天</span></div>
+<div class="cr-grid" style="margin-top:16px;">
+<div>
+<div class="cr-title" style="font-size:16px;">成就徽章</div>
+<div class="cr-badges" data-cr-badges=""></div>
+</div>
+<div>
+<div class="cr-title" style="font-size:16px;">本週目標</div>
+<ul class="cr-goals" data-cr-goals=""></ul>
+<div class="cr-actions" style="margin-top:10px;">
+<button class="cr-btn" id="crSetWeeklyGoals">設定本週目標</button>
+<button class="cr-btn" id="crQuickDone">快速+1（測試）</button>
+</div>
+</div>
+</div>
+</section>
     \n<script src="cr-achievements.js"></script>\n<script src="cr-bootstrap.js"></script>\n
   <!-- ⌛ 時間工具：浮動按鈕 -->
-<div id="tools-toggle" class="tools-btn">⌛ 時間工具</div>
-
+<div class="tools-btn" id="tools-toggle">⌛ 時間工具</div>
 <!-- ⌛ 時間工具：左側面板 -->
-<aside id="tools-panel" class="tools-panel">
-  <div class="tools-head">
-    <div class="tools-title">時間工具</div>
-    <button id="tools-close" class="tools-close">✕</button>
-  </div>
-
-  <div class="tools-tabs">
-    <button class="tools-tab is-active" data-tab="pomodoro">蕃茄時鐘</button>
-    <button class="tools-tab" data-tab="countdown">倒數</button>
-    <button class="tools-tab" data-tab="stopwatch">碼錶</button>
-  </div>
-
-  <!-- 蕃茄時鐘 -->
-  <section class="tools-pane" id="pane-pomodoro" style="display:block;">
-    <div class="tools-row">
-      <label>專注(分)</label><input id="pomo-focus" type="number" min="1" value="25">
-      <label>休息(分)</label><input id="pomo-break" type="number" min="1" value="5">
-      <label>長休(分)</label><input id="pomo-long" type="number" min="1" value="15">
-      <label>循環</label><input id="pomo-rounds" type="number" min="1" value="4">
-    </div>
-    <div class="tools-timer" id="pomo-display">25:00</div>
-    <div class="tools-actions">
-      <button id="pomo-start" class="tools-btn-primary">開始</button>
-      <button id="pomo-pause">暫停</button>
-      <button id="pomo-reset">重設</button>
-      <button id="pomo-skip">跳過階段</button>
-      <label class="tools-inline"><input id="pomo-autonext" type="checkbox" checked> 自動進下一階段</label>
-    </div>
-    <div class="tools-sub">模式：<span id="pomo-mode">專注</span>｜完成循環：<span id="pomo-done">0</span></div>
-    <div class="tools-sub">今日完成番茄數：<span id="pomo-today">0</span></div>
-  </section>
-
-  <!-- 倒數 -->
-  <section class="tools-pane" id="pane-countdown">
-    <div class="tools-row">
-      <label>倒數分鐘</label><input id="cd-min" type="number" min="0" value="10">
-      <label>秒</label><input id="cd-sec" type="number" min="0" max="59" value="0">
-    </div>
-    <div class="tools-timer" id="cd-display">10:00</div>
-    <div class="tools-actions">
-      <button id="cd-start" class="tools-btn-primary">開始</button>
-      <button id="cd-pause">暫停</button>
-      <button id="cd-reset">重設</button>
-    </div>
-  </section>
-
-  <!-- 碼錶 -->
-  <section class="tools-pane" id="pane-stopwatch">
-    <div class="tools-timer" id="sw-display">00:00.0</div>
-    <div class="tools-actions">
-      <button id="sw-start" class="tools-btn-primary">開始</button>
-      <button id="sw-lap">圈數</button>
-      <button id="sw-pause">暫停</button>
-      <button id="sw-reset">重設</button>
-    </div>
-    <ol id="sw-laps" class="tools-laps"></ol>
-  </section>
-</aside>
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // ✅ 和登入頁同一組專案參數（你可以直接沿用這兩個）
-  const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // 你目前本機進度用的 key（cr-achievements.js 已在用）
-  const LS_KEY = "crProgressV1";
-
-  // 沒登入就導回登入頁（放你的 GitHub Pages 登入檔網址）
-  const LOGIN_PAGE = "https://pengdoucheng.github.io/supabase-test.html";
-
-  // --- 啟動：檢查登入，灌雲端資料，綁定同步 ---
-  document.addEventListener("DOMContentLoaded", async () => {
-    const { data } = await sb.auth.getUser();
-    const user = data.user;
-    if (!user) {
-      alert("請先登入");
-      window.location.href = LOGIN_PAGE;
-      return;
-    }
-
-    // 1) 先把雲端的進度灌回本機（若有）
-    const hadCloud = await hydrateFromCloud(user);
-
-    // 2) 如果雲端沒有，而本機有舊資料 → 主動上傳一次，建立第一份雲端備份
-    if (!hadCloud) {
-      const local = safeParse(localStorage.getItem(LS_KEY));
-      if (local) {
-        await upsertProgress(user, local);
-      }
-    }
-
-    // 3) 監聽你原本程式每次更新進度時拋出的事件 → 上傳到雲端
-    attachCloudSync(user);
-  });
-
-  // 下載雲端 → 灌本機（成功回傳 true，否則 false）
-  async function hydrateFromCloud(user){
-    try {
-      const { data, error } = await sb.from("cr_progress")
-        .select("progress, updated_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data || !data.progress) return false;
-
-      // 如果你未存本機或雲端較新 → 覆蓋本機
-      const local = safeParse(localStorage.getItem(LS_KEY));
-      const cloudNewer = newer(data.updated_at, local?.updated_at);
-      if (!local || cloudNewer) {
-        localStorage.setItem(LS_KEY, JSON.stringify(data.progress));
-        // 通知現有 UI 重算/重畫（你原本程式有在聽這個事件）
-        try {
-          window.dispatchEvent(new CustomEvent("cr:progress-updated", { detail: data.progress }));
-        } catch {}
-      }
-      return true;
-    } catch (e) {
-      console.warn("讀取雲端進度失敗：", e);
-      return false;
-    }
-  }
-
-  function newer(cloudTs, localTs){
-    if (!cloudTs) return false;
-    if (!localTs) return true;
-    return new Date(cloudTs).getTime() > new Date(localTs).getTime();
-  }
-
-  function safeParse(s){ try { return JSON.parse(s || ""); } catch { return null; } }
-
-  async function upsertProgress(user, progress){
-    try {
-      // 你本機 JSON 若沒有 updated_at，我們在這裡補一個時間戳
-      if (typeof progress === "object" && progress) {
-        if (!progress.updated_at) progress.updated_at = new Date().toISOString();
-      }
-      const { error } = await sb.from("cr_progress").upsert({
-        user_id: user.id,
-        progress,
-        updated_at: new Date().toISOString()
-      });
-      if (error) throw error;
-      // console.log("✅ 已同步雲端");
-    } catch (e) {
-      console.warn("同步雲端失敗：", e);
-    }
-  }
-
-  function attachCloudSync(user){
-    // 你的 cr-achievements.js 每次儲存後會丟出這個事件
-    window.addEventListener("cr:progress-updated", async (ev) => {
-      const progress = ev?.detail || safeParse(localStorage.getItem(LS_KEY)) || {};
-      await upsertProgress(user, progress);
-    });
-  }
-</script>
-
-<script>
-  // 若前面已有 sb、getUser()，可刪這兩個重複的實作
-  // const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
-
-  // 時間工具：字串<->分鐘
-  function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60 + (m||0); }
-  function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`; }
-  function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
-
-  // CRUD 封裝
-  async function addSchedule({ date, startHHMM, endHHMM, title }){
-    const u = await getUser(); if(!u) throw new Error("尚未登入");
-    const start_min = toMin(startHHMM), end_min = toMin(endHHMM);
-    if (end_min <= start_min) throw new Error("結束時間需大於開始時間");
-    const { data, error } = await sb.from("schedules").insert([{
-      user_id: u.id, date, start_min, end_min, title
-    }]).select().single();
-    if (error) throw error;
-    return data;
-  }
-
-  async function loadSchedulesByDate(date){
-    const u = await getUser(); if(!u) throw new Error("尚未登入");
-    const { data, error } = await sb.from("schedules")
-      .select("*")
-      .eq("user_id", u.id)
-      .eq("date", date)
-      .order("start_min", { ascending: true });
-    if (error) throw error;
-    return data;
-  }
-
-  async function updateSchedule(id, patch){ // patch: { startHHMM?, endHHMM?, title? }
-    const upd = {};
-    if (patch.startHHMM) upd.start_min = toMin(patch.startHHMM);
-    if (patch.endHHMM)   upd.end_min   = toMin(patch.endHHMM);
-    if (patch.title != null) upd.title = patch.title;
-    upd.updated_at = new Date().toISOString();
-    const { data, error } = await sb.from("schedules").update(upd).eq("id", id).select().single();
-    if (error) throw error;
-    return data;
-  }
-
-  async function deleteSchedule(id){
-    const { error } = await sb.from("schedules").delete().eq("id", id);
-    if (error) throw error;
-  }
-
-  // 臨時面板的 UI 綁定（驗證用）
-  document.addEventListener("DOMContentLoaded", async () => {
-    const user = await getUser();
-    if (!user) return; // 你前面的登入檢查會導回登入頁
-
-    const $date = document.querySelector("#sch-date");
-    const $start = document.querySelector("#sch-start");
-    const $end = document.querySelector("#sch-end");
-    const $title = document.querySelector("#sch-title");
-    const $add = document.querySelector("#sch-add");
-    const $reload = document.querySelector("#sch-reload");
-    const $list = document.querySelector("#sch-list");
-
-    if ($date) $date.value = todayStr();
-
-    async function render(){
-      if (!$date) return;
-      const rows = await loadSchedulesByDate($date.value);
-      $list.innerHTML = rows.map(r => `
-        <li style="display:flex;gap:8px;align-items:center;border:1px solid #eee;border-radius:8px;padding:8px 12px">
-          <b>${r.title}</b>
-          <span style="color:#666">${toHHMM(r.start_min)}–${toHHMM(r.end_min)}</span>
-          <span style="margin-left:auto;display:flex;gap:6px">
-            <button data-id="${r.id}" class="sch-edit">編輯</button>
-            <button data-id="${r.id}" class="sch-del">刪除</button>
-          </span>
-        </li>
-      `).join(rows.length ? "" : "<li style='color:#666'>這天還沒有排程</li>");
-    }
-
-    if ($add) $add.addEventListener("click", async () => {
-      try{
-        const row = await addSchedule({
-          date: $date.value,
-          startHHMM: $start.value,
-          endHHMM: $end.value,
-          title: $title.value.trim() || "未命名"
-        });
-        $title.value = "";
-        await render();
-      }catch(e){ alert(e.message || e); }
-    });
-
-    if ($reload) $reload.addEventListener("click", render);
-
-    // 刪除 / 編輯（簡單示例）
-    if ($list) $list.addEventListener("click", async (ev) => {
-      const id = ev.target?.dataset?.id;
-      if (!id) return;
-      if (ev.target.classList.contains("sch-del")) {
-        if (confirm("確定刪除？")) { await deleteSchedule(id); await render(); }
-      } else if (ev.target.classList.contains("sch-edit")) {
-        const newTitle = prompt("新標題？（留空不改）");
-        const newStart = prompt("新開始時間？(HH:MM，留空不改)");
-        const newEnd   = prompt("新結束時間？(HH:MM，留空不改)");
-        try{
-          await updateSchedule(id, {
-            title: newTitle === "" ? undefined : newTitle,
-            startHHMM: newStart || undefined,
-            endHHMM: newEnd || undefined
-          });
-          await render();
-        }catch(e){ alert(e.message || e); }
-      }
-    });
-
-    // 初次載入
-    await render();
-
-    // （可選）Realtime：多人/多裝置時自動刷新
-    sb.channel('schedules-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
-        if (document.hasFocus()) await render();
-      })
-      .subscribe();
-  });
-</script>
-
-
-<!-- 臨時：排程面板（先驗證功能，之後可移除或換成你的時間格 UI） -->
-<section id="sched-dev-panel" style="margin:24px 0;padding:12px;border:1px solid #eee;border-radius:8px">
-  <h3 style="margin:0 0 12px">今日排程（雲端同步）</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <label>日期 <input id="sch-date" type="date"></label>
-    <label>開始 <input id="sch-start" type="time" step="1800" value="08:00"></label>
-    <label>結束 <input id="sch-end" type="time" step="1800" value="08:30"></label>
-    <input id="sch-title" placeholder="標題，如：英文閱讀" style="flex:1;min-width:200px">
-    <button id="sch-add">新增排程</button>
-    <button id="sch-reload">重新載入</button>
-  </div>
-  <ul id="sch-list" style="list-style:none;padding:0;margin-top:12px;display:grid;gap:8px"></ul>
+<aside class="tools-panel" id="tools-panel">
+<div class="tools-head">
+<div class="tools-title">時間工具</div>
+<button class="tools-close" id="tools-close">✕</button>
+</div>
+<div class="tools-tabs">
+<button class="tools-tab is-active" data-tab="pomodoro">蕃茄時鐘</button>
+<button class="tools-tab" data-tab="countdown">倒數</button>
+<button class="tools-tab" data-tab="stopwatch">碼錶</button>
+</div>
+<!-- 蕃茄時鐘 -->
+<section class="tools-pane" id="pane-pomodoro" style="display:block;">
+<div class="tools-row">
+<label>專注(分)</label><input id="pomo-focus" min="1" type="number" value="25"/>
+<label>休息(分)</label><input id="pomo-break" min="1" type="number" value="5"/>
+<label>長休(分)</label><input id="pomo-long" min="1" type="number" value="15"/>
+<label>循環</label><input id="pomo-rounds" min="1" type="number" value="4"/>
+</div>
+<div class="tools-timer" id="pomo-display">25:00</div>
+<div class="tools-actions">
+<button class="tools-btn-primary" id="pomo-start">開始</button>
+<button id="pomo-pause">暫停</button>
+<button id="pomo-reset">重設</button>
+<button id="pomo-skip">跳過階段</button>
+<label class="tools-inline"><input checked="" id="pomo-autonext" type="checkbox"/> 自動進下一階段</label>
+</div>
+<div class="tools-sub">模式：<span id="pomo-mode">專注</span>｜完成循環：<span id="pomo-done">0</span></div>
+<div class="tools-sub">今日完成番茄數：<span id="pomo-today">0</span></div>
 </section>
-
-
-
-  </body>
+<!-- 倒數 -->
+<section class="tools-pane" id="pane-countdown">
+<div class="tools-row">
+<label>倒數分鐘</label><input id="cd-min" min="0" type="number" value="10"/>
+<label>秒</label><input id="cd-sec" max="59" min="0" type="number" value="0"/>
+</div>
+<div class="tools-timer" id="cd-display">10:00</div>
+<div class="tools-actions">
+<button class="tools-btn-primary" id="cd-start">開始</button>
+<button id="cd-pause">暫停</button>
+<button id="cd-reset">重設</button>
+</div>
+</section>
+<!-- 碼錶 -->
+<section class="tools-pane" id="pane-stopwatch">
+<div class="tools-timer" id="sw-display">00:00.0</div>
+<div class="tools-actions">
+<button class="tools-btn-primary" id="sw-start">開始</button>
+<button id="sw-lap">圈數</button>
+<button id="sw-pause">暫停</button>
+<button id="sw-reset">重設</button>
+</div>
+<ol class="tools-laps" id="sw-laps"></ol>
+</section>
+</aside>
+<div id="syncBadge" style="position:fixed; right:12px; bottom:12px; background:#f8f9fa; border:1px solid #e5e7eb; padding:6px 10px; border-radius:8px; font:12px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color:#111827; z-index:9999; box-shadow:0 2px 6px rgba(0,0,0,.05);">雲端同步狀態：載入中…</div></body>
 </html>
+
 
 
