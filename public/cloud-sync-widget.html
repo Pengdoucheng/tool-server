@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>雲端任務（今日 + 歷史）</title>
+<link rel="preconnect" href="{SUPABASE_URL}">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --bg:#fff; --card:#f8f9fb; --line:#e6e7eb; --txt:#222; --sub:#666; --pri:#0a7; }
+  html,body { margin:0; font-family: ui-sans-serif, -apple-system, 'Noto Sans TC', system-ui; color:var(--txt); background:var(--bg); }
+  .wrap { max-width: 840px; margin: 16px auto; padding: 12px; }
+  .grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  h3 { margin:0 0 8px; font-size:18px; }
+  .row { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap; }
+  input[type=time], input[type=text] { padding:8px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  input[type=time] { width:120px; }
+  input[type=text] { flex:1; min-width:180px; }
+  button { padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; }
+  .btn-pri { background:var(--pri); color:#fff; border-color:transparent; }
+  .list { display:grid; gap:8px; margin-top:6px; }
+  .item { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  .sub { color:var(--sub); font-size:12px; }
+  .muted { color:var(--sub); }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--line); font-size:12px; }
+  .toolbar { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+  .history-list { display:grid; gap:6px; max-height: 380px; overflow:auto; }
+  .history-item { padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+  .right .card { height: fit-content; }
+  .empty { color:var(--sub); padding:8px; }
+  .sep { height:1px; background:var(--line); margin:10px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="toolbar">
+    <h2 style="margin:0;">☁️ 雲端任務（與裝置同步）</h2>
+    <div class="sub" id="who"></div>
+  </div>
+  <div class="grid">
+    <section class="left">
+      <div class="card">
+        <h3>今天的任務</h3>
+        <div class="row">
+          <input type="time" id="start" value="09:00">
+          <span>—</span>
+          <input type="time" id="end" value="10:00">
+          <input type="text" id="title" placeholder="輸入任務... 例如：寫企劃、練胸背">
+          <button class="btn-pri" id="add">新增</button>
+          <button id="reload">重新整理</button>
+        </div>
+        <div id="todayList" class="list"></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px;">
+          <div class="muted">完成率：<b id="rate">0%</b>（<span id="doneCnt">0</span>/<span id="totalCnt">0</span>）</div>
+          <div style="display:flex;gap:8px;">
+            <button id="saveDone">儲存完成情況</button>
+            <button class="btn-pri" id="archive">📌 存入歷史（今日）</button>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">小提醒：本區塊專注「雲端同步」。你原本的 AI 分析與主畫面功能不受影響。</div>
+      </div>
+      <div class="card">
+        <h3>檢視任務（任何一天）</h3>
+        <div class="row">
+          <input type="date" id="pickDay">
+          <button id="viewPicked">查看</button>
+        </div>
+        <div id="pickedList" class="list"></div>
+      </div>
+    </section>
+    <section class="right">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <h3>歷史（本週 / 本月）</h3>
+          <div class="row">
+            <button id="showWeek">本週</button>
+            <button id="showMonth">本月</button>
+          </div>
+        </div>
+        <div class="history-list" id="history"></div>
+        <div class="sep"></div>
+        <div class="muted">點任一日期可展開細節。</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+  const LOGIN_PAGE = "https://pengdoucheng.github.io/supabase-test.html";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const $ = sel => document.querySelector(sel);
+  const el = (tag, attrs={}, html="") => { const x=document.createElement(tag); Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v)); if(html) x.innerHTML=html; return x; };
+
+  const todayStr = () => new Date().toISOString().slice(0,10);
+  const toMin = (hhmm) => { const [h,m] = hhmm.split(":").map(Number); return h*60+m; };
+  const toHHMM = (min) => String(Math.floor(min/60)).padStart(2,'0')+":"+String(min%60).padStart(2,'0');
+
+  async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
+
+  async function fetchToday(){
+    const u = await getUser(); if(!u) return [];
+    const { data, error } = await sb.from("cloud_tasks")
+      .select("*").eq("user_id", u.id).eq("date", todayStr()).order("start_min");
+    if(error) throw error; return data || [];
+  }
+  async function addToday(start_min, end_min, title){
+    const u = await getUser(); if(!u) throw new Error("未登入");
+    const { error } = await sb.from("cloud_tasks").insert([{ user_id: u.id, date: todayStr(), start_min, end_min, title, done:false }]);
+    if(error) throw error;
+  }
+  async function toggleDone(id, done){
+    const { error } = await sb.from("cloud_tasks").update({ done }).eq("id", id);
+    if(error) throw error;
+  }
+  async function removeToday(id){
+    const { error } = await sb.from("cloud_tasks").delete().eq("id", id);
+    if(error) throw error;
+  }
+  async function archiveToday(){
+    const u = await getUser(); if(!u) throw new Error("未登入");
+    const rows = await fetchToday(); if(!rows.length) return 0;
+    await sb.from("cloud_tasks_archive").delete().eq("user_id", u.id).eq("date", todayStr());
+    const payload = rows.map(r=>({ user_id:u.id, date:r.date, start_min:r.start_min, end_min:r.end_min, title:r.title, done:r.done }));
+    const { error } = await sb.from("cloud_tasks_archive").insert(payload);
+    if(error) throw error;
+    return payload.length;
+  }
+  async function fetchRange(from, to){
+    const u = await getUser(); if(!u) return [];
+    const { data, error } = await sb.from("cloud_tasks_archive")
+      .select("date, done").eq("user_id", u.id).gte("date", from).lte("date", to);
+    if(error) throw error; return data || [];
+  }
+  async function fetchDayArchive(dateStr){
+    const u = await getUser(); if(!u) return [];
+    const { data, error } = await sb.from("cloud_tasks_archive")
+      .select("*").eq("user_id", u.id).eq("date", dateStr).order("start_min");
+    if(error) throw error; return data || [];
+  }
+
+  function renderList(rows){
+    const list = $("#todayList");
+    if(!rows.length) { list.innerHTML = '<div class="empty">今天還沒有任務，先在上方新增吧。</div>'; updateRate(0,0); return; }
+    list.innerHTML = "";
+    let done=0;
+    rows.forEach(r=>{
+      if(r.done) done++;
+      const item = el("div", { class:"item" });
+      const left = el("div", {}, '<div><b>'+toHHMM(r.start_min)+'–'+toHHMM(r.end_min)+'</b>　'+escapeHtml(r.title)+'</div><div class="sub">'+(r.done?'已完成':'未完成')+'</div>');
+      const right = el("div");
+      const chk = el("input", { type:"checkbox" });
+      if(r.done) chk.checked = true;
+      chk.addEventListener("change", async ()=>{ await toggleDone(r.id, chk.checked); await loadToday(); });
+      const del = el("button", {}, "刪除");
+      del.addEventListener("click", async ()=>{ if(confirm("確定刪除此任務？")){ await removeToday(r.id); await loadToday(); } });
+      right.append(chk); right.append(del);
+      item.append(left); item.append(right);
+      list.append(item);
+    });
+    updateRate(rows.length, done);
+  }
+  function updateRate(total, done){
+    $("#totalCnt").textContent = total;
+    $("#doneCnt").textContent = done;
+    $("#rate").textContent = total? Math.round(done*100/total)+'%':'0%';
+  }
+
+  async function loadToday(){
+    const rows = await fetchToday();
+    renderList(rows);
+  }
+
+  async function renderHistory(mode='week'){
+    const now = new Date();
+    const to = new Date(now);
+    const from = new Date(now);
+    if(mode==='week') from.setDate(now.getDate()-6);
+    if(mode==='month') from.setDate(now.getDate()-29);
+    const dstr = (d)=> d.toISOString().slice(0,10);
+    const data = await fetchRange(dstr(from), dstr(to));
+    const agg = new Map();
+    data.forEach(r=>{ const k=r.date; const v=agg.get(k)||{total:0,done:0}; v.total++; if(r.done) v.done++; agg.set(k,v); });
+    const days = Array.from(agg.keys()).sort((a,b)=> b.localeCompare(a));
+    const box = $("#history"); box.innerHTML = "";
+    if(!days.length) { box.innerHTML = '<div class="empty">尚無歷史資料，先把今天「存入歷史」吧。</div>'; return; }
+    days.forEach(d=>{
+      const v = agg.get(d); const pct = v.total? Math.round(v.done*100/v.total) : 0;
+      const row = el("div", { class:"history-item" }, '<div><b>'+d+'</b>　<span class="pill">完成率 '+pct+'%</span></div><div class="sub">('+v.done+'/'+v.total+')</div>');
+      row.addEventListener("click", async ()=>{ const items = await fetchDayArchive(d); showPicked(d, items); });
+      box.append(row);
+    });
+  }
+
+  function showPicked(dateStr, rows){
+    const list = $("#pickedList");
+    if(!rows.length) { list.innerHTML = '<div class="empty">'+dateStr+' 沒有存檔紀錄。</div>'; return; }
+    list.innerHTML = rows.map(r=>'<div class="item"><div><b>'+toHHMM(r.start_min)+'–'+toHHMM(r.end_min)+'</b>　'+escapeHtml(r.title)+'</div><div class="sub">'+(r.done?'✔ 完成':'— 未完成')+'</div></div>').join("");
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
+
+  $("#add").addEventListener("click", async ()=>{
+    const s = $("#start").value, e = $("#end").value, t = $("#title").value.trim();
+    if(!s || !e || !t) return alert("請填時間與任務內容");
+    if(toMin(e) <= toMin(s)) return alert("結束時間需大於開始");
+    await addToday(toMin(s), toMin(e), t);
+    $("#title").value = "";
+    await loadToday();
+  });
+  $("#reload").addEventListener("click", loadToday);
+  $("#saveDone").addEventListener("click", async ()=>{ await loadToday(); alert("完成情況已儲存到雲端。"); });
+  $("#archive").addEventListener("click", async ()=>{ const n = await archiveToday(); await renderHistory('week'); alert(n? ("已存入今日："+n+" 筆"):"今天沒有任務可存入"); });
+  $("#showWeek").addEventListener("click", ()=> renderHistory('week'));
+  $("#showMonth").addEventListener("click", ()=> renderHistory('month'));
+  $("#viewPicked").addEventListener("click", async ()=>{ const d = $("#pickDay").value; if(!d) return; const rows = await fetchDayArchive(d); showPicked(d, rows); });
+
+  (async () => {
+    const u = await getUser();
+    if(!u) { location.href = LOGIN_PAGE; return; }
+    $("#who").textContent = u.email + "（已登入）";
+    $("#pickDay").value = todayStr();
+    await loadToday();
+    await renderHistory('week');
+  })();
+</script>
+</body>
+</html>
