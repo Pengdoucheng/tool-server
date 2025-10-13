@@ -769,6 +769,291 @@
     }
   }
   </script>
+
+  <!-- ===== Cloud Metrics & Achievements (inline, no-iframe) v3 ===== -->
+<style id="cloud-metrics-style">
+  #cloudMetrics{--bg:#0f1115;--panel:#111520;--line:#1c2230;--muted:#9aa4b2;--txt:#eaecee;--brand:#1a73e8;--good:#22c55e;--warn:#f59e0b;}
+  #cloudMetrics{color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",Arial;margin-top:12px}
+  #cloudMetrics .grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
+  @media (max-width:900px){#cloudMetrics .grid{grid-template-columns:1fr}}
+  #cloudMetrics .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+  #cloudMetrics .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  #cloudMetrics .muted{color:var(--muted);font-size:12px}
+  #cloudMetrics .pill{display:inline-flex;align-items:center;gap:6px;background:#0d1524;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px}
+  #cloudMetrics .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  #cloudMetrics .kpi .item{background:#0d1524;border:1px solid var(--line);border-radius:12px;padding:10px}
+  #cloudMetrics .kpi .big{font-size:22px;font-weight:700}
+  #cloudMetrics .bar{height:8px;background:#0c1220;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  #cloudMetrics .bar>span{display:block;height:100%;background:var(--good);width:0%}
+  #cloudMetrics .ach{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+  @media (max-width:900px){#cloudMetrics .ach{grid-template-columns:repeat(2,1fr)}}
+  #cloudMetrics .badge{background:#0d1524;border:1px dashed var(--line);border-radius:12px;padding:10px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between}
+  #cloudMetrics .badge .title{font-weight:700}
+  #cloudMetrics .badge.lock{opacity:.6}
+  #cloudMetrics .list{max-height:240px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+  #cloudMetrics .rowline{display:flex;justify-content:space-between;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#0c1220;margin-bottom:8px}
+  #cloudMetrics .rowline .left{display:flex;gap:8px;align-items:center}
+  #cloudMetrics .dot{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+  #cloudMetrics .dot.done{background:var(--good)}
+  #cloudMetrics .date{background:#0c1220;border:1px solid var(--line);color:var(--txt);padding:6px 8px;border-radius:8px}
+  #cloudMetrics button{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer}
+</style>
+
+<section id="cloudMetrics" aria-label="雲端完成率與成就">
+  <div class="row" style="justify-content:space-between;margin-bottom:8px">
+    <div class="row">
+      <span class="pill">雲端完成率與成就</span>
+      <label class="muted">月份</label>
+      <input id="cm-month" class="date" type="month"/>
+      <button id="cm-refresh" title="重新整理">重新整理</button>
+    </div>
+    <span id="cm-auth" class="muted">檢查登入中…</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="row"><span class="pill">本月完成率</span><span id="cm-month-ratio" class="muted">--%</span></div>
+      <div class="kpi">
+        <div class="item"><div class="muted">本月完成</div><div id="cm-month-done" class="big">0</div></div>
+        <div class="item"><div class="muted">本月總任務</div><div id="cm-month-total" class="big">0</div></div>
+        <div class="item"><div class="muted">連續完成天數</div><div id="cm-streak" class="big">0</div></div>
+      </div>
+      <div class="bar" style="margin-top:8px"><span id="cm-month-bar"></span></div>
+
+      <div class="row" style="margin-top:12px"><span class="pill">本週完成率</span><span id="cm-week-ratio" class="muted">--%</span></div>
+      <div class="kpi">
+        <div class="item"><div class="muted">本週完成</div><div id="cm-week-done" class="big">0</div></div>
+        <div class="item"><div class="muted">本週總任務</div><div id="cm-week-total" class="big">0</div></div>
+        <div class="item"><div class="muted">本週未完成</div><div id="cm-week-undone" class="big">0</div></div>
+      </div>
+      <div class="bar" style="margin-top:8px"><span id="cm-week-bar"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><span class="pill">成就系統</span><span id="cm-debug" class="muted"></span></div>
+      <div id="cm-ach" class="ach"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="row"><span class="pill">本月紀錄</span><span id="cm-range" class="muted"></span></div>
+    <div id="cm-list" class="list"></div>
+  </div>
+</section>
+
+<script>
+(function(){
+  // ====== 設定：若你的頁面已有 sb（window.sb），下面 URL/ANON 可留空 ======
+  const CONFIG = {
+    SUPABASE_URL: "",     // 例：https://xxxx.supabase.co ；若頁面已有 sb 可留空
+    SUPABASE_ANON: "",    // 你的 anon key
+    // 來源模式：你有 cr_progress 就用 "cr_progress"；如果你的雲端紀錄是一張表（每列1任務），改為 "table_rows"
+    mode: "cr_progress",
+    TABLE: "records",     // 只有在 mode = "table_rows" 時需要
+    FIELDS: { user_id: "user_id", date: "date", title: "title", status: "status", completed: "completed" },
+    // 判斷完成（table_rows 用）
+    isDoneRow: (row,F) => {
+      const s = (row[F.status] ?? "").toString().trim().toLowerCase();
+      const c = row[F.completed];
+      return c === true || c === 1 || c === "1" ||
+             s === "done" || s === "completed" || s === "finish" || s === "finished" ||
+             s === "完成" || s === "已完成" || s === "結束" || s === "達成";
+    },
+    AUTO_REFRESH_SEC: 5
+  };
+
+  // ====== 取得 Supabase client（優先沿用 window.sb） ======
+  let sb = window.sb || null;
+  if (!sb && window.supabase && CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON) {
+    try { sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON); }
+    catch(e){ console.warn("[cloudMetrics] 建 client 失敗", e); }
+  }
+
+  // ====== 快速工具 ======
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    month: $('cm-month'), refresh: $('cm-refresh'), auth: $('cm-auth'), debug: $('cm-debug'),
+    mDone: $('cm-month-done'), mTotal: $('cm-month-total'), mBar: $('cm-month-bar'), mRatio: $('cm-month-ratio'),
+    wDone: $('cm-week-done'), wTotal: $('cm-week-total'), wUndone: $('cm-week-undone'), wBar: $('cm-week-bar'), wRatio: $('cm-week-ratio'),
+    streak: $('cm-streak'), ach: $('cm-ach'), list: $('cm-list'), range: $('cm-range'),
+  };
+  function pad2(n){return String(n).padStart(2,"0");}
+  function toLocalDateStr(d){ const z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+  function mondayOf(date){ const d=new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+  function sundayOf(date){ const m=mondayOf(date); const d=new Date(m); d.setDate(m.getDate()+6); d.setHours(23,59,59,999); return d; }
+
+  async function getUser(){
+    if (!sb) return null;
+    try {
+      const { data } = await sb.auth.getUser();
+      return data?.user || null;
+    } catch { return null; }
+  }
+
+  // ---- 從 cr_progress.progress(jsonb) 解析任務 ----
+  function parseProgressToTasks(progress, monthStr){
+    const tasks = [];
+    const isDone = (o) => {
+      const s = (o.status ?? o.state ?? "").toString().trim().toLowerCase();
+      const c = o.completed ?? o.done ?? o.is_done;
+      return c === true || c === 1 || c === "1" ||
+             s === "done" || s === "completed" || s === "finish" || s === "finished" ||
+             s === "完成" || s === "已完成" || s === "結束" || s === "達成";
+    };
+    const inMonth = (dstr) => /^\d{4}-\d{2}-\d{2}$/.test(dstr) && dstr.startsWith(monthStr);
+
+    if (!progress || typeof progress !== "object") return tasks;
+
+    // C) progress.records: [{date,title,status/completed}, ...]
+    if (Array.isArray(progress.records)){
+      progress.records.forEach(r=>{
+        const dstr = typeof r.date === "string" ? r.date.slice(0,10) : toLocalDateStr(new Date(r.date));
+        if (inMonth(dstr)) tasks.push({date:dstr,title:r.title||"",done:isDone(r)});
+      });
+      return tasks;
+    }
+    // B) progress.days: { "YYYY-MM-DD": [ ... ] 或 {items:[...]} }
+    if (progress.days && typeof progress.days === "object"){
+      Object.keys(progress.days).forEach(dstr=>{
+        if (!inMonth(dstr)) return;
+        const v = progress.days[dstr];
+        const arr = Array.isArray(v) ? v : (v && Array.isArray(v.items) ? v.items : null);
+        if (arr) arr.forEach(it=>tasks.push({date:dstr,title:it.title||"",done:isDone(it)}));
+      });
+      return tasks;
+    }
+    // A) progress["YYYY-MM"]["YYYY-MM-DD"] = [...]
+    Object.keys(progress).forEach(bucket=>{
+      if (!/^\d{4}-\d{2}$/.test(bucket)) return;
+      if (bucket !== monthStr) return;
+      const b = progress[bucket];
+      if (b && typeof b === "object"){
+        Object.keys(b).forEach(dstr=>{
+          if (!inMonth(dstr)) return;
+          const v = b[dstr];
+          const arr = Array.isArray(v) ? v : (v && Array.isArray(v.items) ? v.items : null);
+          if (arr) arr.forEach(it=>tasks.push({date:dstr,title:it.title||"",done:isDone(it)}));
+        });
+      }
+    });
+    return tasks;
+  }
+
+  // ---- 抓某月任務（扁平化） ----
+  async function fetchTasksOfMonth(userId, monthStr){
+    const [yy,mm] = monthStr.split("-").map(Number);
+    const ms = new Date(yy,mm-1,1,0,0,0,0);
+    const me = new Date(yy,mm,0,23,59,59,999);
+
+    if (CONFIG.mode === "table_rows"){
+      const F = CONFIG.FIELDS;
+      const { data, error } = await sb.from(CONFIG.TABLE)
+        .select(`${F.date}, ${F.title}, ${F.status}, ${F.completed}`)
+        .eq(F.user_id, userId)
+        .gte(F.date, toLocalDateStr(ms))
+        .lte(F.date, toLocalDateStr(me))
+        .order(F.date,{ascending:true});
+      if (error){ console.warn("[cloudMetrics] query table_rows 失敗", error); return []; }
+      return (data||[]).map(r=>{
+        const raw=r[F.date];
+        const dstr=(typeof raw==="string"&&raw.length>10)?toLocalDateStr(new Date(raw))
+                    :(typeof raw==="string"?raw:toLocalDateStr(new Date(raw)));
+        return {date:dstr,title:r[F.title]||"",done:CONFIG.isDoneRow(r,F)};
+      });
+    }
+
+    // mode = cr_progress
+    const { data, error } = await sb.from("cr_progress").select("progress").eq("user_id", userId).single();
+    if (error){ console.warn("[cloudMetrics] query cr_progress 失敗", error); return []; }
+    return parseProgressToTasks(data?.progress, monthStr);
+  }
+
+  // ---- 繪製 ----
+  function render(tasks, monthStr){
+    const [yy,mm] = monthStr.split("-").map(Number);
+    const ms = new Date(yy,mm-1,1,0,0,0,0), me = new Date(yy,mm,0,23,59,59,999);
+    els.range.textContent = `${toLocalDateStr(ms)} ~ ${toLocalDateStr(me)}`;
+
+    const mTotal = tasks.length, mDone = tasks.filter(t=>t.done).length;
+    const mRatio = mTotal? Math.round(mDone*100/mTotal):0;
+    els.mTotal.textContent = mTotal; els.mDone.textContent = mDone;
+    els.mRatio.textContent = `${mRatio}%`; els.mBar.style.width = mRatio+"%";
+
+    const today = new Date(), wStart = mondayOf(today), wEnd = sundayOf(today);
+    const inWeek = tasks.filter(t => { const d=new Date(t.date+"T00:00:00"); return d>=wStart && d<=wEnd; });
+    const wTotal = inWeek.length, wDone = inWeek.filter(t=>t.done).length, wUndone = Math.max(0,wTotal-wDone);
+    const wRatio = wTotal? Math.round(wDone*100/wTotal):0;
+    els.wTotal.textContent=wTotal; els.wDone.textContent=wDone; els.wUndone.textContent=wUndone;
+    els.wRatio.textContent=`${wRatio}%`; els.wBar.style.width=wRatio+"%";
+
+    const byDay=new Map();
+    tasks.forEach(t=>{ if(!byDay.has(t.date)) byDay.set(t.date,{done:0,total:0}); const x=byDay.get(t.date); x.total++; if(t.done) x.done++; });
+    let streak=0; for(let d=me.getDate(); d>=1; d--){ const dstr=toLocalDateStr(new Date(ms.getFullYear(),ms.getMonth(),d)); const rec=byDay.get(dstr); if(rec&&rec.done>0) streak++; else break; }
+    els.streak.textContent = streak;
+
+    const ach = [
+      {id:"a10",title:"暖身完成者",desc:"本月完成 ≥ 10 件",need:10, ok:mDone>=10},
+      {id:"a25",title:"穩定輸出",desc:"本月完成 ≥ 25 件",need:25, ok:mDone>=25},
+      {id:"a50",title:"效率達人",desc:"本月完成 ≥ 50 件",need:50, ok:mDone>=50},
+      {id:"a100",title:"任務殺手",desc:"本月完成 ≥ 100 件",need:100, ok:mDone>=100},
+      {id:"s3",title:"連三好日子",desc:"連續 3 天有完成",need:3, ok:streak>=3},
+      {id:"s7",title:"一週穩穩來",desc:"連續 7 天有完成",need:7, ok:streak>=7},
+      {id:"w80",title:"本週八成達標",desc:"本週完成率 ≥ 80%",need:80, ok:wRatio>=80},
+      {id:"m70",title:"本月七成達標",desc:"本月完成率 ≥ 70%",need:70, ok:mRatio>=70},
+    ];
+    els.ach.innerHTML=""; ach.forEach(a=>{ const div=document.createElement("div");
+      div.className="badge"+(a.ok?"":" lock");
+      div.innerHTML = `<div class="title">${a.title}</div>
+        <div class="muted">${a.desc}</div>
+        <div class="row" style="justify-content:space-between;margin-top:6px">
+          <span class="muted">${a.ok?"已解鎖":"未解鎖"}</span>
+          <span class="pill">${a.need}</span>
+        </div>`;
+      els.ach.appendChild(div);
+    });
+
+    els.list.innerHTML = tasks.length? "" : "<div class='muted'>本月尚無紀錄</div>";
+    tasks.forEach(t=>{
+      const line=document.createElement("div"); line.className="rowline";
+      line.innerHTML = `<div class="left">
+        <span class="dot ${t.done?"done":""}"></span>
+        <div><div>${t.title || "(未命名)"}</div><div class="muted" style="font-size:12px">${t.date}</div></div>
+      </div><div class="muted">${t.done?"完成":"未完成"}</div>`;
+      els.list.appendChild(line);
+    });
+
+    els.debug.textContent = `抓到 ${tasks.length} 筆（完成 ${mDone}） mode=${CONFIG.mode}`;
+  }
+
+  function renderEmpty(msg){
+    els.mTotal.textContent="0"; els.mDone.textContent="0"; els.mBar.style.width="0%"; els.mRatio.textContent="--%";
+    els.wTotal.textContent="0"; els.wDone.textContent="0"; els.wUndone.textContent="0"; els.wBar.style.width="0%"; els.wRatio.textContent="--%";
+    els.streak.textContent="0"; els.ach.innerHTML=""; els.list.innerHTML=`<div class='muted'>${msg||"尚無資料"}</div>`; els.debug.textContent="—";
+  }
+
+  async function loadAndRender(){
+    if (!sb){ els.auth.textContent="未初始化 Supabase（請在 CONFIG 填 URL/ANON 或於頁面提供 window.sb）"; renderEmpty(); return; }
+    const user = await getUser();
+    els.auth.textContent = user ? `已登入：${user.email}` : "未登入";
+    if (!user){ renderEmpty("未登入"); return; }
+    const monthStr = els.month.value || toLocalDateStr(new Date()).slice(0,7);
+    const tasks = await fetchTasksOfMonth(user.id, monthStr);
+    render(tasks, monthStr);
+  }
+
+  // ====== Init ======
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const t=new Date(); $('cm-month').value = `${t.getFullYear()}-${pad2(t.getMonth()+1)}`;
+    $('cm-refresh').addEventListener("click", loadAndRender);
+    $('cm-month').addEventListener("change", loadAndRender);
+    if (sb && sb.auth && typeof sb.auth.onAuthStateChange==="function") sb.auth.onAuthStateChange(loadAndRender);
+    if (CONFIG.AUTO_REFRESH_SEC>0) setInterval(loadAndRender, CONFIG.AUTO_REFRESH_SEC*1000);
+    loadAndRender();
+  });
+})();
+</script>
+<!-- ===== /Cloud Metrics & Achievements ===== -->
+
   
   </body>
 </html>
