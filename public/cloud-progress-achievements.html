@@ -1,0 +1,372 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>雲端紀錄｜完成率與成就</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#0f1115;--panel:#111520;--line:#1c2230;--muted:#9aa4b2;--txt:#eaecee;--brand:#1a73e8;--good:#22c55e;--warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",Arial}
+    .wrap{max-width:1080px;margin:18px auto;padding:16px}
+    h1{font-size:18px;margin:0 0 12px}
+    .grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .muted{color:var(--muted);font-size:12px}
+    .pill{display:inline-flex;align-items:center;gap:6px;background:#0d1524;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    .kpi .item{background:#0d1524;border:1px solid var(--line);border-radius:12px;padding:12px}
+    .kpi .big{font-size:24px;font-weight:700}
+    .bar{height:8px;background:#0c1220;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+    .bar>span{display:block;height:100%;background:var(--good);width:0%}
+    .ach{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    @media (max-width:900px){.ach{grid-template-columns:repeat(2,1fr)}}
+    .badge{background:#0d1524;border:1px dashed var(--line);border-radius:12px;padding:12px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+    .badge .title{font-weight:700}
+    .badge.lock{opacity:.6}
+    .list{max-height:260px;overflow:auto;border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+    .rowline{display:flex;justify-content:space-between;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#0c1220;margin-bottom:8px}
+    .rowline .left{display:flex;gap:8px;align-items:center}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+    .dot.done{background:var(--good)}
+    input,select,button{font:inherit}
+    .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .date{background:#0c1220;border:1px solid var(--line);color:var(--txt);padding:6px 8px;border-radius:8px}
+    button{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>雲端紀錄｜完成率與成就</h1>
+    <div class="controls" style="margin-bottom:10px">
+      <label class="muted">月份</label>
+      <input id="monthPicker" class="date" type="month"/>
+      <span class="muted">（預設為今天的月份；週完成率以「週一開始」計算）</span>
+      <span id="authState" class="muted" style="margin-left:auto"></span>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <span class="pill">本月完成率</span>
+          <span id="monthRatioText" class="muted">--%</span>
+        </div>
+        <div class="kpi">
+          <div class="item">
+            <div class="muted">本月完成</div>
+            <div id="monthDone" class="big">0</div>
+          </div>
+          <div class="item">
+            <div class="muted">本月總任務</div>
+            <div id="monthTotal" class="big">0</div>
+          </div>
+          <div class="item">
+            <div class="muted">連續完成天數</div>
+            <div id="streakDays" class="big">0</div>
+          </div>
+        </div>
+        <div class="bar" style="margin-top:10px"><span id="monthBar"></span></div>
+
+        <div class="row" style="margin-top:14px">
+          <span class="pill">本週完成率</span>
+          <span id="weekRatioText" class="muted">--%</span>
+        </div>
+        <div class="kpi">
+          <div class="item">
+            <div class="muted">本週完成</div>
+            <div id="weekDone" class="big">0</div>
+          </div>
+          <div class="item">
+            <div class="muted">本週總任務</div>
+            <div id="weekTotal" class="big">0</div>
+          </div>
+          <div class="item">
+            <div class="muted">本週未完成</div>
+            <div id="weekUndone" class="big">0</div>
+          </div>
+        </div>
+        <div class="bar" style="margin-top:10px"><span id="weekBar"></span></div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <span class="pill">成就系統</span>
+          <span class="muted">完成里程碑會自動解鎖徽章</span>
+        </div>
+        <div id="achGrid" class="ach"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row">
+        <span class="pill">本月紀錄</span>
+        <span id="monthRange" class="muted"></span>
+      </div>
+      <div id="listBox" class="list"></div>
+    </div>
+  </div>
+
+<script>
+/* =============================
+   設定區（請依你的表結構調整）
+   ============================= */
+const CONFIG = {
+  // 若宿主頁面已有 sb（window.sb），本頁會沿用；否則在下方填 URL/ANON
+  SUPABASE_URL: "",
+  SUPABASE_ANON: "",
+
+  // 雲端紀錄資料來源：表名與欄位對應
+  // 假設你的「雲端紀錄」資料表為 records（請改成你的實名）
+  TABLE: "records",
+  FIELDS: {
+    user_id: "user_id",        // uuid
+    date: "date",              // date 或 timestamptz 皆可；若是 timestamptz 會轉成本地日期
+    title: "title",            // 任務名稱
+    status: "status",          // 'done' | 'pending' | ... （若沒有此欄位，於下方 isDone 中自訂）
+    completed: "completed"     // boolean（可選）
+  },
+
+  // 定義「完成」的判斷：可依你的資料表調整
+  isDone: (row) => {
+    const f = CONFIG.FIELDS;
+    const s = (row[f.status] || "").toString().toLowerCase();
+    const c = row[f.completed];
+    return c === true || s === "done" || s === "completed" || s === "finish" || s === "finished";
+  }
+};
+
+/* ============================= */
+/* Supabase 初始化（沿用 window.sb 或自行建立） */
+const _supabase = window.supabase;
+let sb = window.sb || null;
+if (!sb) {
+  if (!_supabase) {
+    console.error("未載入 @supabase/supabase-js。");
+  } else if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON) {
+    console.warn("未提供 SUPABASE_URL / ANON，且沒有 window.sb。請在 CONFIG 內補上。");
+  } else {
+    sb = _supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON);
+  }
+}
+
+const els = {
+  auth: document.getElementById("authState"),
+  monthPicker: document.getElementById("monthPicker"),
+  monthRange: document.getElementById("monthRange"),
+  listBox: document.getElementById("listBox"),
+  monthDone: document.getElementById("monthDone"),
+  monthTotal: document.getElementById("monthTotal"),
+  monthBar: document.getElementById("monthBar"),
+  monthRatioText: document.getElementById("monthRatioText"),
+  weekDone: document.getElementById("weekDone"),
+  weekTotal: document.getElementById("weekTotal"),
+  weekUndone: document.getElementById("weekUndone"),
+  weekBar: document.getElementById("weekBar"),
+  weekRatioText: document.getElementById("weekRatioText"),
+  achGrid: document.getElementById("achGrid"),
+};
+
+function pad2(n){return String(n).padStart(2,"0");}
+function toLocalDateStr(d){
+  const z = new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return z.toISOString().slice(0,10);
+}
+function mondayOf(date){
+  const d = new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d;
+}
+function sundayOf(date){
+  const m = mondayOf(date); const d=new Date(m); d.setDate(m.getDate()+6); return d;
+}
+function monthStart(date){ const d=new Date(date); d.setDate(1); d.setHours(0,0,0,0); return d;}
+function monthEnd(date){ const d=new Date(date); d.setMonth(d.getMonth()+1,0); d.setHours(23,59,59,999); return d;}
+
+async function getUser(){
+  if (!sb) return null;
+  try{ return (await sb.auth.getUser()).data?.user || null; }catch{ return null; }
+}
+
+/* 主要載入流程 */
+async function loadAndRender(){
+  const user = await getUser();
+  els.auth.textContent = user ? `已登入：${user.email}` : "未登入";
+  if (!user || !sb) {
+    renderEmpty();
+    return;
+  }
+
+  const yymm = els.monthPicker.value || toLocalDateStr(new Date()).slice(0,7); // yyyy-mm
+  const [yy,mm] = yymm.split("-").map(Number);
+  const ms = new Date(yy, mm-1, 1, 0,0,0,0);
+  const me = new Date(yy, mm, 0, 23,59,59,999);
+  els.monthRange.textContent = `${toLocalDateStr(ms)} ~ ${toLocalDateStr(me)}`;
+
+  // 抓取本月資料
+  const f = CONFIG.FIELDS;
+  const { data, error } = await sb.from(CONFIG.TABLE)
+    .select(`${f.date}, ${f.title}, ${f.status}, ${f.completed}`)
+    .eq(f.user_id, user.id)
+    .gte(f.date, toLocalDateStr(ms))
+    .lte(f.date, toLocalDateStr(me))
+    .order(f.date, { ascending: true });
+
+  if (error) {
+    console.warn("載入雲端紀錄失敗：", error);
+    renderEmpty();
+    return;
+  }
+
+  // 正規化資料：日期轉 yyyy-mm-dd
+  const rows = (data||[]).map(r => {
+    const raw = r[f.date];
+    let dstr;
+    if (typeof raw === "string" && raw.length > 10) {
+      // timestamptz -> local date
+      dstr = toLocalDateStr(new Date(raw));
+    } else {
+      dstr = (typeof raw === "string") ? raw : toLocalDateStr(new Date(raw));
+    }
+    return {...r, __date: dstr, __done: CONFIG.isDone(r)};
+  });
+
+  // 本月完成率
+  const monthTotal = rows.length;
+  const monthDone = rows.filter(r => r.__done).length;
+  const monthRatio = monthTotal ? Math.round(monthDone*100/monthTotal) : 0;
+
+  els.monthTotal.textContent = monthTotal;
+  els.monthDone.textContent = monthDone;
+  els.monthRatioText.textContent = `${monthRatio}%`;
+  els.monthBar.style.width = monthRatio + "%";
+
+  // 本週（以當月所選日期的週一~週日）
+  const today = new Date();
+  const wStart = mondayOf(today);
+  const wEnd   = sundayOf(today);
+  const inWeek = rows.filter(r => {
+    const d = new Date(r.__date);
+    return d >= wStart && d <= wEnd;
+  });
+  const weekTotal = inWeek.length;
+  const weekDone  = inWeek.filter(r => r.__done).length;
+  const weekUndone = Math.max(0, weekTotal - weekDone);
+  const weekRatio = weekTotal ? Math.round(weekDone*100/weekTotal) : 0;
+
+  els.weekTotal.textContent = weekTotal;
+  els.weekDone.textContent = weekDone;
+  els.weekUndone.textContent = weekUndone;
+  els.weekRatioText.textContent = `${weekRatio}%`;
+  els.weekBar.style.width = weekRatio + "%";
+
+  // 連續完成天數（以本月資料計算，連續「每天至少一件完成」）
+  const days = new Map(); // dateStr -> {doneCount,totalCount}
+  rows.forEach(r => {
+    const key = r.__date;
+    if (!days.has(key)) days.set(key, {done:0,total:0});
+    const obj = days.get(key);
+    obj.total += 1;
+    if (r.__done) obj.done += 1;
+  });
+  const allDates = Array.from({length: me.getDate()}, (_,i) => toLocalDateStr(new Date(ms.getFullYear(), ms.getMonth(), i+1)));
+  let streak = 0;
+  for (let i = allDates.length-1; i >= 0; i--) {
+    const d = allDates[i];
+    const rec = days.get(d);
+    if (rec && rec.done > 0) streak++;
+    else break;
+  }
+  document.getElementById("streakDays").textContent = streak;
+
+  // 成就（舉例：你可依需求自行調整）
+  const achievements = [
+    { id:"a10", title:"暖身完成者", desc:"本月完成 ≥ 10 件", need:10, ok: monthDone >= 10 },
+    { id:"a25", title:"穩定輸出", desc:"本月完成 ≥ 25 件", need:25, ok: monthDone >= 25 },
+    { id:"a50", title:"效率達人", desc:"本月完成 ≥ 50 件", need:50, ok: monthDone >= 50 },
+    { id:"a100",title:"任務殺手", desc:"本月完成 ≥ 100 件", need:100, ok: monthDone >= 100 },
+    { id:"astreak3", title:"連三好日子", desc:"連續 3 天有完成", need:3, ok: streak >= 3 },
+    { id:"astreak7", title:"一週穩穩來", desc:"連續 7 天有完成", need:7, ok: streak >= 7 },
+    { id:"aweek80", title:"本週八成達標", desc:"本週完成率 ≥ 80%", need:80, ok: weekRatio >= 80 },
+    { id:"amonth70", title:"本月七成達標", desc:"本月完成率 ≥ 70%", need:70, ok: monthRatio >= 70 },
+  ];
+  renderAchievements(achievements);
+
+  // 列表（本月）
+  renderList(rows);
+}
+
+function renderEmpty(){
+  els.monthTotal.textContent = "0";
+  els.monthDone.textContent = "0";
+  els.monthBar.style.width = "0%";
+  els.monthRatioText.textContent = "--%";
+  els.weekTotal.textContent = "0";
+  els.weekDone.textContent = "0";
+  els.weekUndone.textContent = "0";
+  els.weekBar.style.width = "0%";
+  els.weekRatioText.textContent = "--%";
+  els.achGrid.innerHTML = "";
+  els.listBox.innerHTML = "<div class='muted'>尚無資料或未登入</div>";
+}
+
+function renderAchievements(list){
+  els.achGrid.innerHTML = "";
+  list.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "badge" + (a.ok ? "" : " lock");
+    div.innerHTML = `
+      <div class="title">${a.title}</div>
+      <div class="muted">${a.desc}</div>
+      <div class="row" style="justify-content:space-between;margin-top:8px">
+        <span class="muted">${a.ok ? "已解鎖" : "未解鎖"}</span>
+        <span class="pill">${a.need}</span>
+      </div>
+    `;
+    els.achGrid.appendChild(div);
+  });
+}
+
+function renderList(rows){
+  els.listBox.innerHTML = "";
+  if (!rows.length) {
+    els.listBox.innerHTML = "<div class='muted'>本月尚無紀錄</div>";
+    return;
+  }
+  rows.forEach(r => {
+    const line = document.createElement("div");
+    line.className = "rowline";
+    line.innerHTML = `
+      <div class="left">
+        <span class="dot ${r.__done ? "done": ""}"></span>
+        <div>
+          <div>${r.title || "(未命名)"}</div>
+          <div class="muted" style="font-size:12px">${r.__date}</div>
+        </div>
+      </div>
+      <div class="muted">${r[CONFIG.FIELDS.status] || ""}</div>
+    `;
+    els.listBox.appendChild(line);
+  });
+}
+
+/* 初始化 */
+document.addEventListener("DOMContentLoaded", async () => {
+  // 預設月份
+  const today = new Date();
+  document.getElementById("monthPicker").value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
+  document.getElementById("monthPicker").addEventListener("change", loadAndRender);
+
+  // 登入狀態變更時重新載入
+  if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") {
+    sb.auth.onAuthStateChange(() => loadAndRender());
+  }
+
+  await loadAndRender();
+});
+</script>
+</body>
+</html>
