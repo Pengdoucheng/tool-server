@@ -118,10 +118,7 @@
           <h5>📅 今日任務排程</h5>
           <div id="timeGrid" class="time-grid"></div>
         </div>
-        <div class="card-ui">
-          <h5>🎯 本週目標設定</h5>
-          <textarea class="form-control" id="goalInput" rows="4" placeholder="輸入你的本週目標，例如：運動3次、完成報告、閱讀一本書..."></textarea>
-        </div>
+       
         <button class="btn btn-success w-100 mb-2" onclick="analyzeByAI()">🔍 分析目前排程</button>
         <button class="btn btn-outline-secondary w-100 mb-2" onclick="reviewDay()">📌 填寫完成情況</button>
         <button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
@@ -589,6 +586,71 @@
   <iframe src="cloud-sync-widget.html" style="width:100%;height:720px;border:0;border-radius:12px;overflow:hidden;"></iframe>
 
 </section>
+<style>
+  /* 你的工具列：把選擇器換成實際的那個（擇一或都保留） */
+  #tools-bar, .tools-toggle, .tools-tabs {
+    position: sticky;      /* 或改 fixed；sticky 通常體驗較佳 */
+    top: 0;
+    z-index: 40;           /* 確保在 panes 之上 */
+    background: var(--bg, #fff);
+    border-bottom: 1px solid var(--line, #e6e7eb);
+  }
+
+  /* 讓每個 pane 自動避開工具列高度 */
+  .tools-pane {
+    position: relative;
+    z-index: 1;
+    margin-top: var(--tools-offset, 12px); /* 由 JS 動態設定高度 */
+    scroll-margin-top: var(--tools-offset, 12px); /* 滑到錨點時也不被蓋住 */
+  }
+
+  /* 機能列排版更穩定，避免擠成一行重疊 */
+  .tools-row,
+  .tools-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;       /* 小螢幕自動換行 */
+  }
+
+  /* 計時字樣大小與間距，避免碰到上緣 */
+  .tools-timer {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .5px;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1;
+    margin: 8px 0 10px;
+  }
+
+  /* 按鈕與輸入框的最小尺寸，避免擠壓 */
+  .tools-actions button,
+  .tools-row input[type="number"],
+  .tools-row input[type="time"] {
+    min-height: 36px;
+  }
+</style>
+
+<script>
+  (function () {
+    // 找到你的工具列（擇一就好；保留多個選擇器以增加相容性）
+    const bar = document.querySelector('#tools-bar, .tools-toggle, .tools-tabs');
+    if (!bar) return;
+
+    const setOffset = () => {
+      // +12 是向下留點空白，避免貼得太緊
+      const h = bar.offsetHeight + 12;
+      document.documentElement.style.setProperty('--tools-offset', h + 'px');
+    };
+
+    setOffset();
+    // 視窗改變尺寸、字體載入、工具列行數變動時更新
+    window.addEventListener('resize', setOffset);
+    // 如果工具列內容動態展開/收合，監聽高度變化
+    const ro = new ResizeObserver(setOffset);
+    ro.observe(bar);
+  })();
+</script>
+
 
 
 
