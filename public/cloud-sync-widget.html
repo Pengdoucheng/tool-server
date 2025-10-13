@@ -228,5 +228,12 @@
     await renderHistory('week');
   })();
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const btn = document.getElementById('saveButton');
+    if(btn) btn.addEventListener('click', Save_Cloud_Archive_Achievements);
+  });
+  </script>
+  
 </body>
 </html>

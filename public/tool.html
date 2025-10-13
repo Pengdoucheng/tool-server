@@ -613,7 +613,163 @@
 
 
 
-
+<script>
+  /* ====== Supabase 初始化（若你頁面已經有，就刪掉這段重複的 const，改用 window.sb） ====== */
+  
+  window.sb = window.sb || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  
+  /* ====== 小工具 ====== */
+  async function __getUser(){ const { data } = await sb.auth.getUser(); return data?.user || null; }
+  function __today(){ return new Date().toISOString().slice(0,10); }
+  function __toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+  function __fmt(min){ return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'); }
+  
+  /* ====== 1) 把「時間區塊」同步到 cloud_tasks ======
+     規則：
+     - 只同步 .time-cell.active（有你目前輸入的那些格）
+     - start = 該格 data-time
+     - end = 下一格 data-time；若沒有下一格就 +30 分
+  */
+  async function syncTimeGridToCloud(){
+    const u = await __getUser(); if(!u){ alert("請先登入帳號"); return 0; }
+    const dateStr = __today();
+    const cells = Array.from(document.querySelectorAll(".time-cell.active"));
+    const rows = [];
+    for (let i=0;i<cells.length;i++){
+      const c = cells[i];
+      const txt = (c.textContent || "").trim();
+      if(!txt) continue;
+      const startHH = c.dataset.time || c.getAttribute("data-time");
+      if(!startHH) continue;
+      let endMin = __toMin(startHH) + 30;
+      const next = c.nextElementSibling;
+      if(next && next.classList.contains("time-cell")){
+        const endHH = next.dataset.time || next.getAttribute("data-time");
+        if(endHH) endMin = __toMin(endHH);
+      }
+      rows.push({ user_id: u.id, date: dateStr, start_min: __toMin(startHH), end_min: endMin, title: txt, done: false });
+    }
+    // 先清今天再寫入，避免重複
+    await sb.from("cloud_tasks").delete().eq("user_id", u.id).eq("date", dateStr);
+    if(rows.length) await sb.from("cloud_tasks").insert(rows);
+    return rows.length;
+  }
+  
+  /* ====== 2) 計算今日完成率（從 cloud_tasks 的 done 勾選） ====== */
+  async function calcTodayRate(){
+    const u = await __getUser(); if(!u) return { total:0, done:0, rate:0 };
+    const { data, error } = await sb.from("cloud_tasks").select("done").eq("user_id", u.id).eq("date", __today());
+    if(error){ console.warn(error); return { total:0, done:0, rate:0 }; }
+    const total = data?.length || 0;
+    const done  = (data||[]).filter(x=>x.done).length;
+    const rate  = total ? Math.round(done*100/total) : 0;
+    return { total, done, rate };
+  }
+  
+  /* ====== 3) 把今日覆蓋存到 cloud_tasks_archive ====== */
+  async function archiveToday(){
+    const u = await __getUser(); if(!u) return 0;
+    const dateStr = __today();
+    const { data } = await sb.from("cloud_tasks").select("*").eq("user_id", u.id).eq("date", dateStr);
+    const rows = data || [];
+    await sb.from("cloud_tasks_archive").delete().eq("user_id", u.id).eq("date", dateStr);
+    if(rows.length){
+      const payload = rows.map(r=>({ user_id:u.id, date:r.date, start_min:r.start_min, end_min:r.end_min, title:r.title, done:r.done }));
+      await sb.from("cloud_tasks_archive").insert(payload);
+    }
+    return rows.length;
+  }
+  
+  /* ====== 4) 計算成就 ======
+     規則（可再擴充）：
+     - 🌅 早起達成：今日第一筆 start_min < 08:00
+     - 💪 今日全勤：今日任務數 ≥ 3 且 完成率 ≥ 80%
+     - 🔥 連續挑戰者：連續 ≥3 天的日完成率 ≥ 60%
+     - 🌕 自律之月：當月平均完成率 ≥ 70%
+  */
+  async function computeAchievements(){
+    const u = await __getUser(); if(!u) return [];
+    const today = __today();
+    const mStart = new Date(); mStart.setDate(1);
+    const monthStart = mStart.toISOString().slice(0,10);
+  
+    // 撈本月的 archive 資料（只看已存檔的）
+    const { data, error } = await sb
+      .from("cloud_tasks_archive")
+      .select("date, start_min, done")
+      .eq("user_id", u.id).gte("date", monthStart).lte("date", today);
+    if(error || !data?.length) return [];
+  
+    // 聚合每日
+    const daily = {};
+    for(const r of data){
+      daily[r.date] ??= { total:0, done:0, firstStart:1440 };
+      daily[r.date].total++;
+      if(r.done) daily[r.date].done++;
+      if(r.start_min < daily[r.date].firstStart) daily[r.date].firstStart = r.start_min;
+    }
+  
+    // 平均完成率
+    const rates = Object.values(daily).map(v => v.done / v.total);
+    const avg = rates.length ? (rates.reduce((a,b)=>a+b,0) / rates.length) : 0;
+  
+    // 連續 >=60%
+    const days = Object.keys(daily).sort(); // yyyy-mm-dd
+    let best = 0, cur = 0;
+    for(const d of days){
+      const v = daily[d];
+      if(v.total && (v.done/v.total)>=0.6){ cur++; best = Math.max(best, cur); }
+      else cur = 0;
+    }
+  
+    const ach = [];
+    const td = daily[today];
+    if (td && td.firstStart < 8*60) ach.push("🌅 早起達成");
+    if (td && td.total>=3 && (td.done/td.total)>=0.8) ach.push("💪 今日全勤");
+    if (best >= 3) ach.push("🔥 連續挑戰者");
+    if (avg >= 0.7) ach.push("🌕 自律之月");
+  
+    return ach;
+  }
+  
+  /* ====== 5) 畫面顯示成就（放在你頁面合適的位置） ====== */
+  function renderAchievements(list){
+    let box = document.querySelector("#achievementsBox");
+    if(!box){
+      box = document.createElement("section");
+      box.id = "achievementsBox";
+      box.className = "container";
+      box.style.margin = "16px auto";
+      box.innerHTML = `
+        <div style="border:1px solid #e6e7eb;border-radius:12px;padding:12px;background:#f8f9fb;">
+          <div style="font-weight:700;margin-bottom:6px;">🏆 成就</div>
+          <div id="achList" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>`;
+      const target = document.querySelector(".container") || document.body;
+      target.appendChild(box);
+    }
+    const listEl = box.querySelector("#achList");
+    listEl.innerHTML = list.length
+      ? list.map(s => `<span style="padding:4px 8px;border:1px solid #ddd;border-radius:999px;background:#fff;">${s}</span>`).join("")
+      : `<span style="color:#666">目前沒有可展示的成就，先把今天「存入歷史」吧。</span>`;
+  }
+  
+  /* ====== 6) 整合：給「儲存」按鈕呼叫的主流程 ====== */
+  async function Save_Cloud_Archive_Achievements(){
+    try{
+      const synced = await syncTimeGridToCloud(); // 先把今天時間格寫入 cloud_tasks
+      const rate = await calcTodayRate();         // 算完成率（看 cloud_tasks 的勾選狀態）
+      const archived = await archiveToday();      // 覆蓋存到 cloud_tasks_archive
+      const ach = await computeAchievements();    // 算成就（本月+今日）
+      renderAchievements(ach);                    // 顯示成就
+      alert(`已儲存：今日 ${rate.done}/${rate.total}（${rate.rate}%），歷史寫入 ${archived} 筆。`);
+    }catch(e){
+      console.error(e);
+      alert("儲存流程發生錯誤："+(e.message||e));
+    }
+  }
+  </script>
+  
   </body>
 </html>
 
