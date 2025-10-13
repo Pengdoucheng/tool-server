@@ -71,6 +71,45 @@
       </div>
     </section>
     <section class="right">
+      <!-- 完成率 KPI + 成就 -->
+<div class="card" id="kpiCard">
+  <div class="row" style="justify-content:space-between;">
+    <h3>完成率與成就</h3>
+    <div class="row">
+      <span class="pill" id="kpiMonthLabel">本月</span>
+      <span class="pill" id="kpiWeekLabel">本週</span>
+    </div>
+  </div>
+
+  <!-- KPI 區 -->
+  <div class="list" style="gap:10px">
+    <div>
+      <div class="row" style="justify-content:space-between">
+        <div class="muted">本月完成率</div>
+        <div class="muted"><b id="mRatio">--%</b>（<span id="mDone">0</span>/<span id="mTotal">0</span>）</div>
+      </div>
+      <div class="bar"><span id="mBar" style="display:block;height:8px;background:#0a7;width:0%;border-radius:999px"></span></div>
+    </div>
+
+    <div>
+      <div class="row" style="justify-content:space-between">
+        <div class="muted">本週完成率</div>
+        <div class="muted"><b id="wRatio">--%</b>（<span id="wDone">0</span>/<span id="wTotal">0</span>）</div>
+      </div>
+      <div class="bar"><span id="wBar" style="display:block;height:8px;background:#0a7;width:0%;border-radius:999px"></span></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- 成就區 -->
+  <div class="row" style="justify-content:space-between">
+    <div class="muted">成就系統</div>
+    <div class="muted" id="achDbg"></div>
+  </div>
+  <div id="achGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></div>
+</div>
+
       <div class="card">
         <div class="row" style="justify-content:space-between;">
           <h3>歷史（本週 / 本月）</h3>
@@ -234,6 +273,162 @@
     if(btn) btn.addEventListener('click', Save_Cloud_Archive_Achievements);
   });
   </script>
+
+<script>
+  // ====== 週/月完成率 + 成就（使用 cloud_tasks_archive） ======
+  (function(){
+    // 不動你原有 sb / 登入流程；直接沿用現有的 sb 與 getUser()
+    const el = id => document.getElementById(id);
+  
+    // 週一為一週起點
+    const mondayOf = (d) => { const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; };
+    const sundayOf = (d) => { const m=mondayOf(d); const x=new Date(m); x.setDate(m.getDate()+6); x.setHours(23,59,59,999); return x; };
+    const iso = (d) => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  
+    function monthRange(base=new Date()){
+      const s = new Date(base.getFullYear(), base.getMonth(), 1, 0,0,0,0);
+      const e = new Date(base.getFullYear(), base.getMonth()+1, 0, 23,59,59,999);
+      return {s, e};
+    }
+    function weekRange(base=new Date()){ return { s: mondayOf(base), e: sundayOf(base) }; }
+  
+    async function fetchArchiveRange(userId, from, to){
+      // 只抓需要的欄位（你表就是這兩個欄 + 其他）
+      const { data, error } = await sb.from("cloud_tasks_archive")
+        .select("date, done")
+        .eq("user_id", userId)
+        .gte("date", iso(from))
+        .lte("date", iso(to));
+      if (error) { console.warn("[KPI] query error", error); return []; }
+      return data || [];
+    }
+  
+    function computeRate(rows){
+      const total = rows.length;
+      const done  = rows.filter(r => r.done).length;
+      const ratio = total ? Math.round(done*100/total) : 0;
+      return { total, done, ratio };
+    }
+  
+    function renderBar(barEl, pct){ barEl.style.width = (pct||0) + "%"; }
+  
+    function renderAchievements({ month, week }){
+      const list = [];
+      // 這裡的條件你可自由改；我先給一組實用的
+      list.push({ id:"m10",  title:"暖身完成者", desc:"本月完成 ≥ 10 件", ok: month.done >= 10, need:10 });
+      list.push({ id:"m25",  title:"穩定輸出",   desc:"本月完成 ≥ 25 件", ok: month.done >= 25, need:25 });
+      list.push({ id:"m50",  title:"效率達人",   desc:"本月完成 ≥ 50 件", ok: month.done >= 50, need:50 });
+      list.push({ id:"m70",  title:"本月七成達標", desc:"本月完成率 ≥ 70%", ok: month.ratio >= 70, need:"70%" });
+      list.push({ id:"w80",  title:"本週八成達標", desc:"本週完成率 ≥ 80%", ok: week.ratio >= 80, need:"80%" });
+  
+      // 連續完成天數（以「cloud_tasks_archive 一天至少 1 件 done」為一日有完成）
+      // 以本月範圍計算
+      const { s:ms, e:me } = monthRange(new Date());
+      const days = new Map(); // "YYYY-MM-DD" -> {done,total}
+      month.rows.forEach(r=>{
+        const k = r.date;
+        const v = days.get(k) || { done:0, total:0 };
+        v.total++; if (r.done) v.done++;
+        days.set(k, v);
+      });
+      let streak = 0;
+      for (let d=me.getDate(); d>=1; d--){
+        const k = iso(new Date(ms.getFullYear(), ms.getMonth(), d));
+        const rec = days.get(k);
+        if (rec && rec.done > 0) streak++;
+        else break;
+      }
+      list.push({ id:"s3", title:"連三好日子", desc:"連續 3 天有完成（本月）", ok: streak >= 3, need:"3天" });
+      list.push({ id:"s7", title:"一週穩穩來", desc:"連續 7 天有完成（本月）", ok: streak >= 7, need:"7天" });
+  
+      // 繪製
+      const grid = el("achGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      list.forEach(a=>{
+        const card = document.createElement("div");
+        card.className = "item";
+        card.style.display="flex";
+        card.style.flexDirection="column";
+        card.style.alignItems="stretch";
+        card.style.gap="4px";
+        card.style.opacity = a.ok ? "1" : ".55";
+        card.innerHTML = `
+          <div style="font-weight:700">${a.title}</div>
+          <div class="sub">${a.desc}</div>
+          <div class="row" style="justify-content:space-between;margin-top:4px">
+            <span class="muted">${a.ok ? "已解鎖" : "未解鎖"}</span>
+            <span class="pill">${a.need}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      el("achDbg").textContent = `本月 ${month.done}/${month.total}，本週 ${week.done}/${week.total}`;
+    }
+  
+    async function refreshKPI(){
+      // 沿用你原本的 getUser()
+      const u = await (typeof getUser === "function" ? getUser() : (await sb.auth.getUser()).data.user);
+      if (!u) return;
+  
+      const now = new Date();
+  
+      // 本月
+      const { s:ms, e:me } = monthRange(now);
+      const mRows = await fetchArchiveRange(u.id, ms, me);
+      const mStat = computeRate(mRows);
+  
+      // 本週
+      const { s:ws, e:we } = weekRange(now);
+      const wRows = await fetchArchiveRange(u.id, ws, we);
+      const wStat = computeRate(wRows);
+  
+      // 更新 KPI
+      el("mRatio").textContent = mStat.ratio + "%";
+      el("mDone").textContent  = mStat.done;
+      el("mTotal").textContent = mStat.total;
+      renderBar(el("mBar"), mStat.ratio);
+  
+      el("wRatio").textContent = wStat.ratio + "%";
+      el("wDone").textContent  = wStat.done;
+      el("wTotal").textContent = wStat.total;
+      renderBar(el("wBar"), wStat.ratio);
+  
+      // 成就
+      renderAchievements({ month: { ...mStat, rows: mRows }, week: wStat });
+  
+      // 標籤（顯示日期範圍）
+      el("kpiMonthLabel").textContent = `本月 ${iso(ms)} ~ ${iso(me)}`;
+      el("kpiWeekLabel").textContent  = `本週 ${iso(ws)} ~ ${iso(we)}`;
+    }
+  
+    // 與你原本流程串接：初次載入、按「存入歷史」後、點「本週/本月」按鈕後，都刷新 KPI
+    document.addEventListener("DOMContentLoaded", ()=>{
+      // 初次載入完你原本的流程之後再跑一次（避免搶到 sb 初始化）
+      setTimeout(refreshKPI, 300);
+  
+      // 你原本的按鈕 hook（若日後你改 id，只要再呼叫 refreshKPI 即可）
+      const oldArchive = window.archiveToday;
+      if (typeof oldArchive === "function"){
+        // 包一層：執行原函式後刷新 KPI
+        window.archiveToday = async function(){
+          const n = await oldArchive.apply(this, arguments);
+          await refreshKPI();
+          return n;
+        };
+      }
+  
+      const btnW = document.getElementById("showWeek");
+      const btnM = document.getElementById("showMonth");
+      btnW && btnW.addEventListener("click", ()=> setTimeout(refreshKPI, 100));
+      btnM && btnM.addEventListener("click", ()=> setTimeout(refreshKPI, 100));
+  
+      // 週期性自動刷新（與你左側今日任務互動時，也可能會存入歷史）
+      setInterval(refreshKPI, 5000);
+    });
+  })();
+  </script>
+  
   
 </body>
 </html>
