@@ -67,7 +67,20 @@
   </style>
   <link rel="stylesheet" href="cr-achievements.css">\n</head>
 <body>
-  
+  <!-- 左側紀錄面板按鈕 -->
+<div id="history-toggle" class="history-btn">📅 紀錄</div>
+
+<!-- 左側紀錄面板 -->
+<div id="history-panel" class="history-panel">
+  <div class="history-header">
+    <h3>任務完成紀錄</h3>
+    <button id="close-history">✖</button>
+  </div>
+
+  <div class="history-mode">
+    <button data-mode="week">本週</button>
+    <button data-mode="month">本月</button>
+  </div>
 
   <div id="history-summary" class="history-summary">
     <p>完成率：<span id="history-rate">0%</span></p>
@@ -151,40 +164,27 @@
       const cell = document.createElement("div");
       cell.className = "time-cell";
       cell.dataset.time = `${h}:${m}`;
-      cell.onclick = async () => {
-  const $date = document.getElementById("schedDate");
-  const dateStr = $date?.value || todayStr();
-  const hhmm = cell.dataset.time;
-
-  if (cell.classList.contains("active")) {
-    // 1) 先更新記憶體狀態 & UI
-    scheduleState.delete(keyOf(dateStr, hhmm));
-    paintCell(cell, dateStr);
-
-    // 2) 再刪雲端
-    try { await removeSlot(dateStr, hhmm); }
-    catch (e) { console.warn("刪除雲端失敗", e); /* 可選：失敗時回滾 */ }
-  } else {
-    const activity = prompt(`輸入 ${hhmm} 的活動內容：`);
-    if (!activity) return;
-
-    // 1) 先更新記憶體狀態 & UI
-    scheduleState.set(keyOf(dateStr, hhmm), { title: activity.trim() });
-    paintCell(cell, dateStr);
-
-    // 2) 再 upsert 雲端
-    try { await upsertSlot(dateStr, hhmm, activity.trim()); }
-    catch (e) { console.warn("儲存雲端失敗", e); /* 可選：失敗時回滾 */ }
-  }
-};
+      cell.onclick = () => {
+        if (cell.classList.contains("active")) {
+          cell.classList.remove("active");
+          cell.textContent = "";
+        } else {
+          const activity = prompt("請輸入活動內容：");
+          if (activity) {
+            cell.classList.add("active");
+            const span = document.createElement("span");
+            span.className = "cell-label";
+            span.textContent = activity;
+            cell.textContent = "";
+            cell.appendChild(span);
           }
-        
-      
+        }
+      };
 
       row.appendChild(label);
       row.appendChild(cell);
       timeGrid.appendChild(row);
-    
+    }
 
     function reviewDay() {
       const reviewArea = document.getElementById("reviewArea");
@@ -472,90 +472,6 @@
 </script>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const $grid = document.getElementById("grid");
-    if (!$grid) return;
-  
-    const obs = new MutationObserver(muts => {
-      const $date = document.getElementById("schedDate");
-      const dateStr = $date?.value || todayStr();
-  
-      muts.forEach(m => {
-        m.addedNodes.forEach(n => {
-          if (!(n instanceof Element)) return;
-          if (n.classList.contains("time-cell")) paintCell(n, dateStr);
-          n.querySelectorAll?.(".time-cell").forEach(el => paintCell(el, dateStr));
-        });
-      });
-    });
-  
-    obs.observe($grid, { childList: true, subtree: true });
-  });
-  </script>
-  
-
-<script>
-  // 全域狀態：key = `${date}|${hhmm}` → { title }
-  const scheduleState = new Map();
-  
-  function keyOf(dateStr, hhmm){ return `${dateStr}|${hhmm}`; }
-  
-  // 只更新記憶體狀態，不碰 DOM（不要求格子先畫完）
-  async function hydrateState(dateStr){
-    const u = (await sb.auth.getUser()).data?.user;
-    if (!u) { 
-      // 登出時，清掉該日期的快取
-      for (const k of [...scheduleState.keys()]) if (k.startsWith(dateStr + "|")) scheduleState.delete(k);
-      return;
-    }
-  
-    // 先清掉該日舊快取
-    for (const k of [...scheduleState.keys()]) if (k.startsWith(dateStr + "|")) scheduleState.delete(k);
-  
-    const { data: rows, error } = await sb.from("schedules")
-      .select("start_min,title")
-      .eq("user_id", u.id)
-      .eq("date", dateStr)
-      .order("start_min", { ascending: true });
-  
-    if (error) { console.warn("hydrateState 失敗", error); return; }
-    (rows || []).forEach(r => {
-      const hhmm = toHHMM(r.start_min);
-      scheduleState.set(keyOf(dateStr, hhmm), { title: r.title || "" });
-    });
-  }
-  
-  </script>
-
-<script>
-  function paintCell(cell, dateStr){
-    if (!cell || !cell.dataset?.time) return;
-    const info = scheduleState.get(keyOf(dateStr, cell.dataset.time));
-  
-    // 先清
-    cell.classList.remove("active");
-    cell.textContent = "";
-  
-    if (info){
-      cell.classList.add("active");
-      const span = document.createElement("span");
-      span.className = "cell-label";
-      span.textContent = info.title;
-      cell.appendChild(span);
-    }
-  }
-  
-  // 把目前畫面上的所有 .time-cell 依狀態重畫（可多次呼叫）
-  function repaintAllCells(){
-    const $date = document.getElementById("schedDate");
-    const dateStr = $date?.value || todayStr();
-    document.querySelectorAll(".time-cell").forEach(c => paintCell(c, dateStr));
-  }
-  </script>
-  
-  
-
-<script>
   // 若前面已有 sb、getUser()，可刪這兩個重複的實作
   // const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
@@ -681,23 +597,6 @@
       .subscribe();
   });
 </script>
-<script>
-  // 1) 日期切換
-  document.getElementById("schedDate")?.addEventListener("change", async (e) => {
-    const dateStr = e.target.value || todayStr();
-    await hydrateState(dateStr);
-    repaintAllCells();
-  });
-  
-  // 2) Auth 狀態（登入/登出）
-  sb.auth.onAuthStateChange(async (_event, session) => {
-    const $date = document.getElementById("schedDate");
-    const dateStr = $date?.value || todayStr();
-    await hydrateState(dateStr);
-    repaintAllCells();
-  });
-  </script>
-  
 
 
 <!-- 臨時：排程面板（先驗證功能，之後可移除或換成你的時間格 UI） -->
@@ -710,5 +609,6 @@
 
   </body>
 </html>
+
 
 
