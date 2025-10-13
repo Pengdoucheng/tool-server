@@ -7,9 +7,7 @@
   <title>雲端紀錄｜完成率與成就</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{
-      --bg:#0f1115;--panel:#111520;--line:#1c2230;--muted:#9aa4b2;--txt:#eaecee;--brand:#1a73e8;--good:#22c55e;--warn:#f59e0b;
-    }
+    :root{ --bg:#0f1115;--panel:#111520;--line:#1c2230;--muted:#9aa4b2;--txt:#eaecee;--brand:#1a73e8;--good:#22c55e;--warn:#f59e0b; }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",Arial}
     .wrap{max-width:1080px;margin:18px auto;padding:16px}
@@ -47,7 +45,7 @@
     <div class="controls" style="margin-bottom:10px">
       <label class="muted">月份</label>
       <input id="monthPicker" class="date" type="month"/>
-      <span class="muted">（預設為今天的月份；週完成率以「週一開始」計算）</span>
+      <button id="btnRefresh" title="重新整理">重新整理</button>
       <span id="authState" class="muted" style="margin-left:auto"></span>
     </div>
 
@@ -58,18 +56,9 @@
           <span id="monthRatioText" class="muted">--%</span>
         </div>
         <div class="kpi">
-          <div class="item">
-            <div class="muted">本月完成</div>
-            <div id="monthDone" class="big">0</div>
-          </div>
-          <div class="item">
-            <div class="muted">本月總任務</div>
-            <div id="monthTotal" class="big">0</div>
-          </div>
-          <div class="item">
-            <div class="muted">連續完成天數</div>
-            <div id="streakDays" class="big">0</div>
-          </div>
+          <div class="item"><div class="muted">本月完成</div><div id="monthDone" class="big">0</div></div>
+          <div class="item"><div class="muted">本月總任務</div><div id="monthTotal" class="big">0</div></div>
+          <div class="item"><div class="muted">連續完成天數</div><div id="streakDays" class="big">0</div></div>
         </div>
         <div class="bar" style="margin-top:10px"><span id="monthBar"></span></div>
 
@@ -78,18 +67,9 @@
           <span id="weekRatioText" class="muted">--%</span>
         </div>
         <div class="kpi">
-          <div class="item">
-            <div class="muted">本週完成</div>
-            <div id="weekDone" class="big">0</div>
-          </div>
-          <div class="item">
-            <div class="muted">本週總任務</div>
-            <div id="weekTotal" class="big">0</div>
-          </div>
-          <div class="item">
-            <div class="muted">本週未完成</div>
-            <div id="weekUndone" class="big">0</div>
-          </div>
+          <div class="item"><div class="muted">本週完成</div><div id="weekDone" class="big">0</div></div>
+          <div class="item"><div class="muted">本週總任務</div><div id="weekTotal" class="big">0</div></div>
+          <div class="item"><div class="muted">本週未完成</div><div id="weekUndone" class="big">0</div></div>
         </div>
         <div class="bar" style="margin-top:10px"><span id="weekBar"></span></div>
       </div>
@@ -97,7 +77,7 @@
       <div class="card">
         <div class="row">
           <span class="pill">成就系統</span>
-          <span class="muted">完成里程碑會自動解鎖徽章</span>
+          <span id="debugInfo" class="muted"></span>
         </div>
         <div id="achGrid" class="ach"></div>
       </div>
@@ -114,45 +94,40 @@
 
 <script>
 /* =============================
-   設定區（請依你的表結構調整）
+   設定：請只改這裡
    ============================= */
 const CONFIG = {
-  // 若宿主頁面已有 sb（window.sb），本頁會沿用；否則在下方填 URL/ANON
-  SUPABASE_URL: "",
-  SUPABASE_ANON: "",
+  // 若以 <iframe> 載入，通常沒有 window.sb，請填 URL/ANON
+  SUPABASE_URL: "https://rbtevdmunkjjevoeooli.supabase.co",     // 例如 "https://xxxx.supabase.co"
+  SUPABASE_ANON: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw",
 
-  // 雲端紀錄資料來源：表名與欄位對應
-  // 假設你的「雲端紀錄」資料表為 records（請改成你的實名）
+  // 資料來源模式：
+  //   "table_rows" = 每列一筆任務（需 TABLE/FIELDS）
+  //   "cr_progress" = 從 public.cr_progress.progress(jsonb) 解析
+  mode: "cr_progress",
+
+  // 若 mode="table_rows" 才需要 ▼
   TABLE: "records",
-  FIELDS: {
-    user_id: "user_id",        // uuid
-    date: "date",              // date 或 timestamptz 皆可；若是 timestamptz 會轉成本地日期
-    title: "title",            // 任務名稱
-    status: "status",          // 'done' | 'pending' | ... （若沒有此欄位，於下方 isDone 中自訂）
-    completed: "completed"     // boolean（可選）
+  FIELDS: { user_id: "user_id", date: "date", title: "title", status: "status", completed: "completed" },
+
+  // 「完成」的判定：中英/布林/數值都支援（用於 table_rows 模式）
+  isDoneRow: (row, F) => {
+    const s = (row[F.status] ?? "").toString().trim().toLowerCase();
+    const c = row[F.completed];
+    return c === true || c === 1 || c === "1"
+        || s === "done" || s === "completed" || s === "finish" || s === "finished"
+        || s === "完成" || s === "已完成" || s === "結束" || s === "達成";
   },
 
-  // 定義「完成」的判斷：可依你的資料表調整
-  isDone: (row) => {
-    const f = CONFIG.FIELDS;
-    const s = (row[f.status] || "").toString().toLowerCase();
-    const c = row[f.completed];
-    return c === true || s === "done" || s === "completed" || s === "finish" || s === "finished";
-  }
+  // 自動刷新秒數（0 = 不自動）
+  AUTO_REFRESH_SEC: 5
 };
 
 /* ============================= */
-/* Supabase 初始化（沿用 window.sb 或自行建立） */
 const _supabase = window.supabase;
 let sb = window.sb || null;
-if (!sb) {
-  if (!_supabase) {
-    console.error("未載入 @supabase/supabase-js。");
-  } else if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON) {
-    console.warn("未提供 SUPABASE_URL / ANON，且沒有 window.sb。請在 CONFIG 內補上。");
-  } else {
-    sb = _supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON);
-  }
+if (!sb && _supabase && CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON) {
+  sb = _supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON);
 }
 
 const els = {
@@ -170,133 +145,200 @@ const els = {
   weekBar: document.getElementById("weekBar"),
   weekRatioText: document.getElementById("weekRatioText"),
   achGrid: document.getElementById("achGrid"),
+  debugInfo: document.getElementById("debugInfo"),
+  btnRefresh: document.getElementById("btnRefresh"),
 };
 
-function pad2(n){return String(n).padStart(2,"0");}
-function toLocalDateStr(d){
-  const z = new Date(d.getTime()-d.getTimezoneOffset()*60000);
-  return z.toISOString().slice(0,10);
-}
-function mondayOf(date){
-  const d = new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d;
-}
-function sundayOf(date){
-  const m = mondayOf(date); const d=new Date(m); d.setDate(m.getDate()+6); return d;
-}
-function monthStart(date){ const d=new Date(date); d.setDate(1); d.setHours(0,0,0,0); return d;}
-function monthEnd(date){ const d=new Date(date); d.setMonth(d.getMonth()+1,0); d.setHours(23,59,59,999); return d;}
+function toLocalDateStr(d){ const z = new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function mondayOf(date){ const d = new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+function sundayOf(date){ const m = mondayOf(date); const d=new Date(m); d.setDate(m.getDate()+6); d.setHours(23,59,59,999); return d; }
+async function getUser(){ if (!sb) return null; try{ return (await sb.auth.getUser()).data?.user || null; }catch{return null;} }
 
-async function getUser(){
-  if (!sb) return null;
-  try{ return (await sb.auth.getUser()).data?.user || null; }catch{ return null; }
-}
+/* 取得某月的「扁平化任務」：[{date:'YYYY-MM-DD', title, done:boolean}] */
+async function fetchTasksOfMonth(userId, monthStr){
+  const [yy,mm] = monthStr.split("-").map(Number);
+  const ms = new Date(yy, mm-1, 1, 0,0,0,0);
+  const me = new Date(yy, mm, 0, 23,59,59,999);
 
-/* 主要載入流程 */
-async function loadAndRender(){
-  const user = await getUser();
-  els.auth.textContent = user ? `已登入：${user.email}` : "未登入";
-  if (!user || !sb) {
-    renderEmpty();
-    return;
+  if (CONFIG.mode === "table_rows"){
+    const F = CONFIG.FIELDS;
+    const { data, error } = await sb.from(CONFIG.TABLE)
+      .select(`${F.date}, ${F.title}, ${F.status}, ${F.completed}`)
+      .eq(F.user_id, userId)
+      .gte(F.date, toLocalDateStr(ms))
+      .lte(F.date, toLocalDateStr(me))
+      .order(F.date, { ascending: true });
+    if (error){ console.warn("query table_rows error", error); return []; }
+    return (data||[]).map(r => {
+      const raw = r[F.date];
+      let dstr = (typeof raw === "string" && raw.length > 10) ? toLocalDateStr(new Date(raw))
+               : (typeof raw === "string" ? raw : toLocalDateStr(new Date(raw)));
+      return { date: dstr, title: r[F.title] || "", done: CONFIG.isDoneRow(r, F) };
+    });
   }
 
-  const yymm = els.monthPicker.value || toLocalDateStr(new Date()).slice(0,7); // yyyy-mm
-  const [yy,mm] = yymm.split("-").map(Number);
+  // mode = "cr_progress"
+  const { data, error } = await sb.from("cr_progress").select("progress").eq("user_id", userId).single();
+  if (error){ console.warn("query cr_progress error", error); return []; }
+  const prog = data?.progress || {};
+
+  // 盡量容錯解析幾種常見結構：
+  // A) { "2025-10": { "2025-10-13": [{title, status/completed}, ...], ... }, ... }
+  // B) { "days": { "2025-10-13": [{...}], ... } }
+  // C) { "records": [{ date, title, status/completed }, ...] }
+  const out = [];
+
+  // helper：判斷是否完成
+  const isDoneAny = (obj) => {
+    const s = (obj.status ?? obj.state ?? "").toString().trim().toLowerCase();
+    const c = obj.completed ?? obj.done ?? obj.is_done;
+    return c === true || c === 1 || c === "1"
+        || s === "done" || s === "completed" || s === "finish" || s === "finished"
+        || s === "完成" || s === "已完成" || s === "結束" || s === "達成";
+  };
+
+  const inMonth = (dstr) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dstr)) return false;
+    const d = new Date(dstr+"T00:00:00");
+    return d >= ms && d <= me;
+  };
+
+  // C) records: array
+  if (Array.isArray(prog.records)){
+    prog.records.forEach(rec => {
+      const dstr = typeof rec.date === "string" ? rec.date.slice(0,10) : toLocalDateStr(new Date(rec.date));
+      if (inMonth(dstr)) out.push({ date: dstr, title: rec.title || "", done: isDoneAny(rec) });
+    });
+    return out;
+  }
+
+  // B) days: dict
+  if (prog.days && typeof prog.days === "object"){
+    Object.keys(prog.days).forEach(dstr => {
+      if (!inMonth(dstr)) return;
+      const arr = prog.days[dstr];
+      if (Array.isArray(arr)){
+        arr.forEach(item => out.push({ date: dstr, title: item.title || "", done: isDoneAny(item) }));
+      } else if (arr && typeof arr === "object" && Array.isArray(arr.items)){
+        arr.items.forEach(item => out.push({ date: dstr, title: item.title || "", done: isDoneAny(item) }));
+      }
+    });
+    return out;
+  }
+
+  // A) "YYYY-MM": { "YYYY-MM-DD": [...] }
+  Object.keys(prog).forEach(key => {
+    if (!/^\d{4}-\d{2}$/.test(key)) return;
+    if (key !== monthStr) return;
+    const bucket = prog[key];
+    if (bucket && typeof bucket === "object"){
+      Object.keys(bucket).forEach(dstr => {
+        if (!inMonth(dstr)) return;
+        const arr = bucket[dstr];
+        if (Array.isArray(arr)){
+          arr.forEach(item => out.push({ date: dstr, title: item.title || "", done: isDoneAny(item) }));
+        } else if (arr && typeof arr === "object" && Array.isArray(arr.items)){
+          arr.items.forEach(item => out.push({ date: dstr, title: item.title || "", done: isDoneAny(item) }));
+        }
+      });
+    }
+  });
+
+  return out;
+}
+
+/* 繪製 */
+function renderStats(tasks, monthStr){
+  const [yy,mm] = monthStr.split("-").map(Number);
   const ms = new Date(yy, mm-1, 1, 0,0,0,0);
   const me = new Date(yy, mm, 0, 23,59,59,999);
   els.monthRange.textContent = `${toLocalDateStr(ms)} ~ ${toLocalDateStr(me)}`;
 
-  // 抓取本月資料
-  const f = CONFIG.FIELDS;
-  const { data, error } = await sb.from(CONFIG.TABLE)
-    .select(`${f.date}, ${f.title}, ${f.status}, ${f.completed}`)
-    .eq(f.user_id, user.id)
-    .gte(f.date, toLocalDateStr(ms))
-    .lte(f.date, toLocalDateStr(me))
-    .order(f.date, { ascending: true });
-
-  if (error) {
-    console.warn("載入雲端紀錄失敗：", error);
-    renderEmpty();
-    return;
-  }
-
-  // 正規化資料：日期轉 yyyy-mm-dd
-  const rows = (data||[]).map(r => {
-    const raw = r[f.date];
-    let dstr;
-    if (typeof raw === "string" && raw.length > 10) {
-      // timestamptz -> local date
-      dstr = toLocalDateStr(new Date(raw));
-    } else {
-      dstr = (typeof raw === "string") ? raw : toLocalDateStr(new Date(raw));
-    }
-    return {...r, __date: dstr, __done: CONFIG.isDone(r)};
-  });
-
-  // 本月完成率
-  const monthTotal = rows.length;
-  const monthDone = rows.filter(r => r.__done).length;
+  const monthTotal = tasks.length;
+  const monthDone  = tasks.filter(t => t.done).length;
   const monthRatio = monthTotal ? Math.round(monthDone*100/monthTotal) : 0;
-
   els.monthTotal.textContent = monthTotal;
-  els.monthDone.textContent = monthDone;
+  els.monthDone.textContent  = monthDone;
   els.monthRatioText.textContent = `${monthRatio}%`;
   els.monthBar.style.width = monthRatio + "%";
 
-  // 本週（以當月所選日期的週一~週日）
   const today = new Date();
   const wStart = mondayOf(today);
   const wEnd   = sundayOf(today);
-  const inWeek = rows.filter(r => {
-    const d = new Date(r.__date);
+  const inWeek = tasks.filter(t => {
+    const d = new Date(t.date + "T00:00:00");
     return d >= wStart && d <= wEnd;
   });
   const weekTotal = inWeek.length;
-  const weekDone  = inWeek.filter(r => r.__done).length;
-  const weekUndone = Math.max(0, weekTotal - weekDone);
+  const weekDone  = inWeek.filter(t => t.done).length;
+  const weekUndone= Math.max(0, weekTotal - weekDone);
   const weekRatio = weekTotal ? Math.round(weekDone*100/weekTotal) : 0;
-
   els.weekTotal.textContent = weekTotal;
-  els.weekDone.textContent = weekDone;
-  els.weekUndone.textContent = weekUndone;
+  els.weekDone.textContent  = weekDone;
+  els.weekUndone.textContent= weekUndone;
   els.weekRatioText.textContent = `${weekRatio}%`;
   els.weekBar.style.width = weekRatio + "%";
 
-  // 連續完成天數（以本月資料計算，連續「每天至少一件完成」）
-  const days = new Map(); // dateStr -> {doneCount,totalCount}
-  rows.forEach(r => {
-    const key = r.__date;
-    if (!days.has(key)) days.set(key, {done:0,total:0});
-    const obj = days.get(key);
-    obj.total += 1;
-    if (r.__done) obj.done += 1;
+  // 連續完成天數（本月內，每天至少一件完成）
+  const byDay = new Map();
+  tasks.forEach(t => {
+    if (!byDay.has(t.date)) byDay.set(t.date, {done:0,total:0});
+    const x = byDay.get(t.date); x.total++; if (t.done) x.done++;
   });
-  const allDates = Array.from({length: me.getDate()}, (_,i) => toLocalDateStr(new Date(ms.getFullYear(), ms.getMonth(), i+1)));
   let streak = 0;
-  for (let i = allDates.length-1; i >= 0; i--) {
-    const d = allDates[i];
-    const rec = days.get(d);
-    if (rec && rec.done > 0) streak++;
-    else break;
+  for (let d = me.getDate(); d >= 1; d--){
+    const dstr = toLocalDateStr(new Date(ms.getFullYear(), ms.getMonth(), d));
+    const rec  = byDay.get(dstr);
+    if (rec && rec.done > 0) streak++; else break;
   }
   document.getElementById("streakDays").textContent = streak;
 
-  // 成就（舉例：你可依需求自行調整）
+  // 成就
   const achievements = [
-    { id:"a10", title:"暖身完成者", desc:"本月完成 ≥ 10 件", need:10, ok: monthDone >= 10 },
-    { id:"a25", title:"穩定輸出", desc:"本月完成 ≥ 25 件", need:25, ok: monthDone >= 25 },
-    { id:"a50", title:"效率達人", desc:"本月完成 ≥ 50 件", need:50, ok: monthDone >= 50 },
-    { id:"a100",title:"任務殺手", desc:"本月完成 ≥ 100 件", need:100, ok: monthDone >= 100 },
-    { id:"astreak3", title:"連三好日子", desc:"連續 3 天有完成", need:3, ok: streak >= 3 },
-    { id:"astreak7", title:"一週穩穩來", desc:"連續 7 天有完成", need:7, ok: streak >= 7 },
-    { id:"aweek80", title:"本週八成達標", desc:"本週完成率 ≥ 80%", need:80, ok: weekRatio >= 80 },
-    { id:"amonth70", title:"本月七成達標", desc:"本月完成率 ≥ 70%", need:70, ok: monthRatio >= 70 },
+    { id:"a10", title:"暖身完成者", desc:"本月完成 ≥ 10 件", need:10,  ok: monthDone >= 10 },
+    { id:"a25", title:"穩定輸出",   desc:"本月完成 ≥ 25 件", need:25,  ok: monthDone >= 25 },
+    { id:"a50", title:"效率達人",   desc:"本月完成 ≥ 50 件", need:50,  ok: monthDone >= 50 },
+    { id:"a100",title:"任務殺手",   desc:"本月完成 ≥ 100 件",need:100, ok: monthDone >= 100 },
+    { id:"s3",  title:"連三好日子", desc:"連續 3 天有完成",  need:3,   ok: streak >= 3 },
+    { id:"s7",  title:"一週穩穩來", desc:"連續 7 天有完成",  need:7,   ok: streak >= 7 },
+    { id:"w80", title:"本週八成達標",desc:"本週完成率 ≥ 80%", need:80,  ok: weekRatio >= 80 },
+    { id:"m70", title:"本月七成達標",desc:"本月完成率 ≥ 70%", need:70,  ok: monthRatio >= 70 },
   ];
-  renderAchievements(achievements);
+  els.achGrid.innerHTML = "";
+  achievements.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "badge" + (a.ok ? "" : " lock");
+    div.innerHTML = `
+      <div class="title">${a.title}</div>
+      <div class="muted">${a.desc}</div>
+      <div class="row" style="justify-content:space-between;margin-top:8px">
+        <span class="muted">${a.ok ? "已解鎖" : "未解鎖"}</span>
+        <span class="pill">${a.need}</span>
+      </div>`;
+    els.achGrid.appendChild(div);
+  });
 
-  // 列表（本月）
-  renderList(rows);
+  // 列表
+  els.listBox.innerHTML = "";
+  if (!tasks.length){
+    els.listBox.innerHTML = "<div class='muted'>本月尚無紀錄</div>";
+  } else {
+    tasks.forEach(t => {
+      const line = document.createElement("div");
+      line.className = "rowline";
+      line.innerHTML = `
+        <div class="left">
+          <span class="dot ${t.done ? "done": ""}"></span>
+          <div>
+            <div>${t.title || "(未命名)"}</div>
+            <div class="muted" style="font-size:12px">${t.date}</div>
+          </div>
+        </div>
+        <div class="muted">${t.done ? "完成" : "未完成"}</div>`;
+      els.listBox.appendChild(line);
+    });
+  }
+  els.debugInfo.textContent = `抓到 ${tasks.length} 筆（完成 ${monthDone}）mode=${CONFIG.mode}`;
 }
 
 function renderEmpty(){
@@ -311,60 +353,27 @@ function renderEmpty(){
   els.weekRatioText.textContent = "--%";
   els.achGrid.innerHTML = "";
   els.listBox.innerHTML = "<div class='muted'>尚無資料或未登入</div>";
+  els.debugInfo.textContent = "—";
 }
 
-function renderAchievements(list){
-  els.achGrid.innerHTML = "";
-  list.forEach(a => {
-    const div = document.createElement("div");
-    div.className = "badge" + (a.ok ? "" : " lock");
-    div.innerHTML = `
-      <div class="title">${a.title}</div>
-      <div class="muted">${a.desc}</div>
-      <div class="row" style="justify-content:space-between;margin-top:8px">
-        <span class="muted">${a.ok ? "已解鎖" : "未解鎖"}</span>
-        <span class="pill">${a.need}</span>
-      </div>
-    `;
-    els.achGrid.appendChild(div);
-  });
+/* 主流程 */
+async function loadAndRender(){
+  const user = await getUser();
+  els.auth.textContent = user ? `已登入：${user.email}` : "未登入";
+  if (!user || !sb){ renderEmpty(); return; }
+  const monthStr = els.monthPicker.value || toLocalDateStr(new Date()).slice(0,7);
+  const tasks = await fetchTasksOfMonth(user.id, monthStr);
+  renderStats(tasks, monthStr);
 }
 
-function renderList(rows){
-  els.listBox.innerHTML = "";
-  if (!rows.length) {
-    els.listBox.innerHTML = "<div class='muted'>本月尚無紀錄</div>";
-    return;
-  }
-  rows.forEach(r => {
-    const line = document.createElement("div");
-    line.className = "rowline";
-    line.innerHTML = `
-      <div class="left">
-        <span class="dot ${r.__done ? "done": ""}"></span>
-        <div>
-          <div>${r.title || "(未命名)"}</div>
-          <div class="muted" style="font-size:12px">${r.__date}</div>
-        </div>
-      </div>
-      <div class="muted">${r[CONFIG.FIELDS.status] || ""}</div>
-    `;
-    els.listBox.appendChild(line);
-  });
-}
-
-/* 初始化 */
+let timer = null;
 document.addEventListener("DOMContentLoaded", async () => {
-  // 預設月份
   const today = new Date();
-  document.getElementById("monthPicker").value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
-  document.getElementById("monthPicker").addEventListener("change", loadAndRender);
-
-  // 登入狀態變更時重新載入
-  if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") {
-    sb.auth.onAuthStateChange(() => loadAndRender());
-  }
-
+  els.monthPicker.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
+  els.monthPicker.addEventListener("change", loadAndRender);
+  els.btnRefresh.addEventListener("click", loadAndRender);
+  if (sb && sb.auth && typeof sb.auth.onAuthStateChange === "function") sb.auth.onAuthStateChange(loadAndRender);
+  if (CONFIG.AUTO_REFRESH_SEC > 0) timer = setInterval(loadAndRender, CONFIG.AUTO_REFRESH_SEC*1000);
   await loadAndRender();
 });
 </script>
