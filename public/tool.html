@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
@@ -64,32 +64,22 @@
       font-weight: 500;
       color: #333;
     }
+  
+/* === UI 調整：避免工具欄按鈕重疊 === */
+@media (max-width: 768px){
+  .tools-row { flex-wrap: wrap; }
+  .tools-row label{ min-width: 76px; }
+  .tools-actions{ flex-wrap: wrap; gap:8px; }
+}
+/* 隱藏舊的完成率與勾選區 */
+#reviewArea, #review-actions, .history-btn, .history-panel { display:none !important; }
+/* 隱藏本週目標卡 */
+#cr-goals, #crSetWeekGoals { display:none !important; }
+
   </style>
   <link rel="stylesheet" href="cr-achievements.css"></head>
 <body>
-  <!-- 左側紀錄面板按鈕 -->
-<div id="history-toggle" class="history-btn">📅 紀錄</div>
-
-<!-- 左側紀錄面板 -->
-<div id="history-panel" class="history-panel">
-  <div class="history-header">
-    <h3>任務完成紀錄</h3>
-    <button id="close-history">✖</button>
-  </div>
-
-  <div class="history-mode">
-    <button data-mode="week">本週</button>
-    <button data-mode="month">本月</button>
-  </div>
-
-  <div id="history-summary" class="history-summary">
-    <p>完成率：<span id="history-rate">0%</span></p>
-  </div>
-
-  <div id="history-days" class="history-days">
-    <!-- 動態插入每天的紀錄 -->
-  </div>
-</div>
+  <!-- 左側紀錄面板已移除 -->
 
   <!-- ===== 使用者教學小卡 ===== -->
 <div id="crOnboarding" class="cr-onboard">
@@ -119,194 +109,7 @@
           <div id="timeGrid" class="time-grid"></div>
         </div>
         <div class="card-ui">
-          <h5>🎯 本週目標設定</h5>
-          <textarea class="form-control" id="goalInput" rows="4" placeholder="輸入你的本週目標，例如：運動3次、完成報告、閱讀一本書..."></textarea>
-        </div>
-        <button class="btn btn-success w-100 mb-2" onclick="analyzeByAI()">🔍 分析目前排程</button>
-        <button class="btn btn-outline-secondary w-100 mb-2" onclick="reviewDay()">📌 填寫完成情況</button>
-        <button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
-      </div>
-      <div class="col-md-6">
-        <div class="card-ui">
-          <h5>🤖 AI 時間建議</h5>
-          <div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
-        </div>
-        <div class="card-ui">
-          <h5>📌 今日完成情況</h5>
-          <div id="reviewArea" class="mb-2"></div>
-        </div>
-        <div class="card-ui">
-          <h5>💸 成本分析回饋</h5>
-          <div id="costResult" class="text-danger" style="white-space: pre-wrap; min-height: 100px;"></div>
-        </div>
-        <div class="card-ui">
-          <h5>📈 任務完成率統計</h5>
-          <canvas id="statChart" width="400" height="200"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const timeGrid = document.getElementById("timeGrid");
-    const timeStart = 8 * 60, timeEnd = 22 * 60, interval = 30;
-
-    for (let t = timeStart; t < timeEnd; t += interval) {
-      const row = document.createElement("div");
-      row.className = "time-row";
-      const h = Math.floor(t / 60).toString().padStart(2, '0');
-      const m = (t % 60).toString().padStart(2, '0');
-
-      const label = document.createElement("div");
-      label.className = "time-label align-self-center";
-      label.textContent = `${h}:${m}`;
-
-      const cell = document.createElement("div");
-      cell.className = "time-cell";
-      cell.dataset.time = `${h}:${m}`;
-      cell.onclick = () => {
-        if (cell.classList.contains("active")) {
-          cell.classList.remove("active");
-          cell.textContent = "";
-        } else {
-          const activity = prompt("請輸入活動內容：");
-          if (activity) {
-            cell.classList.add("active");
-            const span = document.createElement("span");
-            span.className = "cell-label";
-            span.textContent = activity;
-            cell.textContent = "";
-            cell.appendChild(span);
-          }
-        }
-      };
-
-      row.appendChild(label);
-      row.appendChild(cell);
-      timeGrid.appendChild(row);
-    }
-
-    function reviewDay() {
-      const reviewArea = document.getElementById("reviewArea");
-      const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
-      if (activeCells.length === 0) {
-        alert("⚠️ 尚未填寫任何任務！");
-        return;
-      }
-      reviewArea.innerHTML = activeCells.map((cell, i) => {
-        const time = cell.dataset.time;
-        const content = cell.textContent.trim();
-        return `
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" id="review${i}" data-time="${time}" data-content="${content}" checked>
-          <label class="form-check-label" for="review${i}">${time} - ${content}</label>
-        </div>`;
-      }).join("");
-    }
-
-    async function analyzeByAI() {
-      const resultBox = document.getElementById("aiResult");
-      const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
-      if (activeCells.length === 0) {
-        resultBox.textContent = "⚠️ 請先填入一些行程內容再分析喔！";
-        return;
-      }
-      const summary = activeCells.map(cell => `- ${cell.dataset.time} ${cell.textContent.trim()}`).join("\n");
-      const prompt = `以下是我的今日排程：\n${summary}\n\n請你檢查這樣的時間分配是否合理，有沒有安排過度密集、空檔過長、缺乏休息等問題，並提供優化建議。`;
-      resultBox.textContent = "AI 分析中...";
-      try {
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        resultBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆，請重試。";
-
-      } catch (err) {
-        resultBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
-      }
-    }
-
-    async function submitReviewAndAnalyzeCost() {
-      const checkboxes = Array.from(document.querySelectorAll('#reviewArea input[type="checkbox"]'));
-      const incomplete = checkboxes.filter(cb => !cb.checked);
-      const costBox = document.getElementById("costResult");
-
-      if (incomplete.length === 0) {
-        costBox.textContent = "✅ 今天任務全部完成，讚讚！";
-        updateChart(checkboxes.length, 0);
-        return;
-      }
-
-      const incompleteList = incomplete.map(cb => `- ${cb.dataset.time} ${cb.dataset.content}`);
-      const prompt = `以下是我今天沒有完成的任務：\n${incompleteList.join("\n")}\n\n請你推估這些未完成項目可能造成的時間與金錢成本，以及如何改善，並給我一點人性化的鼓勵或建議。`;
-
-      costBox.textContent = "AI 分析中...";
-
-      try {
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        costBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆。";
-
-      } catch (err) {
-        costBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
-      }
-
-      updateChart(checkboxes.length, incomplete.length);
-    }
-
-    function updateChart(total, uncompleted) {
-      const completed = total - uncompleted;
-      const ctx = document.getElementById('statChart').getContext('2d');
-      if (window.taskChart) window.taskChart.destroy();
-      window.taskChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['完成', '未完成'],
-          datasets: [{
-            data: [completed, uncompleted],
-            backgroundColor: ['#198754', '#dc3545']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            }
-          }
-        }
-      });
-    }
-  </script>
-
-    <section class="cr-card" style="margin:24px 0;">
-      <div class="cr-title">本月完成率</div>
-      <div class="cr-sub">以本月已建立的任務為基礎計算，完成越多越亮眼。</div>
-      <div class="cr-progress">
-        <div class="cr-progress-bar cr-gradient" data-cr-progress-bar></div>
-      </div>
-      <div class="cr-sub" style="margin-top:8px;">目前：<span data-cr-progress-label>0%</span>｜連續完成：<span data-cr-streak>0 天</span></div>
-      <div class="cr-grid" style="margin-top:16px;">
-        <div>
-          <div class="cr-title" style="font-size:16px;">成就徽章</div>
-          <div class="cr-badges" data-cr-badges></div>
-        </div>
-        <div>
-          <div class="cr-title" style="font-size:16px;">本週目標</div>
-          <ul class="cr-goals" data-cr-goals></ul>
-          <div class="cr-actions" style="margin-top:10px;">
-            <button class="cr-btn" id="crSetWeeklyGoals">設定本週目標</button>
-            <button class="cr-btn" id="crQuickDone">快速+1（測試）</button>
-          </div>
-        </div>
-      </div>
-    </section>
+          <h5>🎯 <!-- 本週目標移除 -->
     \n<script src="cr-achievements.js"></script>\n<script src="cr-bootstrap.js"></script>\n
   <!-- ⌛ 時間工具：浮動按鈕 -->
 <div id="tools-toggle" class="tools-btn">⌛ 時間工具</div>
@@ -609,5 +412,4 @@
 
   </body>
 </html>
-
 
