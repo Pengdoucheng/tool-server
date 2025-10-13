@@ -582,10 +582,103 @@
 
 
 <!-- 臨時：排程面板（先驗證功能，之後可移除或換成你的時間格 UI） -->
-<section id="sched-dev-panel" style="margin:24px 0;padding:12px;border:1px solid #eee;border-radius:8px">
-  <iframe src="cloud-sync-widget.html" style="width:100%;height:720px;border:0;border-radius:12px;overflow:hidden;"></iframe>
+<!-- 替換原本的 <section id="sched-dev-panel">…</section> 整段為以下內容 -->
+<section id="sched-dev-panel" style="margin:24px 0;">
+  <!-- 觸發按鈕 -->
+  <button id="open-cloud-sync"
+          style="padding:10px 14px;border-radius:10px;border:1px solid #e6e7eb;background:#0a7;color:#fff;cursor:pointer;">
+    ☁️ 開啟雲端同步工具
+  </button>
 
+  <!-- Modal：預設隱藏 -->
+  <div id="cloud-modal" aria-hidden="true" role="dialog" aria-modal="true" style="display:none;
+       position:fixed; inset:0; z-index:9999;">
+    <!-- 背景 -->
+    <div id="cloud-backdrop" style="position:absolute; inset:0; background:rgba(15,17,21,.55);"></div>
+
+    <!-- 置中容器 -->
+    <div id="cloud-dialog" style="
+         position:relative; margin:4vh auto 0; width:min(1100px, 94vw);
+         background:#fff; border-radius:14px; border:1px solid #e6e7eb; box-shadow:0 12px 50px rgba(0,0,0,.35);
+         display:flex; flex-direction:column; max-height:92vh; overflow:hidden;">
+      <!-- 標頭 -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #e6e7eb;">
+        <div style="font-weight:700;">雲端同步工具</div>
+        <button id="close-cloud-sync" aria-label="關閉視窗"
+                style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;">✕</button>
+      </div>
+      <!-- 內容（iframe 自動撐滿） -->
+      <div style="flex:1; display:flex;">
+        <iframe id="cloud-iframe" src="cloud-sync-widget.html"
+                style="width:100%; height:85vh; border:0; display:block;"></iframe>
+      </div>
+    </div>
+  </div>
 </section>
+
+<script>
+(() => {
+  const openBtn   = document.getElementById('open-cloud-sync');
+  const modal     = document.getElementById('cloud-modal');
+  const backdrop  = document.getElementById('cloud-backdrop');
+  const dialog    = document.getElementById('cloud-dialog');
+  const closeBtn  = document.getElementById('close-cloud-sync');
+  const iframe    = document.getElementById('cloud-iframe');
+
+  // 防止背景滾動
+  const lockScroll = () => { document.documentElement.style.overflow = 'hidden'; };
+  const unlockScroll = () => { document.documentElement.style.overflow = ''; };
+
+  // 依視窗高度動態調整 iframe 高度
+  function resizeIframe() {
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    // 頂部邊距約 4vh、標頭 ~ 48px
+    const iframeH = Math.max(320, Math.min(vh * 0.86, vh - 64));
+    iframe.style.height = iframeH + 'px';
+  }
+
+  function openModal() {
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    lockScroll();
+    resizeIframe();
+    // 將焦點移到關閉鍵，提升可及性
+    closeBtn.focus({ preventScroll: true });
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    unlockScroll();
+    openBtn.focus?.();
+  }
+
+  // 事件
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', closeModal);
+  window.addEventListener('resize', resizeIframe);
+
+  // ESC 關閉
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
+      closeModal();
+    }
+  });
+
+  // 防止按鍵事件冒泡關閉（點擊內容不會關閉）
+  dialog.addEventListener('click', (e) => e.stopPropagation());
+})();
+</script>
+
+<!-- 行動版微調：小螢幕近似全螢幕 -->
+<style>
+@media (max-width: 640px) {
+  #cloud-dialog{ width:96vw; margin:2vh auto 0; border-radius:12px; }
+  #cloud-dialog iframe{ height:84vh !important; }
+}
+</style>
+
 <style>
   /* 你的工具列：把選擇器換成實際的那個（擇一或都保留） */
   #tools-bar, .tools-toggle, .tools-tabs {
