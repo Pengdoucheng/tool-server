@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+<meta charset="UTF-8">
+<title>整合版 tool.html</title>
+<style>
+body{background:#f5f5f5;margin:0;padding:0;font-family:sans-serif;}
+.tp-shell{padding:20px;}
+.tp-mode-card{border:1px solid #ccc;padding:16px;margin:12px 0;border-radius:12px;cursor:pointer;}
+.tp-tool-section{display:none;padding:16px;background:#fff;margin-top:20px;border-radius:12px;}
+.tp-tool-section.active{display:block;}
+</style>
+</head>
+<body>
+<div class="tp-shell">
+  <h1>自律控肉飯 · 主控台</h1>
+  <div class="tp-mode-card" data-target="tp-ai">AI 排程工具</div>
+  <div class="tp-mode-card" data-target="tp-pomodoro">番茄鐘</div>
+  <div class="tp-mode-card" data-target="tp-records">時間紀錄</div>
+  <div class="tp-mode-card" data-target="tp-tasks">任務管理</div>
+
+  <section id="tp-ai" class="tp-tool-section active">
+    <!-- 原始 tool.html 內容開始 -->
+    <!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI 時間排程與成本分析</title>
@@ -757,3 +780,32 @@
 
 
 
+
+    <!-- 原始內容結束 -->
+  </section>
+
+  <section id="tp-pomodoro" class="tp-tool-section">
+    <h2>番茄鐘（待實作）</h2>
+  </section>
+
+  <section id="tp-records" class="tp-tool-section">
+    <h2>時間紀錄（待實作）</h2>
+  </section>
+
+  <section id="tp-tasks" class="tp-tool-section">
+    <h2>任務管理（待實作）</h2>
+  </section>
+</div>
+
+<script>
+document.querySelectorAll('.tp-mode-card').forEach(function(card){
+  card.addEventListener('click', function(){
+    var id = card.getAttribute('data-target');
+    document.querySelectorAll('.tp-tool-section').forEach(function(sec){ sec.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

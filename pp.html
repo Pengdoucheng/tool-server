@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>自律控肉飯·時間主控台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #f6f5f3;
+      --card-bg: #ffffff;
+      --accent: #ff7a4a;
+      --accent-soft: #ffe3d5;
+      --text-main: #222222;
+      --text-sub: #666666;
+      --border-radius-lg: 18px;
+      --shadow-soft: 0 18px 35px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC",
+        "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    /* 頂部簡單列 */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .logo {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 14px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-mark {
+      width: 20px;
+      height: 20px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ffb36b, #ff7a4a);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    /* Hero 區 */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 28px;
+      align-items: center;
+      margin-bottom: 36px;
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .hero-sub {
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-primary {
+      border: none;
+      outline: none;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 22px rgba(248, 113, 113, 0.35);
+      transition: transform 0.12s ease, box-shadow 0.12s ease,
+        background 0.12s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(248, 113, 113, 0.4);
+      background: #ff6a36;
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      padding: 8px 15px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: transparent;
+      font-size: 13px;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hero-badge-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .hero-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.03);
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+    }
+
+    .hero-visual {
+      background: radial-gradient(circle at top left, #ffead5, #c7d2fe);
+      border-radius: 26px;
+      padding: 18px 18px 22px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-chip {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .hero-widget {
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 22px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .hero-widget-item {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .hero-widget-label {
+      margin-bottom: 3px;
+    }
+
+    .hero-widget-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .hero-orbit {
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      right: -30px;
+      top: -25px;
+    }
+
+    /* 模式選擇區 */
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .mode-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius-lg);
+      padding: 16px 16px 18px;
+      box-shadow: 0 10px 25px rgba(148, 163, 184, 0.22);
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 130px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease,
+        border-color 0.12s ease, background 0.12s ease;
+    }
+
+    .mode-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 35px rgba(148, 163, 184, 0.32);
+      border-color: rgba(248, 113, 113, 0.4);
+    }
+
+    .mode-tag {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    .mode-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .mode-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .mode-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .mode-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      margin-right: 6px;
+    }
+
+    .mode-link {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* 今日概況 */
+    .today-summary {
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 20px;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .summary-item-label {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 2px;
+    }
+
+    .summary-item-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .summary-item-sub {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .summary-footer {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 24px;
+    }
+
+    /* 下方工具區塊 */
+    .tool-section {
+      display: none;
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 18px 18px 22px;
+      box-shadow: 0 18px 35px rgba(148, 163, 184, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      margin-top: 4px;
+    }
+
+    .tool-section.active {
+      display: block;
+    }
+
+    .tool-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .tool-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .tool-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .placeholder-box {
+      border-radius: 14px;
+      border: 1px dashed rgba(148, 163, 184, 0.6);
+      padding: 16px;
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.7;
+    }
+
+    .placeholder-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .pill-sm {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 840px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+      .hero-visual {
+        order: -1;
+      }
+      .mode-grid {
+        grid-template-columns: 1fr;
+      }
+      .today-summary {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        padding: 20px 16px 40px;
+      }
+      .hero-title {
+        font-size: 22px;
+      }
+      .hero-sub {
+        font-size: 13px;
+      }
+      .today-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- 頂部 -->
+  <div class="top-bar">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      自律控肉飯 · Tools
+    </div>
+    <div class="top-actions">
+      <span class="pill">beta · 時間自律工具</span>
+      <span>今天是整理自己的一天</span>
+    </div>
+  </div>
+
+  <!-- Hero 區 -->
+  <section class="hero">
+    <div>
+      <div class="hero-title">時間主控台 · 選一種節奏開始今天</div>
+      <div class="hero-sub">
+        把今天想做的事交給不同工具：用 AI 排程、用番茄鐘專注，
+        或是回顧你的自律紀錄。先選一種模式，再慢慢把時間控回來。
+      </div>
+      <div class="hero-actions">
+        <button class="btn-primary" id="start-today">
+          讓 AI 幫我排今天
+        </button>
+        <button class="btn-ghost">
+          查看本週紀錄 →
+        </button>
+      </div>
+      <div class="hero-badge-row">
+        <span class="hero-badge">控時間，控節奏，控肉飯</span>
+        <span class="hero-badge">適合大學生 · 打工人 · 自學仔</span>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-chip">今天的小小摘要</div>
+      <div class="hero-widget">
+        <div class="hero-widget-item">
+          <div class="hero-widget-label">今日專注時間</div>
+          <div class="hero-widget-value">45 分鐘</div>
+        </div>
+        <div class="hero-widget-item">
+          <div class="hero-widget-label">完成任務</div>
+          <div class="hero-widget-value">3 / 6</div>
+        </div>
+        <div class="hero-widget-item">
+          <div class="hero-widget-label">連續自律</div>
+          <div class="hero-widget-value">4 天</div>
+        </div>
+      </div>
+      <div class="hero-widget" style="font-size:11px;">
+        <div class="hero-widget-item">
+          <div class="hero-widget-label">最常拖延</div>
+          <div class="hero-widget-value" style="font-size:12px;">報告 / 作業</div>
+        </div>
+        <div class="hero-widget-item">
+          <div class="hero-widget-label">巔峰時間</div>
+          <div class="hero-widget-value" style="font-size:12px;">20:00–23:00</div>
+        </div>
+        <div class="hero-widget-item">
+          <div class="hero-widget-label">今日狀態</div>
+          <div class="hero-widget-value" style="font-size:12px;">還有救 🙂</div>
+        </div>
+      </div>
+      <div class="hero-orbit"></div>
+    </div>
+  </section>
+
+  <!-- 模式選擇 -->
+  <div class="section-title-row">
+    <div>
+      <div class="section-title">選擇你的自律模式</div>
+      <div class="section-sub">依照你現在的狀態，選一個最適合的工具開始。</div>
+    </div>
+  </div>
+
+  <div class="mode-grid">
+    <div class="mode-card" data-target="ai-tool">
+      <div>
+        <div class="mode-tag">AI 模式</div>
+        <div class="mode-name">AI 排程工具</div>
+        <div class="mode-desc">
+          輸入今天的固定行程與代辦，交給 AI 幫你排出一份可行的時間表。
+        </div>
+      </div>
+      <div class="mode-footer">
+        <div style="display:flex;align-items:center;">
+          <span class="mode-badge-dot"></span>
+          <span>適合：事情太多，不知道先做什麼</span>
+        </div>
+        <span class="mode-link">進入 →</span>
+      </div>
+    </div>
+
+    <div class="mode-card" data-target="pomodoro">
+      <div>
+        <div class="mode-tag">專注模式</div>
+        <div class="mode-name">番茄鐘 · 深度專注</div>
+        <div class="mode-desc">
+          25 分鐘專注 + 5 分鐘休息，一顆番茄一顆番茄地把任務切碎完成。
+        </div>
+      </div>
+      <div class="mode-footer">
+        <div style="display:flex;align-items:center;">
+          <span class="mode-badge-dot"></span>
+          <span>適合：寫報告、讀書、設計、Coding</span>
+        </div>
+        <span class="mode-link">開始專注 →</span>
+      </div>
+    </div>
+
+    <div class="mode-card" data-target="records">
+      <div>
+        <div class="mode-tag">回顧模式</div>
+        <div class="mode-name">時間紀錄 Dashboard</div>
+        <div class="mode-desc">
+          查看這週的專注時數、完成率與最常拖延的任務類型，幫你找到卡住的地方。
+        </div>
+      </div>
+      <div class="mode-footer">
+        <div style="display:flex;align-items:center;">
+          <span class="mode-badge-dot"></span>
+          <span>適合：晚上想檢討一下今天</span>
+        </div>
+        <span class="mode-link">打開儀表板 →</span>
+      </div>
+    </div>
+
+    <div class="mode-card" data-target="tasks">
+      <div>
+        <div class="mode-tag">任務總管</div>
+        <div class="mode-name">任務管理 / 模板</div>
+        <div class="mode-desc">
+          把零碎代辦整理好，或直接套用「期末衝刺」「考試週」等任務模板。
+        </div>
+      </div>
+      <div class="mode-footer">
+        <div style="display:flex;align-items:center;">
+          <span class="mode-badge-dot"></span>
+          <span>適合：先整理，再開始 AI 排程</span>
+        </div>
+        <span class="mode-link">整理任務 →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 今日概況 -->
+  <div class="today-summary">
+    <div>
+      <div class="summary-item-label">今日專注時間</div>
+      <div class="summary-item-value">45 分鐘</div>
+      <div class="summary-item-sub">目標 90 分鐘</div>
+    </div>
+    <div>
+      <div class="summary-item-label">完成任務</div>
+      <div class="summary-item-value">3 / 6</div>
+      <div class="summary-item-sub">還有 3 個待處理</div>
+    </div>
+    <div>
+      <div class="summary-item-label">連續自律天數</div>
+      <div class="summary-item-value">4 天</div>
+      <div class="summary-item-sub">第 5 天就可以解鎖獎勵</div>
+    </div>
+  </div>
+  <div class="summary-footer">
+    ※ 上述數據目前為示意假資料，之後可以接 Supabase 把真實紀錄帶進來。
+  </div>
+
+  <!-- 工具內容區：這裡之後換成你真正的頁面 / 組件 -->
+
+  <section class="tool-section active" id="ai-tool">
+    <div class="tool-header">
+      <div class="tool-title">AI 排程工具（示意）</div>
+      <div class="tool-sub">把你現在那個「選擇自律任務」畫面塞進來就對了。</div>
+    </div>
+    <div class="placeholder-box">
+      <div class="placeholder-title">這裡放你目前的 AI 工具頁面</div>
+      <p>
+        例如：<br>
+        ・上面是「輸入今天的固定行程 / 上課 / 打工時間」。<br>
+        ・中間是「任務清單」「任務模板」卡片（就是你現在的那一頁）。<br>
+        ・下面有一個「讓 AI 幫我排今天」按鈕，送出到後端算排程。<br>
+      </p>
+      <p>你可以把現有 HTML 直接剪下來貼在這個區塊裡。</p>
+    </div>
+  </section>
+
+  <section class="tool-section" id="pomodoro">
+    <div class="tool-header">
+      <div class="tool-title">番茄鐘 · 深度專注（示意）</div>
+      <div class="tool-sub">之後可以放計時 UI、開始 / 暫停按鈕、任務名稱等等。</div>
+    </div>
+    <div class="placeholder-box">
+      <div class="placeholder-title">可以包含的元素</div>
+      <p>
+        ・大大的倒數計時（例如 25:00）。<br>
+        ・「開始」「暫停」「重設」按鈕。<br>
+        ・正在專注的任務名稱。<br>
+        ・已完成番茄數統計。<br>
+      </p>
+      <div>
+        <span class="pill-sm">番茄長度：25 分鐘</span>
+        <span class="pill-sm">休息：5 分鐘</span>
+        <span class="pill-sm">長休息：15 分鐘</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="tool-section" id="records">
+    <div class="tool-header">
+      <div class="tool-title">時間紀錄 Dashboard（示意）</div>
+      <div class="tool-sub">將來可以連 Supabase，畫折線圖或長條圖。</div>
+    </div>
+    <div class="placeholder-box">
+      <div class="placeholder-title">可以放的東西</div>
+      <p>
+        ・本週每日專注總時數。<br>
+        ・任務完成率（完成 / 總任務）。<br>
+        ・各任務類型花費時間占比（讀書、設計、打工…）。<br>
+        ・最常被拖延的任務清單。<br>
+      </p>
+    </div>
+  </section>
+
+  <section class="tool-section" id="tasks">
+    <div class="tool-header">
+      <div class="tool-title">任務管理 / 模板（示意）</div>
+      <div class="tool-sub">當作 AI 排程前置整理區。</div>
+    </div>
+    <div class="placeholder-box">
+      <div class="placeholder-title">任務整理區可以怎麼玩</div>
+      <p>
+        ・新增 / 編輯 / 刪除任務。<br>
+        ・設定預估時間、截止日、優先順序。<br>
+        ・一鍵套用「期末專題模式」「考前衝刺模式」等預設模板。<br>
+      </p>
+    </div>
+  </section>
+</div>
+
+<script>
+  // 點卡片切換下方工具區
+  const cards = document.querySelectorAll('.mode-card');
+  const sections = document.querySelectorAll('.tool-section');
+
+  function activateSection(id) {
+    sections.forEach(sec => {
+      sec.classList.toggle('active', sec.id === id);
+    });
+    // 滾動到工具區起點
+    const target = document.getElementById(id);
+    if (target) {
+      const offsetTop = target.getBoundingClientRect().top + window.scrollY - 20;
+      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+    }
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const targetId = card.dataset.target;
+      activateSection(targetId);
+    });
+  });
+
+  // Hero 的「讓 AI 幫我排今天」按鈕，預設直接開 AI 區
+  document.getElementById('start-today').addEventListener('click', () => {
+    activateSection('ai-tool');
+  });
+</script>
+</body>
+</html>
