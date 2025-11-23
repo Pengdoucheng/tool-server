@@ -26,14 +26,13 @@
       padding: 0;
     }
 
-    /* 整體容器：彈出小視窗 → 比較窄、垂直一頁式 */
     .container {
       max-width: 960px;
-      margin: 0 auto 32px;
+      margin: 0 auto 24px;
       padding-inline: 12px;
     }
 
-    /* 頂部導覽：黑底 + 紅線 + 小步驟提示條 */
+    /* 導覽列：黑底＋步驟提示 */
     .app-navbar {
       border-bottom: 3px solid var(--cr-red);
       background-color: var(--cr-black) !important;
@@ -64,7 +63,7 @@
       color: rgba(255,255,255,0.35);
     }
 
-    /* 卡片 UI：紅色左條、一頁式段落感 */
+    /* 卡片 UI：紅黑白 */
     .card-ui {
       background-color: var(--cr-card-bg);
       border-radius: 16px;
@@ -89,7 +88,7 @@
     .card-ui h5 {
       font-weight: 700;
       letter-spacing: 0.08em;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       text-transform: uppercase;
       margin-bottom: 10px;
       display: flex;
@@ -112,9 +111,53 @@
       transition: box-shadow 0.18s ease-out, transform 0.18s ease-out;
     }
 
-    /* 主要版面：在小視窗中改成「垂直一頁式」 */
+    /* 步驟 header */
+    .step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      margin-top: 4px;
+    }
+
+    .step-pills {
+      display: flex;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+
+    .step-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #d3d5dd;
+      color: #666;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .step-pill span.step-num {
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .step-pill.current {
+      border-color: var(--cr-red);
+      color: var(--cr-black);
+      background-color: #fff3f3;
+    }
+
+    /* step 區塊：一次只顯示一個 */
+    .step-section {
+      display: none;
+    }
+    .step-section.active {
+      display: block;
+    }
+
+    /* 主要版面：彈出式就當成直向小 wizard */
     @media (min-width: 768px) {
-      .layout-main {
+      .layout-main-step1 {
         display: grid;
         grid-template-columns: minmax(0,1.05fr) minmax(0,1fr);
         gap: 16px;
@@ -123,25 +166,25 @@
     }
 
     @media (max-width: 767.98px) {
-      .layout-main {
+      .layout-main-step1 {
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
     }
 
-    /* 排程區：時間格子 */
+    /* 時間格子 */
     .time-grid {
       display: grid;
       grid-template-columns: 72px 1fr;
       gap: 4px;
-      max-height: 420px;
+      max-height: 380px;
       overflow-y: auto;
       padding-right: 4px;
     }
 
     .time-row {
-      display: contents; /* 讓 label + cell 對齊 grid */
+      display: contents;
     }
 
     .time-label {
@@ -188,25 +231,20 @@
       text-overflow: ellipsis;
     }
 
-    /* 三個主要按鈕：排成「自律流程」 */
+    /* 行為按鈕 */
     .cr-actions {
-      margin-top: 4px;
+      margin-top: 6px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
     .cr-actions .btn {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       border-radius: 999px;
       padding-block: 8px;
-    }
-
-    .btn-success {
-      background-color: #198754 !important;
-      border-color: #198754 !important;
     }
 
     .btn-primary {
@@ -223,28 +261,37 @@
       border-radius: 999px;
     }
 
-    /* 右側卡片：文字區域排版 */
+    .btn-success {
+      border-radius: 999px;
+    }
+
+    /* 右側文字區塊 */
     #aiResult,
     #reviewArea,
     #costResult {
       font-size: 0.88rem;
       line-height: 1.5;
     }
-
-    #aiResult {
-      color: #222;
-    }
-
     #costResult {
       color: var(--cr-red-dark);
     }
 
-    /* 圖表卡片微調 */
     #statChart {
       max-height: 200px;
     }
 
-    /* 歷史紀錄 / 教學小卡：不改結構，微調顏色 */
+    /* 更多 RWD 調整 */
+    @media (max-width: 480px) {
+      .card-ui {
+        padding: 16px 14px 14px;
+        border-radius: 14px;
+      }
+      .time-grid {
+        max-height: 320px;
+      }
+    }
+
+    /* 歷史面板色系微調（保持可用） */
     .history-panel {
       background-color: #111;
       color: #fff;
@@ -256,53 +303,13 @@
       text-transform: uppercase;
     }
 
-    .history-mode button[data-mode="week"],
-    .history-mode button[data-mode="month"] {
-      border-radius: 999px;
-    }
-
-    #crOnboarding .cr-onboard-card {
-      border-radius: 16px;
-      border: 1px solid var(--cr-border);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-    }
-
-    #crOnboarding h2 {
-      font-size: 1.1rem;
-    }
-
-    /* 彈出式內頁：整體滾動體驗 */
-    html, body {
-      height: 100%;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .app-root {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .app-main-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding-top: 4px;
-    }
-
-    @media (max-width: 480px) {
-      .card-ui {
-        padding: 16px 14px 14px;
-        border-radius: 14px;
-      }
-      .time-grid {
-        max-height: 360px;
-      }
+    /* 把時間工具按鈕 & 面板整個藏起來 */
+    .tools-btn,
+    #tools-panel {
+      display: none !important;
     }
   </style>
+
 
   <link rel="stylesheet" href="cr-achievements.css">
 </head>
@@ -346,76 +353,136 @@
     </div>
 
     <!-- 🔝 導覽列：黑底紅線＋流程提示 -->
-    <nav class="navbar navbar-light shadow-sm mb-3 app-navbar">
-      <div class="container-fluid">
-        <div class="d-flex flex-column">
-          <span class="navbar-brand mb-1 h6">🧠 自律控肉飯 · 時間管家</span>
-          <div class="app-steps">
-            <span>① 排好今天</span><span class="app-steps-dot">•</span>
-            <span>② 勾選完成</span><span class="app-steps-dot">•</span>
-            <span>③ 看 AI 分析 & 成本</span>
+  <!-- 🔝 導覽列：黑底紅線＋流程提示 -->
+  <nav class="navbar navbar-light shadow-sm mb-3 app-navbar">
+    <div class="container-fluid">
+      <div class="d-flex flex-column">
+        <span class="navbar-brand mb-1 h6">🧠 自律控肉飯 · 時間管家</span>
+        <div class="app-steps">
+          <span>① 排好今天</span><span class="app-steps-dot">•</span>
+          <span>② 勾選完成</span><span class="app-steps-dot">•</span>
+          <span>③ 看 AI 分析 & 成本</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- 步驟 header -->
+    <div class="step-header">
+      <div class="step-pills">
+        <div id="step-indicator-1" class="step-pill current">
+          <span class="step-num">STEP 1</span> 排程與 AI 建議
+        </div>
+        <div id="step-indicator-2" class="step-pill">
+          <span class="step-num">STEP 2</span> 勾選完成＆成本分析
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 1：排程 + AI 分析 -->
+    <section id="step1" class="step-section active">
+      <div class="layout-main-step1">
+        <div>
+          <div class="card-ui">
+            <h5>📅 今日任務排程</h5>
+            <div id="timeGrid" class="time-grid"></div>
+          </div>
+
+          <div class="cr-actions">
+            <button class="btn btn-success w-100" onclick="analyzeByAI()">🔍 分析目前排程</button>
+            <button class="btn btn-primary w-100" onclick="goStep(2)">➡ 下一步：完成情況</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card-ui">
+            <h5>🤖 AI 時間建議</h5>
+            <div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
           </div>
         </div>
       </div>
-    </nav>
+    </section>
 
-    <div class="app-main-scroll">
-      <div class="container">
-        <div class="layout-main">
-          <!-- 左側：今日排程 + 行為按鈕 -->
-          <div>
-            <div class="card-ui">
-              <h5>📅 今日任務排程</h5>
-              <div id="timeGrid" class="time-grid"></div>
-            </div>
-
-            <div class="cr-actions">
-              <button class="btn btn-success w-100" onclick="analyzeByAI()">🔍 分析目前排程</button>
-              <button class="btn btn-outline-secondary w-100" onclick="reviewDay()">📌 填寫完成情況</button>
-              <button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
-            </div>
-          </div>
-
-          <!-- 右側：AI 回饋 / 完成情況 / 成本 / 圖表 -->
-          <div>
-            <div class="card-ui">
-              <h5>🤖 AI 時間建議</h5>
-              <div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
-            </div>
-            <div class="card-ui">
-              <h5>📌 今日完成情況</h5>
-              <div id="reviewArea" class="mb-2"></div>
-            </div>
-            <div class="card-ui">
-              <h5>💸 成本分析回饋</h5>
-              <div id="costResult" style="white-space: pre-wrap; min-height: 100px;"></div>
-            </div>
-            <div class="card-ui">
-              <h5>📈 任務完成率統計</h5>
-              <canvas id="statChart" width="400" height="200"></canvas>
-            </div>
-          </div>
-        </div>
+    <!-- STEP 2：勾選完成 + 成本分析 -->
+    <section id="step2" class="step-section">
+      <div class="mb-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="goStep(1)">← 上一步：調整排程</button>
       </div>
-    </div><!-- /.app-main-scroll -->
-  </div><!-- /.app-root -->
+
+      <div class="card-ui">
+        <h5>📌 今日完成情況</h5>
+        <p class="text-muted mb-1" style="font-size:0.82rem;">系統會自動列出你在上一步排好的所有區塊，你可以勾選已完成的項目。</p>
+        <div id="reviewArea" class="mb-2"></div>
+        <button class="btn btn-outline-secondary btn-sm mt-1" onclick="reviewDay()">重新產生清單</button>
+      </div>
+
+      <div class="card-ui">
+        <h5>💸 成本分析回饋</h5>
+        <p class="text-muted mb-1" style="font-size:0.82rem;">勾完未完成的項目後，按下下面按鈕，讓 AI 幫你估算時間與成本。</p>
+        <button class="btn btn-primary w-100 mb-2" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
+        <div id="costResult" style="white-space: pre-wrap; min-height: 100px;"></div>
+      </div>
+
+      <div class="card-ui">
+        <h5>📈 任務完成率統計</h5>
+        <canvas id="statChart" width="400" height="200"></canvas>
+      </div>
+    </section>
+
+  </div>
+
 
   <!-- ===== 下面開始：原本的 JS / Supabase / 工具區，完全不動功能，只改部分樣式 ===== -->
 
+
   <script>
+    function goStep(step) {
+      const step1 = document.getElementById("step1");
+      const step2 = document.getElementById("step2");
+      const pill1 = document.getElementById("step-indicator-1");
+      const pill2 = document.getElementById("step-indicator-2");
+      if (!step1 || !step2) return;
+  
+      if (step === 1) {
+        step1.classList.add("active");
+        step2.classList.remove("active");
+        pill1?.classList.add("current");
+        pill2?.classList.remove("current");
+        return;
+      }
+  
+      if (step === 2) {
+        // 沒有排任何任務就不讓進下一步
+        const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
+        if (activeCells.length === 0) {
+          alert("請先在 STEP 1 排好今天的行程，再進到下一步喔！");
+          return;
+        }
+        // 自動產生勾選清單
+        reviewDay();
+  
+        step1.classList.remove("active");
+        step2.classList.add("active");
+        pill1?.classList.remove("current");
+        pill2?.classList.add("current");
+      }
+    }
+  
     const timeGrid = document.getElementById("timeGrid");
     const timeStart = 8 * 60, timeEnd = 22 * 60, interval = 30;
-
+  
     for (let t = timeStart; t < timeEnd; t += interval) {
       const row = document.createElement("div");
       row.className = "time-row";
       const h = Math.floor(t / 60).toString().padStart(2, '0');
       const m = (t % 60).toString().padStart(2, '0');
-
+  
       const label = document.createElement("div");
       label.className = "time-label align-self-center";
       label.textContent = `${h}:${m}`;
-
+  
       const cell = document.createElement("div");
       cell.className = "time-cell";
       cell.dataset.time = `${h}:${m}`;
@@ -435,12 +502,12 @@
           }
         }
       };
-
+  
       row.appendChild(label);
       row.appendChild(cell);
       timeGrid.appendChild(row);
     }
-
+  
     function reviewDay() {
       const reviewArea = document.getElementById("reviewArea");
       const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
@@ -458,7 +525,7 @@
         </div>`;
       }).join("");
     }
-
+  
     async function analyzeByAI() {
       const resultBox = document.getElementById("aiResult");
       const activeCells = Array.from(document.querySelectorAll(".time-cell.active"));
@@ -478,27 +545,28 @@
         const data = await res.json();
         resultBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆，請重試。";
 
+  
       } catch (err) {
         resultBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
       }
     }
-
+  
     async function submitReviewAndAnalyzeCost() {
       const checkboxes = Array.from(document.querySelectorAll('#reviewArea input[type="checkbox"]'));
       const incomplete = checkboxes.filter(cb => !cb.checked);
       const costBox = document.getElementById("costResult");
-
+  
       if (incomplete.length === 0) {
         costBox.textContent = "✅ 今天任務全部完成，讚讚！";
         updateChart(checkboxes.length, 0);
         return;
       }
-
+  
       const incompleteList = incomplete.map(cb => `- ${cb.dataset.time} ${cb.dataset.content}`);
       const prompt = `以下是我今天沒有完成的任務：\n${incompleteList.join("\n")}\n\n請你推估這些未完成項目可能造成的時間與金錢成本，以及如何改善，並給我一點人性化的鼓勵或建議。`;
-
+  
       costBox.textContent = "AI 分析中...";
-
+  
       try {
         const res = await fetch("/api/analyze", {
           method: "POST",
@@ -507,14 +575,14 @@
         });
         const data = await res.json();
         costBox.textContent = data.result || "⚠️ 沒有收到 AI 回覆。";
-
+  
       } catch (err) {
         costBox.textContent = "⚠️ 發生錯誤，AI 無法回覆。";
       }
-
+  
       updateChart(checkboxes.length, incomplete.length);
     }
-
+  
     function updateChart(total, uncompleted) {
       const completed = total - uncompleted;
       const ctx = document.getElementById('statChart').getContext('2d');
@@ -539,6 +607,7 @@
       });
     }
   </script>
+  
 
   <!-- 成就 & Bootstrap 擴充 -->
   <script src="cr-achievements.js"></script>
