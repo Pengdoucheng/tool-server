@@ -665,8 +665,10 @@
           </div>
           <div class="task-footer">
             <span class="task-tag">模式：社群互動</span>
-            <a class="task-link" href="#" data-target="community">前往社群牆</a>
+            <!-- ✅ 這顆直接跳 community.html -->
+            <a class="task-link" href="community.html">前往社群牆</a>
           </div>
+          
         </article>
       </div>
     </section>
@@ -718,16 +720,19 @@
       });
   
       // 綁定卡片按鈕
-      document.querySelectorAll('.task-link').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-          e.preventDefault();
-          const url = link.getAttribute('data-url');
-          const label =
-            link.getAttribute('data-title') ||
-            (link.closest('.task-card')?.querySelector('.task-title')?.textContent || '');
-          openOverlay(label, url);
-        });
-      });
+    // 只綁定「有 data-url 的 task-link」→ 用 overlay 開
+document.querySelectorAll('.task-link[data-url]').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const url = link.getAttribute('data-url');
+    const label =
+      link.getAttribute('data-title') ||
+      link.closest('.task-card').querySelector('.task-title').textContent;
+
+    openOverlay(label, url); // 你的 overlay 函式
+  });
+});
+
     </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>

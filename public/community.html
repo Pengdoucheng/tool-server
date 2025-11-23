@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>自律控肉飯 · 社群牆</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --red:#ff4b4b;
+      --red-dark:#e11d48;
+      --bg:#050505;
+      --panel:#101010;
+      --panel-soft:#18181b;
+      --border:#27272a;
+      --text:#f9fafb;
+      --sub:#9ca3af;
+      --radius:18px;
+      --shadow:0 26px 60px rgba(0,0,0,.85);
+      --font:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+    *{box-sizing:border-box;font-family:var(--font);}
+    html,body{margin:0;padding:0;height:100%;}
+    body{
+      background:
+       radial-gradient(circle at top,rgba(248,113,113,.18),transparent 65%),
+       radial-gradient(circle at bottom,rgba(15,23,42,.9),#020617);
+      color:var(--text);
+      padding:20px 12px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .page{
+      width:100%;
+      max-width:1100px;
+      display:grid;
+      grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);
+      gap:18px;
+    }
+    @media(max-width:880px){
+      body{padding:16px 10px;}
+      .page{grid-template-columns:minmax(0,1fr);}
+    }
+
+    /* Header */
+    .card-main{
+      background:linear-gradient(140deg,#18181b,#020617 60%,#101010 100%);
+      border-radius:var(--radius);
+      padding:18px 18px 16px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(248,113,113,.35);
+      position:relative;
+      overflow:hidden;
+    }
+    .card-main::before{
+      content:"";
+      position:absolute;
+      right:-140px;top:-140px;
+      width:360px;height:360px;
+      border-radius:50%;
+      background:radial-gradient(circle,rgba(248,113,113,.3),transparent 65%);
+      mix-blend-mode:screen;
+      pointer-events:none;
+    }
+    .topbar{
+      position:relative;z-index:1;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      margin-bottom:8px;
+    }
+    .logo{display:flex;align-items:center;gap:10px;}
+    .logo-mark{
+      width:26px;height:26px;border-radius:10px;
+      background:conic-gradient(from 220deg,#020617,var(--red));
+      box-shadow:0 0 18px rgba(248,113,113,.7);
+      position:relative;
+    }
+    .logo-mark::after{
+      content:"";position:absolute;inset:4px;border-radius:8px;
+      border:1px solid rgba(248,250,252,.7);
+    }
+    .logo-main{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;}
+    .logo-sub{font-size:11px;color:var(--sub);}
+    .pill{
+      padding:4px 10px;border-radius:999px;
+      border:1px solid rgba(248,113,113,.6);
+      background:rgba(10,10,10,.9);
+      font-size:11px;color:var(--text);
+      display:inline-flex;align-items:center;gap:6px;
+    }
+    .pill-dot{width:7px;height:7px;border-radius:999px;background:var(--red);}
+
+    .hero{position:relative;z-index:1;margin:4px 0 10px;}
+    .hero-kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(248,113,113,.9);margin-bottom:4px;}
+    .hero-title{margin:0 0 4px;font-size:22px;font-weight:700;}
+    .hero-sub{margin:0;font-size:13px;color:var(--sub);max-width:520px;line-height:1.7;}
+    .hero-sub strong{color:#f97373;font-weight:600;}
+
+    .status-bar{
+      position:relative;z-index:1;
+      margin-top:6px;margin-bottom:8px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      font-size:11px;color:var(--sub);
+    }
+    .status-user span.name{color:var(--text);font-weight:600;}
+    .btn-small{
+      border-radius:999px;border:1px solid var(--border);
+      background:#111827;color:var(--sub);
+      padding:4px 10px;font-size:11px;cursor:pointer;
+      display:inline-flex;align-items:center;gap:5px;
+    }
+    .btn-small:hover{border-color:rgba(248,113,113,.7);color:var(--text);}
+
+    /* layout inside main card */
+    .main-grid{
+      position:relative;z-index:1;
+      display:grid;
+      grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr);
+      gap:14px;
+    }
+    @media(max-width:720px){
+      .main-grid{grid-template-columns:minmax(0,1fr);}
+    }
+
+    /* post composer */
+    .composer{
+      background:rgba(10,10,10,.9);
+      border-radius:16px;
+      border:1px solid rgba(39,39,42,.9);
+      padding:10px 10px 8px;
+    }
+    .composer label{font-size:11px;color:var(--sub);display:block;margin-bottom:4px;}
+    .composer textarea{
+      width:100%;min-height:80px;resize:vertical;
+      background:#020617;border-radius:12px;
+      border:1px solid #27272a;color:var(--text);
+      padding:8px 10px;font-size:13px;line-height:1.6;
+    }
+    .composer textarea:focus{outline:none;border-color:rgba(248,113,113,.8);box-shadow:0 0 0 1px rgba(248,113,113,.5);}
+    .composer-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center;}
+    .tag-select{
+      flex:1;min-width:120px;
+      border-radius:999px;border:1px solid #27272a;
+      background:#020617;color:var(--sub);
+      padding:6px 10px;font-size:11px;
+    }
+    .btn-main{
+      border-radius:999px;border:1px solid rgba(248,250,252,.9);
+      background:#f9fafb;color:#020617;font-size:13px;font-weight:600;
+      padding:7px 14px;cursor:pointer;
+      display:inline-flex;align-items:center;gap:6px;
+      box-shadow:0 14px 34px rgba(0,0,0,.85);
+    }
+    .btn-main-dot{width:12px;height:12px;border-radius:999px;background:var(--red);}
+    .btn-main:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
+
+    .composer-tip{margin-top:4px;font-size:10px;color:var(--sub);}
+
+    /* feed */
+    .feed{
+      max-height:420px;overflow-y:auto;
+      padding-right:4px;
+    }
+    .feed::-webkit-scrollbar{width:6px;}
+    .feed::-webkit-scrollbar-thumb{background:#27272a;border-radius:999px;}
+
+    .post-card{
+      background:rgba(8,8,8,.96);
+      border-radius:14px;
+      border:1px solid #27272a;
+      padding:9px 10px 8px;
+      margin-bottom:8px;
+      font-size:12px;
+    }
+    .post-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+    .post-user{font-size:11px;color:var(--sub);}
+    .post-user span{color:var(--text);font-weight:600;}
+    .post-time{font-size:11px;color:#6b7280;}
+    .post-content{font-size:12px;line-height:1.7;margin-bottom:4px;white-space:pre-wrap;}
+    .post-tags{font-size:11px;color:#9ca3af;margin-bottom:4px;}
+    .post-tags span{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:2px 8px;border-radius:999px;
+      border:1px solid #27272a;background:#020617;margin-right:4px;
+    }
+    .post-actions{
+      display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#9ca3af;
+    }
+    .btn-like{
+      border:none;background:transparent;color:#9ca3af;
+      display:inline-flex;align-items:center;gap:4px;
+      cursor:pointer;font-size:11px;padding:2px 0;
+    }
+    .btn-like.liked{color:var(--red);}
+    .btn-like span.heart{font-size:13px;}
+    .empty{font-size:11px;color:#6b7280;padding:8px 2px;}
+
+    /* side card: ranking */
+    .side-card{
+      background:#050509;border-radius:var(--radius);
+      padding:14px 14px 10px;
+      box-shadow:0 22px 60px rgba(0,0,0,1);
+      border:1px solid #27272a;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .side-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
+    .side-header span.sub{font-size:11px;color:var(--sub);}
+    .badge{
+      padding:3px 8px;border-radius:999px;border:1px solid #4b5563;
+      font-size:10px;color:#e5e7eb;
+    }
+    .rank-list{list-style:none;margin:4px 0 0;padding:0;}
+    .rank-item{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:5px 0;border-bottom:1px dashed #1f2937;font-size:11px;
+    }
+    .rank-item:last-child{border-bottom:none;}
+    .rank-name{display:flex;align-items:center;gap:6px;}
+    .rank-dot{
+      width:8px;height:8px;border-radius:999px;
+      background:#4b5563;
+    }
+    .rank-score{font-size:11px;color:#f97373;}
+    .rank-empty{font-size:11px;color:#6b7280;margin-top:3px;}
+    .rank-1 .rank-dot{background:var(--red);}
+    .rank-1 .rank-name span{color:var(--red);}
+    .rank-2 .rank-dot{background:#fb923c;}
+    .rank-2 .rank-name span{color:#fb923c;}
+    .rank-3 .rank-dot{background:#e5e7eb;}
+    .rank-3 .rank-name span{color:#e5e7eb;}
+
+    .side-footer{font-size:10px;color:#4b5563;text-align:right;margin-top:2px;}
+    .error{font-size:11px;color:#fecaca;margin-top:4px;}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- 左側：社群牆主區 -->
+    <section class="card-main" aria-label="社群牆">
+      <header class="topbar">
+        <div class="logo">
+          <div class="logo-mark"></div>
+          <div>
+            <div class="logo-main">ZILV · COMMUNITY</div>
+            <div class="logo-sub">自律控肉飯 · 社群牆</div>
+          </div>
+        </div>
+        <div class="pill">
+          <span class="pill-dot"></span>
+          <span>紅 / 黑 / 白 · 自律分享區</span>
+        </div>
+      </header>
+
+      <div class="hero">
+        <div class="hero-kicker">21-DAY HABIT FEED</div>
+        <h1 class="hero-title">把你的自律紀錄丟上牆，讓別人幫你按個讚。</h1>
+        <p class="hero-sub">
+          每一篇貼文可以是今天完成的任務、番茄鐘成果、或是失敗的小抱怨都沒關係。
+          <strong>重點是你有回來看自己在做什麼。</strong>
+        </p>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-user" id="statusUser">尚未取得登入資訊…</div>
+        <button class="btn-small" onclick="goLogin()">
+          前往登入 / 管理帳號 →
+        </button>
+      </div>
+
+      <div class="main-grid">
+        <!-- 發文區 -->
+        <section class="composer" aria-label="發文區">
+          <label for="postContent">今天想分享什麼？</label>
+          <textarea id="postContent" placeholder="例如：今天完成 3 顆番茄鐘，終於把報告寫完一半。"></textarea>
+
+          <div class="composer-row">
+            <select id="habitTag" class="tag-select">
+              <option value="">選擇一個標籤（可留白）</option>
+              <option value="讀書">讀書 / 作業</option>
+              <option value="早起">早起 / 作息</option>
+              <option value="運動">運動 / 健身</option>
+              <option value="專注">專注 / 番茄鐘</option>
+              <option value="整理">整理房間 / 整理人生</option>
+              <option value="其他">其他自律小事</option>
+            </select>
+            <button class="btn-main" id="btnPost" onclick="createPost()">
+              <span class="btn-main-dot"></span>
+              發佈到社群牆
+            </button>
+          </div>
+
+          <p class="composer-tip">
+            提示：不用寫得很厲害，就像跟未來的自己說一句話。之後我們可以讓 AI 幫你回一段短評。
+          </p>
+          <div id="composerError" class="error" style="display:none;"></div>
+        </section>
+
+        <!-- 貼文列表 -->
+        <section aria-label="最新貼文">
+          <div class="feed" id="feed"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- 右側：排行榜 -->
+    <aside class="side-card" aria-label="排行榜">
+      <div class="side-header">
+        <div>
+          <div>本週被按讚最多的自律使用者</div>
+          <span class="sub">依照最近貼文被按讚的次數計算 · 只做展示用</span>
+        </div>
+        <span class="badge" id="badgeCount">尚未載入</span>
+      </div>
+
+      <ul class="rank-list" id="rankList"></ul>
+      <div class="rank-empty" id="rankEmpty" style="display:none;">還沒有任何讚，先去當第一個按讚的人。</div>
+      <div class="side-footer">之後可以把榜單連結到 21 天挑戰或周邊解鎖。</div>
+    </aside>
+  </div>
+
+  <script>
+    // === 1. Supabase 初始化（記得換成你的專案） ===
+    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co"; // TODO: 換成你的
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";            // TODO: 換成你的
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+    let loadingFeed = false;
+
+    function goLogin(){
+      // 這裡改成你實際的登入頁路徑（在 Render 上）
+      window.location.href = "https://tool-server-d695.onrender.com/supabase-test.html";
+    }
+
+    // === 2. 初始化：抓使用者 + 載入貼文 ===
+    document.addEventListener("DOMContentLoaded", async () => {
+      await fetchUser();
+      await loadFeed();
+      sb.auth.onAuthStateChange(async () => {
+        await fetchUser();
+        await loadFeed();
+      });
+    });
+
+    async function fetchUser(){
+      const { data, error } = await sb.auth.getUser();
+      if(error){
+        console.error(error);
+        document.getElementById("statusUser").textContent = "無法取得登入狀態。";
+        return;
+      }
+      currentUser = data.user || null;
+      if(currentUser){
+        document.getElementById("statusUser").innerHTML =
+          `已登入：<span class="name">${currentUser.email}</span>`;
+      }else{
+        document.getElementById("statusUser").textContent =
+          "尚未登入：發文與按讚需要先登入。";
+      }
+    }
+
+    // === 3. 發文 ===
+    async function createPost(){
+      const errorBox = document.getElementById("composerError");
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+
+      if(!currentUser){
+        errorBox.textContent = "請先登入後再發文。";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      const contentEl = document.getElementById("postContent");
+      const tagEl = document.getElementById("habitTag");
+      const content = contentEl.value.trim();
+      const habitTag = tagEl.value || null;
+
+      if(!content){
+        errorBox.textContent = "內容不能是空白。";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      document.getElementById("btnPost").disabled = true;
+
+      const { error } = await sb.from("posts").insert({
+        user_id: currentUser.id,
+        content,
+        habit_tag: habitTag
+      });
+
+      document.getElementById("btnPost").disabled = false;
+
+      if(error){
+        console.error(error);
+        errorBox.textContent = "發文失敗：" + error.message;
+        errorBox.style.display = "block";
+        return;
+      }
+
+      contentEl.value = "";
+      tagEl.value = "";
+      await loadFeed();
+    }
+
+    // === 4. 載入貼文 + 按讚狀態 + 排行榜 ===
+    async function loadFeed(){
+      if(loadingFeed) return;
+      loadingFeed = true;
+
+      const feedEl = document.getElementById("feed");
+      feedEl.innerHTML = '<div class="empty">載入中…</div>';
+
+      // 4-1 先載入貼文
+      const { data: posts, error } = await sb
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(50);
+
+      if(error){
+        console.error(error);
+        feedEl.innerHTML = '<div class="empty">載入貼文失敗。</div>';
+        loadingFeed = false;
+        return;
+      }
+
+      if(!posts || posts.length === 0){
+        feedEl.innerHTML = '<div class="empty">還沒有任何貼文，當第一個發文的人吧。</div>';
+        updateRankingFromData(posts, []);
+        loadingFeed = false;
+        return;
+      }
+
+      const postIds = posts.map(p => p.id);
+
+      // 4-2 載入這些貼文的所有 likes
+      const { data: likes, error: likesError } = await sb
+        .from("likes")
+        .select("post_id, user_id")
+        .in("post_id", postIds);
+
+      if(likesError){
+        console.error(likesError);
+      }
+
+      const likesByPost = {};
+      const likedByMe = new Set();
+      if(likes && likes.length){
+        likes.forEach(l => {
+          likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
+          if(currentUser && l.user_id === currentUser.id){
+            likedByMe.add(l.post_id);
+          }
+        });
+      }
+
+      // 4-3 渲染貼文
+      feedEl.innerHTML = "";
+      const mapPostsById = {};
+      posts.forEach(p => { mapPostsById[p.id] = p; });
+
+      posts.forEach(p => {
+        const card = document.createElement("article");
+        card.className = "post-card";
+
+        const likeCount = likesByPost[p.id] || 0;
+        const isLiked = likedByMe.has(p.id);
+
+        // header
+        const header = document.createElement("div");
+        header.className = "post-header";
+
+        const userLabel = document.createElement("div");
+        userLabel.className = "post-user";
+        const shortId = (p.user_id || '').slice(0, 4);
+        userLabel.innerHTML = `<span>User #${shortId || '????'}</span> · 自律使用者`;
+
+        const timeLabel = document.createElement("div");
+        timeLabel.className = "post-time";
+        const t = new Date(p.created_at);
+        timeLabel.textContent = t.toLocaleString("zh-TW", {
+          month:"2-digit",day:"2-digit",
+          hour:"2-digit",minute:"2-digit"
+        });
+
+        header.appendChild(userLabel);
+        header.appendChild(timeLabel);
+
+        // content
+        const content = document.createElement("div");
+        content.className = "post-content";
+        content.textContent = p.content;
+
+        // tags
+        const tags = document.createElement("div");
+        tags.className = "post-tags";
+        if(p.habit_tag){
+          tags.innerHTML = `<span>習慣 · ${p.habit_tag}</span>`;
+        }
+
+        // actions
+        const actions = document.createElement("div");
+        actions.className = "post-actions";
+
+        const likeBtn = document.createElement("button");
+        likeBtn.className = "btn-like" + (isLiked ? " liked" : "");
+        likeBtn.innerHTML = `<span class="heart">❤</span><span>${likeCount} 個讚</span>`;
+        likeBtn.onclick = () => toggleLike(p.id, isLiked);
+
+        const meta = document.createElement("div");
+        meta.textContent = "這是一個對外公開的自律牆，請溫柔互動。";
+
+        actions.appendChild(likeBtn);
+        actions.appendChild(meta);
+
+        card.appendChild(header);
+        card.appendChild(content);
+        if(p.habit_tag) card.appendChild(tags);
+        card.appendChild(actions);
+
+        feedEl.appendChild(card);
+      });
+
+      // 4-4 用 posts + likes 計算「使用者排行榜」
+      updateRankingFromData(posts, likes || []);
+      loadingFeed = false;
+    }
+
+    // === 5. 按讚 / 取消讚 ===
+    async function toggleLike(postId, alreadyLiked){
+      if(!currentUser){
+        alert("請先登入再按讚。");
+        return;
+      }
+
+      if(alreadyLiked){
+        const { error } = await sb
+          .from("likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", currentUser.id);
+        if(error){
+          console.error(error);
+          alert("取消讚失敗：" + error.message);
+          return;
+        }
+      }else{
+        const { error } = await sb.from("likes").insert({
+          post_id: postId,
+          user_id: currentUser.id
+        });
+        if(error){
+          // unique constraint 也會進來，直接忽略即可
+          if(!error.message.includes("duplicate key")){
+            console.error(error);
+            alert("按讚失敗：" + error.message);
+          }
+        }
+      }
+
+      await loadFeed();
+    }
+
+    // === 6. 依照 likes 計算「被按讚最多的使用者」排行榜 ===
+    function updateRankingFromData(posts, likes){
+      const rankListEl = document.getElementById("rankList");
+      const rankEmptyEl = document.getElementById("rankEmpty");
+      const badgeEl = document.getElementById("badgeCount");
+
+      rankListEl.innerHTML = "";
+      const postsById = {};
+      posts.forEach(p => postsById[p.id] = p);
+
+      if(!likes || likes.length === 0){
+        badgeEl.textContent = "沒有讚的紀錄";
+        rankEmptyEl.style.display = "block";
+        return;
+      }
+
+      const scoreByUser = {};
+      likes.forEach(l => {
+        const post = postsById[l.post_id];
+        if(!post) return;
+        const ownerId = post.user_id;
+        if(!ownerId) return;
+        scoreByUser[ownerId] = (scoreByUser[ownerId] || 0) + 1;
+      });
+
+      const entries = Object.entries(scoreByUser)
+        .map(([userId, score]) => ({ userId, score }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+
+      badgeEl.textContent = `共 ${Object.keys(scoreByUser).length} 位使用者有被按讚`;
+      rankEmptyEl.style.display = entries.length ? "none" : "block";
+
+      entries.forEach((e, index) => {
+        const li = document.createElement("li");
+        li.className = "rank-item rank-" + (index+1);
+
+        const name = document.createElement("div");
+        name.className = "rank-name";
+        const dot = document.createElement("div");
+        dot.className = "rank-dot";
+        const shortId = e.userId.slice(0,4);
+        const span = document.createElement("span");
+        span.textContent = `User #${shortId || "????"}`;
+        name.appendChild(dot);
+        name.appendChild(span);
+
+        const score = document.createElement("div");
+        score.className = "rank-score";
+        score.textContent = `${e.score} 個讚`;
+
+        li.appendChild(name);
+        li.appendChild(score);
+        rankListEl.appendChild(li);
+      });
+
+      if(entries.length === 0){
+        rankEmptyEl.style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
