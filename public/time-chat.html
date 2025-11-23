@@ -6,124 +6,140 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --bg: #111111;
-      --card: #181818;
+      --bg: #f5f5f7;
+      --card: #ffffff;
       --accent: #e31b23; /* 紅 */
-      --border: #2a2a2a;
-      --text: #ffffff;
-      --sub: #aaaaaa;
-      --bubble-user: #ffffff;
-      --bubble-user-text: #111111;
-      --bubble-bot: #181818;
-      --bubble-bot-border: #e31b23;
+      --border: #e1e1e5;
+      --text: #111111;
+      --sub: #777777;
+      --bubble-ai: #f3f4f6;
+      --bubble-user: #111111;
+      --bubble-user-text: #ffffff;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", system-ui, sans-serif;
-      background: radial-gradient(circle at top left, #222 0, #111 45%, #000 100%);
+      background: var(--bg);
       color: var(--text);
     }
 
     body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      padding: 8px;
     }
 
     .chat-shell {
       width: 100%;
-      max-width: 900px;
-      height: 80vh;
-      max-height: 720px;
-      background: linear-gradient(135deg, #111 0%, #151515 50%, #111 100%);
-      border-radius: 20px;
+      height: 100%;
+      background: var(--card);
+      border-radius: 16px;
       border: 1px solid var(--border);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.75);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
       display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
 
-    /* 左側：聊天室 */
-    .chat-main {
-      flex: 2.2;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid var(--border);
-    }
-
+    /* 頂部標題列 */
     .chat-header {
-      padding: 14px 18px;
+      padding: 10px 14px 6px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
     }
 
     .chat-title-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      min-width: 0;
     }
 
     .chat-logo {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       border-radius: 999px;
       border: 2px solid var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--accent);
+      background: #fff;
     }
 
     .chat-title-text {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      min-width: 0;
     }
 
     .chat-title-text h1 {
       margin: 0;
-      font-size: 16px;
-      letter-spacing: 0.08em;
+      font-size: 14px;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .chat-title-text span {
       font-size: 11px;
       color: var(--sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .chat-tag {
+      flex-shrink: 0;
       border-radius: 999px;
       border: 1px solid var(--accent);
-      padding: 4px 10px;
-      font-size: 11px;
+      padding: 3px 8px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.12em;
+      color: var(--accent);
+      background: #fff5f5;
     }
 
+    /* 提示條 */
+    .chat-hint {
+      padding: 6px 14px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--sub);
+      background: #fafafa;
+    }
+
+    .chat-hint strong {
+      color: var(--accent);
+    }
+
+    /* 訊息區 */
     .chat-messages {
       flex: 1;
-      padding: 16px 18px;
+      padding: 10px 12px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      scroll-behavior: smooth;
+      gap: 8px;
     }
 
     .msg-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: flex-end;
       max-width: 92%;
     }
@@ -134,38 +150,38 @@
     }
 
     .avatar {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       border-radius: 999px;
-      border: 1px solid var(--border);
+      border: 1px solid #ddd;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 12px;
+      background: #fff;
+      color: #555;
+      flex-shrink: 0;
     }
 
-    .avatar.bot {
+    .avatar.ai {
       border-color: var(--accent);
       color: var(--accent);
     }
 
-    .avatar.user {
-      background: var(--bubble-user);
-      color: var(--bubble-user-text);
-      font-weight: 600;
-    }
-
     .bubble {
-      padding: 9px 11px;
-      border-radius: 14px;
+      padding: 7px 9px;
+      border-radius: 12px;
       font-size: 13px;
       line-height: 1.5;
       position: relative;
+      word-wrap: break-word;
+      white-space: pre-wrap;
     }
 
-    .bubble.bot {
-      background: var(--bubble-bot);
-      border: 1px solid var(--bubble-bot-border);
+    .bubble.ai {
+      background: var(--bubble-ai);
+      border: 1px solid #e3e4ea;
+      color: var(--text);
     }
 
     .bubble.user {
@@ -174,20 +190,20 @@
     }
 
     .bubble-meta {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--sub);
       margin-top: 2px;
     }
 
     .typing-indicator {
       display: inline-flex;
-      gap: 4px;
+      gap: 3px;
       align-items: center;
     }
 
     .dot {
-      width: 5px;
-      height: 5px;
+      width: 4px;
+      height: 4px;
       border-radius: 999px;
       background: var(--accent);
       opacity: 0.4;
@@ -199,35 +215,53 @@
 
     @keyframes bounce {
       0%, 100% { transform: translateY(0); opacity: 0.4; }
-      50% { transform: translateY(-3px); opacity: 1; }
+      50% { transform: translateY(-2px); opacity: 1; }
     }
 
+    /* 底部輸入區 */
     .chat-input-area {
-      padding: 10px 14px;
+      padding: 8px 10px 10px;
       border-top: 1px solid var(--border);
+      background: #ffffff;
       display: flex;
-      align-items: center;
-      gap: 8px;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .hint-pill {
-      font-size: 11px;
-      color: var(--sub);
+    .quick-row {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .quick-chip {
+      flex-shrink: 0;
       border-radius: 999px;
-      border: 1px solid #333;
-      padding: 4px 10px;
+      border: 1px solid #e2e3ea;
+      padding: 3px 8px;
+      font-size: 10px;
+      color: var(--sub);
+      background: #fafafa;
+      cursor: pointer;
       white-space: nowrap;
     }
 
+    .quick-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #fff5f5;
+    }
+
     .input-shell {
-      flex: 1;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       border-radius: 999px;
-      background: #101010;
-      border: 1px solid var(--border);
-      padding: 6px 10px 6px 12px;
+      background: #f5f5f7;
+      border: 1px solid #ddd;
+      padding: 5px 8px 5px 10px;
     }
 
     .input-shell input {
@@ -237,26 +271,28 @@
       outline: none;
       color: var(--text);
       font-size: 13px;
+      min-width: 0;
     }
 
     .input-shell input::placeholder {
-      color: #555;
+      color: #aaa;
     }
 
     .send-btn {
       border-radius: 999px;
       border: none;
       outline: none;
-      padding: 7px 12px;
-      font-size: 12px;
+      padding: 6px 10px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.12em;
       background: var(--accent);
       color: #fff;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      flex-shrink: 0;
     }
 
     .send-btn:disabled {
@@ -265,166 +301,62 @@
     }
 
     .send-btn span.icon {
-      font-size: 13px;
-    }
-
-    /* 右側：說明 & 快捷提問 */
-    .side-panel {
-      flex: 1.2;
-      display: flex;
-      flex-direction: column;
-      padding: 16px 18px;
-      gap: 12px;
-      background: radial-gradient(circle at top right, #222 0, #111 40%, #050505 100%);
-    }
-
-    .side-section-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: var(--sub);
-    }
-
-    .side-main-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .side-desc {
-      font-size: 13px;
-      color: var(--sub);
-      line-height: 1.6;
-    }
-
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-      margin-bottom: 4px;
-    }
-
-    .pill {
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 11px;
-      border: 1px solid #333;
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .pill:hover {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-
-    .rule-box {
-      border-radius: 12px;
-      border: 1px dashed #444;
-      padding: 10px 10px;
       font-size: 12px;
-      color: var(--sub);
-      line-height: 1.5;
-      margin-top: 2px;
     }
 
-    .rule-box strong { color: #fff; }
-
-    .hint-list {
-      list-style: none;
-      padding-left: 0;
-      margin: 6px 0 0;
-      font-size: 12px;
-      color: var(--sub);
-    }
-
-    .hint-list li::before {
-      content: "• ";
-      color: var(--accent);
-    }
-
-    @media (max-width: 768px) {
-      body { padding: 10px; }
-      .chat-shell {
-        flex-direction: column;
-        height: 90vh;
+    @media (max-width: 480px) {
+      body {
+        padding: 4px;
       }
-      .chat-main {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        flex: 1.6;
+      .chat-input-area {
+        padding: 6px 6px 8px;
       }
-      .side-panel { flex: 1; }
+      .chat-header {
+        padding: 8px 10px 4px;
+      }
     }
   </style>
 </head>
 <body>
 <div class="chat-shell">
-  <!-- 左：聊天室 -->
-  <section class="chat-main">
-    <header class="chat-header">
-      <div class="chat-title-group">
-        <div class="chat-logo">⏱</div>
-        <div class="chat-title-text">
-          <h1>Time Coach</h1>
-          <span>時間管理專用 AI 聊天室</span>
-        </div>
-      </div>
-      <div class="chat-tag">FOCUS · TIME · RHYTHM</div>
-    </header>
-
-    <div class="chat-messages" id="chatMessages">
-      <!-- 初始歡迎訊息：用 JS 注入 -->
-    </div>
-
-    <footer class="chat-input-area">
-      <div class="hint-pill">僅支援：時間管理 / 排程 / 自律相關</div>
-      <div class="input-shell">
-        <input id="userInput" type="text"
-               placeholder="輸入你的時間管理困擾，例如：『這週打工跟期末報告要怎麼排？』">
-        <button id="sendBtn" class="send-btn">
-          <span class="icon">➤</span><span>送出</span>
-        </button>
-      </div>
-    </footer>
-  </section>
-
-  <!-- 右：說明＋快捷問題 -->
-  <aside class="side-panel">
-    <div>
-      <div class="side-section-title">Scope</div>
-      <div class="side-main-title">只聊「時間安排」的一間小房間</div>
-      <p class="side-desc">
-        把這裡當成你的「排程教練」。可以問讀書規劃、打工＆作業怎麼排、要怎麼維持自律，  
-        但不要聊感情、八卦或跟時間無關的話題，AI 會直接拉回主題。
-      </p>
-    </div>
-
-    <div>
-      <div class="side-section-title">Quick Start</div>
-      <div class="pill-row">
-        <button class="pill" data-ask="我這禮拜有打工、上課跟期末報告，時間很碎，怎麼排比較好？">這週課表＋打工</button>
-        <button class="pill" data-ask="我常常番茄鐘做到一半就分心，怎麼調整比較好？">番茄鐘做不完</button>
-        <button class="pill" data-ask="如果每天只有 2 小時可以讀書，考試前兩週要怎麼安排？">考前兩週規劃</button>
-        <button class="pill" data-ask="我想建立早睡早起的作息，可以幫我設計一個漸進式調整計畫嗎？">調整作息</button>
+  <header class="chat-header">
+    <div class="chat-title-group">
+      <div class="chat-logo">⏱</div>
+      <div class="chat-title-text">
+        <h1>Time Coach</h1>
+        <span>通用 AI · 擅長整理時間與計畫</span>
       </div>
     </div>
+    <div class="chat-tag">ZILV · TOOLS</div>
+  </header>
 
-    <div>
-      <div class="side-section-title">Rule</div>
-      <div class="rule-box">
-        <strong>AI 的任務只有一個：</strong>  
-        幫你把時間排好、用好。  
-        <ul class="hint-list">
-          <li>如果你問跟時間無關的東西，它會提醒你回到時間管理。</li>
-          <li>回答邏輯優先：幫你拆目標、估時間、安排順序。</li>
-          <li>所有建議都默認你是大學生＋生活作息正常為前提。</li>
-        </ul>
-      </div>
+  <div class="chat-hint">
+    你可以問任何事情，如果是
+    <strong>時間管理、排程、自律</strong> 的問題，我會幫你把計畫拆得更清楚。
+  </div>
+
+  <main class="chat-messages" id="chatMessages">
+    <!-- JS 會插入訊息 -->
+  </main>
+
+  <footer class="chat-input-area">
+    <div class="quick-row">
+      <button class="quick-chip" data-ask="幫我排一下今天的時間，早上有課、下午打工、晚上想寫報告。">排今天行程</button>
+      <button class="quick-chip" data-ask="我常常想讀書但坐下來五分鐘就分心，有什麼建議？">容易分心怎麼辦</button>
+      <button class="quick-chip" data-ask="期末考前兩週，每天只有兩小時可以讀書，怎麼安排比較好？">考前讀書計畫</button>
+      <button class="quick-chip" data-ask="我想調整成早睡早起，能幫我排一個一週的作息調整計畫嗎？">調整作息</button>
     </div>
-  </aside>
+
+    <div class="input-shell">
+      <input
+        id="userInput"
+        type="text"
+        placeholder="輸入訊息，例如：『幫我排今天的行程』或其他想聊的事" />
+      <button id="sendBtn" class="send-btn">
+        <span class="icon">➤</span><span>送出</span>
+      </button>
+    </div>
+  </footer>
 </div>
 
 <script>
@@ -433,33 +365,33 @@
   const sendBtn = document.getElementById("sendBtn");
 
   let isWaiting = false;
-  let messages = []; // 存 user / assistant 的對話，會傳到後端
+  let messages = []; // 存 user / assistant 的對話，會傳給後端
 
   // === 初始化：歡迎訊息 ===
   window.addEventListener("DOMContentLoaded", () => {
     addBotMessage(
-      "嗨，我是你的時間管理 AI 教練。\n\n" +
-      "你可以跟我說：\n" +
-      "・這週課、打工、報告怎麼排才不會爆掉\n" +
-      "・想用番茄鐘、但常常中途分心\n" +
-      "・想建立固定讀書習慣或早睡早起作息\n\n" +
-      "先跟我描述一下你接下來 3–7 天的生活，我幫你一起排。"
+      "嗨，我是你的 AI 助理，也是專門幫你整理「時間與計畫」的小教練。\n\n" +
+      "你可以：\n" +
+      "・跟我聊生活、想法、任何問題\n" +
+      "・或是請我幫你排今天／這週的時間、讀書計畫、自律作息\n\n" +
+      "如果你有時間管理的困擾，可以先簡單說：\n" +
+      "「我今天有什麼行程、想完成什麼」，剩下交給我。"
     );
   });
 
   // === UI：新增訊息 ===
   function addMessage(role, content, metaText) {
     const row = document.createElement("div");
-    row.className = "msg-row " + (role === "user" ? "user" : "bot");
+    row.className = "msg-row " + (role === "user" ? "user" : "ai");
 
     const avatar = document.createElement("div");
-    avatar.className = "avatar " + (role === "user" ? "user" : "bot");
-    avatar.textContent = role === "user" ? "You" : "AI";
+    avatar.className = "avatar " + (role === "user" ? "" : "ai");
+    avatar.textContent = role === "user" ? "你" : "AI";
 
     const bubbleWrap = document.createElement("div");
 
     const bubble = document.createElement("div");
-    bubble.className = "bubble " + (role === "user" ? "user" : "bot");
+    bubble.className = "bubble " + (role === "user" ? "user" : "ai");
     bubble.innerText = content;
 
     bubbleWrap.appendChild(bubble);
@@ -478,7 +410,7 @@
   }
 
   function addBotMessage(text, meta) {
-    addMessage("assistant", text, meta || "時間管理教練 · 專注在排程與自律");
+    addMessage("assistant", text, meta || "AI 助理 · 擅長整理時間與計畫");
   }
 
   function addUserMessage(text) {
@@ -488,16 +420,16 @@
   // 打字中指示
   function showTyping() {
     const row = document.createElement("div");
-    row.className = "msg-row bot";
+    row.className = "msg-row ai";
     row.id = "typingRow";
 
     const avatar = document.createElement("div");
-    avatar.className = "avatar bot";
+    avatar.className = "avatar ai";
     avatar.textContent = "AI";
 
     const bubbleWrap = document.createElement("div");
     const bubble = document.createElement("div");
-    bubble.className = "bubble bot";
+    bubble.className = "bubble ai";
 
     const typing = document.createElement("div");
     typing.className = "typing-indicator";
@@ -518,28 +450,8 @@
     if (row) row.remove();
   }
 
-  // 簡單前端判斷：完全離題就直接擋掉（省 token）
-  function looksOffTopic(text) {
-    const t = text.toLowerCase();
-    const timeKeywords = [
-      "時間", "排程", "行程", "讀書", "作業", "報告", "考試", "自律",
-      "進度", "dead line", "deadline", "schedule", "番茄", "番茄鐘",
-      "pomodoro", "打工", "班", "課表", "作息"
-    ];
-    return !timeKeywords.some(k => t.includes(k));
-  }
-
-  // ✅ 呼叫後端 /api/time-coach
+  // ✅ 呼叫後端 /api/time-coach（現在當一般聊天用）
   async function askTimeCoach(userText) {
-    // 如果超離題，直接前端回應一次
-    if (looksOffTopic(userText)) {
-      return "這個聊天室目前只回答「時間管理、排程、自律」相關的問題喔。\n\n" +
-             "你可以改成跟我說：\n" +
-             "・這週有哪些課、打工、作業\n" +
-             "・最近最重要的 1～3 件事是什麼\n" +
-             "我再幫你排一個比較實際的時間表。";
-    }
-
     const apiMessages = messages.map(m => ({
       role: m.role === "assistant" ? "assistant" : "user",
       content: m.content,
@@ -582,7 +494,7 @@
     } catch (err) {
       console.error(err);
       hideTyping();
-      addBotMessage("抱歉，教練這邊暫時連線失敗，你可以等等再試一次。");
+      addBotMessage("抱歉，目前暫時連不到伺服器，你可以等一下再試一次。");
     } finally {
       isWaiting = false;
       sendBtn.disabled = false;
@@ -599,9 +511,9 @@
   });
 
   // 快速問題按鈕
-  document.querySelectorAll(".pill").forEach(pill => {
-    pill.addEventListener("click", () => {
-      const txt = pill.getAttribute("data-ask");
+  document.querySelectorAll(".quick-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const txt = chip.getAttribute("data-ask");
       userInput.value = txt;
       userInput.focus();
     });
@@ -609,3 +521,4 @@
 </script>
 </body>
 </html>
+
