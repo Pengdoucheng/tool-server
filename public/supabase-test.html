@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>登入</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 乾淨、白色、正式版樣式 -->
+  <style>
+    :root{
+      --bg:#f6f7f9;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --primary:#2563eb;
+      --primary-600:#1d4ed8;
+      --ring:rgba(37,99,235,.15);
+      --success:#10b981;
+      --danger:#ef4444;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(16,24,40,.08), 0 2px 6px rgba(16,24,40,.06);
+      --font: system-ui, -apple-system, "SF Pro TC", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", Inter, sans-serif;
+    }
+    *{box-sizing:border-box}
+    html, body{height:100%}
+    body{
+      margin:0; font-family:var(--font); color:var(--text); background:var(--bg);
+      display:grid; place-items:center; padding:24px;
+    }
+
+    .wrap{
+      width:min(100%, 920px);
+      display:grid; grid-template-columns: 1.05fr 1fr; gap:24px;
+      align-items:stretch;
+    }
+    @media (max-width: 980px){ .wrap{grid-template-columns:1fr; gap:16px;} }
+
+    /* 左側說明 */
+    .hero{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px 24px 18px;
+      box-shadow:var(--shadow);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px}
+    .mark{width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#dbeafe,#a5b4fc); box-shadow: inset 0 1px 0 rgba(255,255,255,.7)}
+    h1{margin:12px 0 8px; font-size: clamp(22px, 3vw, 30px); line-height:1.25}
+    .muted{color:var(--muted)}
+    .bullets{margin:14px 0 0; padding:0; list-style:none; display:grid; gap:10px}
+    .bullets li{display:flex; gap:10px; align-items:flex-start}
+    .dot{width:8px; height:8px; background:#93c5fd; border-radius:50%; margin-top:.6em}
+
+    /* 右側卡片（登入/任務） */
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px;
+      box-shadow:var(--shadow);
+    }
+    .h2{margin:0 0 6px; font-size:18px; font-weight:800}
+    .desc{margin:0 0 16px; color:var(--muted); font-size:14px}
+
+    label{display:block; font-size:13px; color:#374151; margin:10px 0 6px}
+    .ctl{
+      border:1px solid #d1d5db; background:#fff; border-radius:12px; padding:12px 14px;
+      display:flex; align-items:center; gap:8px;
+      transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    .ctl:focus-within{ box-shadow: 0 0 0 4px var(--ring); border-color:#bfdbfe; }
+    input[type="email"], input[type="password"], input[type="text"]{
+      width:100%; border:0; outline:0; font-size:16px; background:transparent; color:var(--text);
+    }
+
+    .row{display:grid; gap:12px}
+    .actions{display:grid; gap:10px; margin-top:6px}
+    .stack{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    @media (max-width: 520px){ .stack{grid-template-columns:1fr} }
+
+    .btn{
+      appearance:none; border:1px solid transparent; background:#fff; color:var(--text);
+      padding:12px 14px; border-radius:12px; font-weight:800; cursor:pointer; font-size:15px;
+      transition: background .15s ease, color .15s ease, border-color .15s ease, transform .02s ease;
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn-primary{ background:var(--primary); color:#fff; }
+    .btn-primary:hover{ background:var(--primary-600); }
+    .btn-outline{ border-color:#d1d5db; color:#1f2937; background:#fff; }
+    .btn-outline:hover{ border-color:#93c5fd; color:#111827; }
+
+    .topbar{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px}
+    .who{color:var(--muted); font-size:14px}
+
+    /* 任務區塊（沿用原功能，純樣式） */
+    .bar{display:flex; gap:10px}
+    .ipt{flex:1}
+    .list{list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px}
+    .item{display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; background:#fff}
+    .item label{margin:0; display:flex; align-items:center; gap:8px}
+    .item .del{border-color:#e5e7eb}
+    .item .del:hover{border-color:#fecaca; color:#991b1b}
+
+    .empty{color:var(--muted); font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- 左側：簡潔說明（純視覺，不影響功能） -->
+    <aside class="hero">
+      <div class="brand"><div class="mark" aria-hidden="true"></div><span>自律控肉飯 · 登入</span></div>
+      <h1>簡潔、專業、可用。</h1>
+      <p class="muted">快加入自律控肉飯。</p>
+      <ul class="bullets">
+        <li><span class="dot"></span><span>紀錄一個月的行程。</span></li>
+        <li><span class="dot"></span><span>AI專業分析排程。</span></li>
+        <li><span class="dot"></span><span>規劃每一天行程。</span></li>
+      </ul>
+    </aside>
+
+    <!-- 右側：你的原本功能（ID 與 JS 流程未改） -->
+    <main class="card">
+      <!-- 標題 -->
+      <h2 class="h2">登入</h2>
+      <p class="desc">輸入帳號密碼完按註冊即可登入。</p>
+
+      <!-- Auth（保持既有的 id 與 onclick 名稱） -->
+      <section id="auth" style="display:block">
+        <div class="row">
+          <div>
+            <label for="email">電子郵件</label>
+            <div class="ctl"><input id="email" type="email" placeholder="you@example.com" autocomplete="email"></div>
+          </div>
+          <div>
+            <label for="password">密碼</label>
+            <div class="ctl"><input id="password" type="password" placeholder="至少 6 碼" autocomplete="current-password"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="stack">
+            <button class="btn btn-outline" onclick="register()">註冊</button>
+            <button class="btn btn-primary" onclick="login()">登入</button>
+          </div>
+          <button class="btn btn-outline" onclick="loginWithGoogle()">用 Google 登入</button>
+          <p class="muted" style="margin:6px 0 0">gmail請使用google登入！</p>
+        </div>
+      </section>
+
+      <!-- App（保持既有的 id 與 onclick 名稱） -->
+      <section id="app" style="display:none">
+        <div class="topbar">
+          <h3 style="margin:0">任務清單</h3>
+          <div>
+            <span class="who" id="who"></span>
+            <button class="btn btn-outline" onclick="logout()">登出</button>
+          </div>
+        </div>
+
+        <div class="bar">
+          <div class="ctl ipt"><input id="newTitle" placeholder="輸入任務..." /></div>
+          <button class="btn btn-primary" onclick="addTask()">新增</button>
+        </div>
+
+        <ul id="list" class="list"></ul>
+        <p id="empty" class="empty"></p>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== 以下 JavaScript 完全沿用你的原本流程（未改邏輯） ===== -->
+  <script>
+    // ⬇️ 換成你的 Project URL 與 anon public key
+    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // --- Auth ---
+    async function register(){
+      const email = emailInput().value, password = pwdInput().value;
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) return alert(error.message);
+      alert("註冊成功！請至信箱驗證後再登入。");
+    }
+    async function login(){
+      const email = emailInput().value, password = pwdInput().value;
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) return alert(error.message);
+
+      // ✅ 登入成功 → 跳轉到你的 tool.html（依你原本程式）
+      window.location.href = "https://pengdoucheng.github.io/home.html";
+    }
+
+    async function logout(){ await sb.auth.signOut(); render(); }
+    async function user(){ return (await sb.auth.getUser()).data.user || null; }
+
+    // --- CRUD (表名是單數：task) ---
+    async function addTask(){
+      const u = await user(); if(!u) return alert("請先登入");
+      const title = document.querySelector("#newTitle").value.trim(); if(!title) return;
+      const { error } = await sb.from("task").insert([{ user_id: u.id, title }]);
+      if (error) return alert(error.message);
+      document.querySelector("#newTitle").value = "";
+      load();
+    }
+    async function toggle(id, done){
+      const { error } = await sb.from("task").update({ done }).eq("id", id);
+      if (error) return alert(error.message);
+      load();
+    }
+    async function removeTask(id){
+      const { error } = await sb.from("task").delete().eq("id", id);
+      if (error) return alert(error.message);
+      load();
+    }
+    async function load(){
+      const u = await user(); if(!u) return;
+      const { data, error } = await sb.from("task")
+        .select("*").eq("user_id", u.id).order("created_at", { ascending:false });
+      if (error) return alert(error.message);
+      const list = document.querySelector("#list"), empty = document.querySelector("#empty");
+      if (!data.length){ list.innerHTML = ""; empty.textContent = "目前沒有任務"; return; }
+      empty.textContent = "";
+      list.innerHTML = data.map(t => `
+        <li class="item">
+          <label>
+            <input type="checkbox" ${t.done?'checked':''} onchange="toggle('${t.id}', this.checked)" />
+            <span style="${t.done?'text-decoration:line-through;opacity:.6':''}">${escapeHTML(t.title)}</span>
+          </label>
+          <button class="btn btn-outline del" onclick="removeTask('${t.id}')">刪除</button>
+        </li>`).join("");
+    }
+
+    // --- UI state ---
+    async function render(){
+      const u = await user();
+      document.querySelector("#auth").style.display = u ? "none" : "block";
+      document.querySelector("#app").style.display  = u ? "block" : "none";
+      if (u){ document.querySelector("#who").textContent = u.email; load(); }
+    }
+    sb.auth.onAuthStateChange(() => render());
+    document.addEventListener("DOMContentLoaded", render);
+
+    // util
+    function emailInput(){ return document.querySelector("#email"); }
+    function pwdInput(){ return document.querySelector("#password"); }
+    function escapeHTML(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])) }
+  </script>
+
+  <!-- Google 登入（沿用你的函式名與流程） -->
+  <script>
+    async function loginWithGoogle(){
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: "https://pengdoucheng.github.io/home.html"
+        }
+      });
+      if (error) alert(error.message);
+    }
+  </script>
+</body>
+</html>
+

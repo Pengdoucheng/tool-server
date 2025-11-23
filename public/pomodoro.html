@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>自律控肉飯 · 番茄鐘專注模式</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --accent-red: #ff4b4b;
+      --accent-red-dark: #d93636;
+      --bg-main: #f5f5f5;
+      --text-main: #111111;
+      --text-sub: #666666;
+      --card-radius: 22px;
+      --shadow-soft: 0 20px 40px rgba(15, 23, 42, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC",
+        "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(circle at top left, #ffffff 0, #f5f5f5 40%, #ececec 100%);
+      color: var(--text-main);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .page {
+      max-width: 1200px;
+      width: 100%;
+      padding: 24px 16px 32px;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 10px;
+      background: conic-gradient(from 210deg, #111111, var(--accent-red));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-mark::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .logo-text-main {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .logo-text-sub {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(17, 17, 17, 0.1);
+      background: #ffffff;
+    }
+
+    /* Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    /* Timer Card */
+    .timer-card {
+      background: #ffffff;
+      border-radius: var(--card-radius);
+      padding: 20px 20px 18px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timer-card::before {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(255, 75, 75, 0.27), transparent 60%);
+      right: -40px;
+      top: -40px;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    .timer-headline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .timer-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .timer-kicker {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent-red-dark);
+    }
+
+    .timer-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .mode-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #111111;
+      color: #ffffff;
+      font-size: 11px;
+    }
+
+    .mode-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent-red);
+    }
+
+    .mode-tabs {
+      display: inline-flex;
+      padding: 2px;
+      border-radius: 999px;
+      background: #f4f4f5;
+      border: 1px solid rgba(17, 17, 17, 0.07);
+      position: relative;
+      z-index: 1;
+    }
+
+    .mode-tab {
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mode-tab.active {
+      background: #ffffff;
+      color: #111111;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+    }
+
+    .mode-tab-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-red);
+    }
+
+    /* Timer circle */
+    .timer-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .timer-circle-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .timer-circle {
+      width: 230px;
+      height: 230px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.8), transparent 60%),
+        conic-gradient(from 270deg, var(--accent-red) var(--progress), #f4f4f5 var(--progress));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+      position: relative;
+    }
+
+    .timer-circle-inner {
+      width: 180px;
+      height: 180px;
+      border-radius: 999px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .timer-display {
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .timer-status {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .timer-status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      margin-right: 4px;
+      background: var(--accent-red);
+    }
+
+    /* Timer controls & task */
+    .timer-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 210px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn-main {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      background: #111111;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.3);
+    }
+
+    .btn-main-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--accent-red);
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      padding: 7px 14px;
+      border: 1px solid rgba(17, 17, 17, 0.16);
+      background: #ffffff;
+      font-size: 12px;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .btn-ghost.danger {
+      color: var(--accent-red-dark);
+      border-color: rgba(255, 75, 75, 0.3);
+    }
+
+    .controls-note {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    /* Task input */
+    .task-block {
+      background: #f7f7f8;
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px dashed rgba(17, 17, 17, 0.06);
+    }
+
+    .task-label {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    .task-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .task-input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(17, 17, 17, 0.18);
+      padding: 7px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .task-input:focus {
+      border-color: var(--accent-red);
+      box-shadow: 0 0 0 1px rgba(255, 75, 75, 0.35);
+    }
+
+    .task-mini-tag {
+      font-size: 11px;
+      color: var(--accent-red-dark);
+      margin-top: 4px;
+    }
+
+    /* Right side: stats & history */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .stats-card {
+      background: #111111;
+      color: #f9fafb;
+      border-radius: var(--card-radius);
+      padding: 14px 14px 12px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.28);
+    }
+
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .badge-soft {
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(248, 250, 252, 0.3);
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .stats-label {
+      color: #9ca3af;
+      margin-bottom: 2px;
+    }
+
+    .stats-value {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .stats-sub {
+      color: #9ca3af;
+      font-size: 10px;
+    }
+
+    .streak-pill {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #f97373;
+    }
+
+    .history-card {
+      background: #ffffff;
+      border-radius: var(--card-radius);
+      padding: 12px 14px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+      border: 1px solid rgba(17, 17, 17, 0.04);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 11px;
+      color: var(--text-sub);
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(17, 17, 17, 0.08);
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .history-label {
+      font-size: 11px;
+      color: var(--text-main);
+    }
+
+    .history-note {
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    .history-tag {
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(17, 17, 17, 0.12);
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    .history-empty {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    /* Footer tip */
+    .footer-tip {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: right;
+    }
+
+    /* RWD */
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 18px 10px 26px;
+      }
+
+      .timer-body {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .timer-circle {
+        width: 210px;
+        height: 210px;
+      }
+
+      .timer-circle-inner {
+        width: 170px;
+        height: 170px;
+      }
+
+      .timer-display {
+        font-size: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <div>
+          <div class="logo-text-main">ZILV · POMODORO</div>
+          <div class="logo-text-sub">自律控肉飯 · 番茄鐘專注模式</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="pill">紅 / 黑 / 白 · 專注介面</span>
+        <span>今天，你想專注哪一顆番茄？</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- 左側：計時器 -->
+      <section class="timer-card" aria-label="番茄鐘計時器">
+        <div class="timer-headline">
+          <div class="timer-title-group">
+            <div class="timer-kicker">FOCUS · DEEP MODE</div>
+            <h1 class="timer-title">番茄鐘 · 專注當下這 25 分鐘</h1>
+          </div>
+          <div class="mode-tabs" role="tablist">
+            <button class="mode-tab active" data-mode="focus">
+              <span class="mode-tab-dot"></span> 專注
+            </button>
+            <button class="mode-tab" data-mode="short">
+              休息 5
+            </button>
+            <button class="mode-tab" data-mode="long">
+              休息 15
+            </button>
+          </div>
+        </div>
+
+        <div class="timer-body">
+          <div class="timer-circle-wrap">
+            <div class="timer-circle" id="timerCircle" style="--progress: 0deg;">
+              <div class="timer-circle-inner">
+                <div class="timer-display" id="timerDisplay">25:00</div>
+                <div class="timer-status" id="timerStatus">
+                  <span class="timer-status-dot" id="statusDot"></span>
+                  等待開始
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timer-side">
+            <div>
+              <div class="controls">
+                <button class="btn-main" id="btnStart">
+                  <span class="btn-main-dot"></span>
+                  開始專注
+                </button>
+                <button class="btn-ghost" id="btnPause">暫停</button>
+                <button class="btn-ghost" id="btnSkip">直接下一顆</button>
+                <button class="btn-ghost danger" id="btnReset">重置</button>
+              </div>
+              <p class="controls-note">
+                建議：專注期間先關掉通知，把這 25 分鐘當成一顆「只做這件事」的小宇宙。
+              </p>
+            </div>
+
+            <div class="task-block">
+              <div class="task-label">這一顆番茄，你打算專心做什麼？（只填一件就好）</div>
+              <div class="task-row">
+                <input type="text" class="task-input" id="taskInput" placeholder="例如：完成報告第三段、讀完一節課、改完一頁版面…" />
+                <button class="btn-ghost" id="btnTaskSave">記住</button>
+              </div>
+              <div class="task-mini-tag" id="currentTaskLabel">目前專注目標：尚未設定</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右側：數據與歷史 -->
+      <aside class="side-panel" aria-label="今日番茄統計與歷史紀錄">
+        <section class="stats-card">
+          <div class="stats-header">
+            <div>今日番茄統計</div>
+            <div class="badge-soft" id="todayDateLabel">今天</div>
+          </div>
+          <div class="stats-grid">
+            <div>
+              <div class="stats-label">今日專注分鐘</div>
+              <div class="stats-value" id="statFocusMinutes">0 分</div>
+              <div class="stats-sub">目標 90 分</div>
+            </div>
+            <div>
+              <div class="stats-label">完成番茄數</div>
+              <div class="stats-value" id="statPomodoroCount">0 顆</div>
+              <div class="stats-sub">每 4 顆建議長休息</div>
+            </div>
+            <div>
+              <div class="stats-label">連續自律天數</div>
+              <div class="stats-value" id="statStreak">0 天</div>
+              <div class="stats-sub">超過 5 天可以解鎖獎勵</div>
+            </div>
+          </div>
+          <div class="streak-pill" id="streakNote">
+            第 0 天：從今天開始累積你的第一顆番茄。
+          </div>
+        </section>
+
+        <section class="history-card">
+          <div class="history-header">
+            <div>今日番茄紀錄</div>
+            <button class="btn-ghost" id="btnClearHistory" style="font-size: 10px; padding:4px 8px;">清空今日紀錄</button>
+          </div>
+          <ul class="history-list" id="historyList">
+            <li class="history-empty">還沒有任何番茄紀錄，先專心完成第一顆吧。</li>
+          </ul>
+        </section>
+
+        <p class="footer-tip">
+          ※ 所有數據僅儲存在你的瀏覽器（localStorage），不會上傳到伺服器。
+        </p>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    // ===== 狀態定義 =====
+    const MODES = {
+      focus: { label: "專注", minutes: 25, color: "#ff4b4b" },
+      short: { label: "休息 5", minutes: 5, color: "#16a34a" },
+      long: { label: "休息 15", minutes: 15, color: "#0ea5e9" },
+    };
+
+    let currentMode = "focus";
+    let remainingSeconds = MODES[currentMode].minutes * 60;
+    let timerId = null;
+    let isRunning = false;
+
+    // 統計 & localStorage key
+    const STORAGE_KEY = "zilv_pomodoro_stats_v1";
+
+    function todayKey() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10); // YYYY-MM-DD
+    }
+
+    function loadStats() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return {
+            streak: 0,
+            lastActiveDate: null,
+            days: {},
+          };
+        }
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error("loadStats error", e);
+        return {
+          streak: 0,
+          lastActiveDate: null,
+          days: {},
+        };
+      }
+    }
+
+    function saveStats(stats) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    }
+
+    function ensureToday(stats) {
+      const key = todayKey();
+      if (!stats.days[key]) {
+        stats.days[key] = {
+          focusMinutes: 0,
+          pomodoros: 0,
+          history: [],
+        };
+      }
+      // streak update
+      if (stats.lastActiveDate !== key) {
+        if (stats.lastActiveDate) {
+          const last = new Date(stats.lastActiveDate);
+          const now = new Date(key);
+          const diff = (now - last) / (1000 * 60 * 60 * 24);
+          if (diff === 1) {
+            stats.streak = (stats.streak || 0) + 1;
+          } else if (diff > 1) {
+            // 斷掉
+            stats.streak = 1;
+          }
+        } else {
+          stats.streak = 1;
+        }
+        stats.lastActiveDate = key;
+      }
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById("timerDisplay");
+      const status = document.getElementById("timerStatus");
+      const dot = document.getElementById("statusDot");
+      const circle = document.getElementById("timerCircle");
+      const modeInfo = MODES[currentMode];
+
+      display.textContent = formatTime(remainingSeconds);
+
+      if (!isRunning) {
+        status.textContent = "等待開始";
+      } else {
+        status.textContent =
+          (currentMode === "focus" ? "專注中…" : "休息中…") +
+          " 按暫停可以稍微喘口氣。";
+      }
+
+      // 進度角度：0 ~ 360deg
+      const total = modeInfo.minutes * 60;
+      const progress = 360 * (1 - remainingSeconds / total);
+      circle.style.setProperty("--progress", progress + "deg");
+
+      // 不同模式顏色
+      dot.style.background =
+        currentMode === "focus"
+          ? "var(--accent-red)"
+          : currentMode === "short"
+          ? "#16a34a"
+          : "#0ea5e9";
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      remainingSeconds = MODES[mode].minutes * 60;
+      isRunning = false;
+      clearInterval(timerId);
+      timerId = null;
+
+      document
+        .querySelectorAll(".mode-tab")
+        .forEach((btn) => btn.classList.toggle("active", btn.dataset.mode === mode));
+
+      const title = document.querySelector(".timer-title");
+      if (mode === "focus") {
+        title.textContent = "番茄鐘 · 專注當下這 25 分鐘";
+      } else if (mode === "short") {
+        title.textContent = "短休息 · 給大腦一點點緩衝";
+      } else {
+        title.textContent = "長休息 · 好好放鬆 15 分鐘";
+      }
+
+      updateTimerDisplay();
+      updateStartButtonLabel();
+    }
+
+    function updateStartButtonLabel() {
+      const btn = document.getElementById("btnStart");
+      if (!isRunning) {
+        btn.innerHTML =
+          '<span class="btn-main-dot"></span>' +
+          (currentMode === "focus" ? "開始專注" : "開始休息");
+      } else {
+        btn.innerHTML =
+          '<span class="btn-main-dot"></span>' +
+          (currentMode === "focus" ? "繼續專注" : "繼續休息");
+      }
+    }
+
+    function pushHistoryEntry(mode, label, seconds) {
+      const stats = loadStats();
+      ensureToday(stats);
+      const key = todayKey();
+      const minutes = Math.round(seconds / 60);
+
+      stats.days[key].history.unshift({
+        mode,
+        label,
+        seconds,
+        minutes,
+        finishedAt: new Date().toISOString(),
+      });
+      saveStats(stats);
+      renderStats();
+    }
+
+    function onTimerFinished() {
+      const activeTask = document.getElementById("taskInput").value.trim();
+      const label =
+        currentMode === "focus"
+          ? activeTask || "未命名專注"
+          : currentMode === "short"
+          ? "短休息"
+          : "長休息";
+
+      const modeInfo = MODES[currentMode];
+      const totalSeconds = modeInfo.minutes * 60;
+
+      // 更新統計
+      const stats = loadStats();
+      ensureToday(stats);
+      const key = todayKey();
+
+      if (currentMode === "focus") {
+        stats.days[key].focusMinutes += Math.round(totalSeconds / 60);
+        stats.days[key].pomodoros += 1;
+      }
+
+      saveStats(stats);
+      pushHistoryEntry(currentMode, label, totalSeconds);
+
+      // 自動切換模式
+      if (currentMode === "focus") {
+        const currentStats = loadStats();
+        const dayState = currentStats.days[key];
+        const totalPomos = dayState ? dayState.pomodoros : 0;
+
+        if (totalPomos > 0 && totalPomos % 4 === 0) {
+          setMode("long");
+        } else {
+          setMode("short");
+        }
+      } else {
+        setMode("focus");
+      }
+
+      renderStats();
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      isRunning = true;
+      updateStartButtonLabel();
+
+      timerId = setInterval(() => {
+        remainingSeconds -= 1;
+        if (remainingSeconds <= 0) {
+          clearInterval(timerId);
+          timerId = null;
+          remainingSeconds = 0;
+          isRunning = false;
+          updateTimerDisplay();
+          updateStartButtonLabel();
+          onTimerFinished();
+        } else {
+          updateTimerDisplay();
+        }
+      }, 1000);
+
+      updateTimerDisplay();
+    }
+
+    function pauseTimer() {
+      if (!isRunning) return;
+      isRunning = false;
+      clearInterval(timerId);
+      timerId = null;
+      updateTimerDisplay();
+      updateStartButtonLabel();
+    }
+
+    function resetTimer() {
+      isRunning = false;
+      clearInterval(timerId);
+      timerId = null;
+      remainingSeconds = MODES[currentMode].minutes * 60;
+      updateTimerDisplay();
+      updateStartButtonLabel();
+    }
+
+    function skipTimer() {
+      isRunning = false;
+      clearInterval(timerId);
+      timerId = null;
+      onTimerFinished();
+    }
+
+    function renderStats() {
+      const stats = loadStats();
+      ensureToday(stats);
+      const key = todayKey();
+      const today = stats.days[key];
+
+      const focusMinutes = today ? today.focusMinutes : 0;
+      const pomos = today ? today.pomodoros : 0;
+
+      document.getElementById("statFocusMinutes").textContent = focusMinutes + " 分";
+      document.getElementById("statPomodoroCount").textContent = pomos + " 顆";
+      document.getElementById("statStreak").textContent = stats.streak + " 天";
+
+      const streakNote = document.getElementById("streakNote");
+      if (stats.streak <= 1) {
+        streakNote.textContent = "第 " + stats.streak + " 天：從今天開始累積你的第一顆番茄。";
+      } else {
+        streakNote.textContent =
+          "已連續自律 " +
+          stats.streak +
+          " 天，保持這個節奏，你會比想像中更快到達想要的樣子。";
+      }
+
+      // 日期 label
+      const dateLabel = document.getElementById("todayDateLabel");
+      const d = new Date();
+      const options = { month: "short", day: "numeric", weekday: "short" };
+      dateLabel.textContent = d.toLocaleDateString("zh-TW", options);
+
+      // 歷史列表
+      const list = document.getElementById("historyList");
+      list.innerHTML = "";
+      if (!today || !today.history || today.history.length === 0) {
+        const li = document.createElement("li");
+        li.className = "history-empty";
+        li.textContent = "還沒有任何番茄紀錄，先專心完成第一顆吧。";
+        list.appendChild(li);
+      } else {
+        today.history.forEach((item) => {
+          const li = document.createElement("li");
+          li.className = "history-item";
+
+          const meta = document.createElement("div");
+          meta.className = "history-meta";
+
+          const label = document.createElement("div");
+          label.className = "history-label";
+          label.textContent = item.label;
+
+          const note = document.createElement("div");
+          note.className = "history-note";
+          const time = new Date(item.finishedAt);
+          const timeStr = time.toLocaleTimeString("zh-TW", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          note.textContent =
+            (item.mode === "focus" ? "專注 " : "休息 ") +
+            item.minutes +
+            " 分鐘 · 完成於 " +
+            timeStr;
+
+          meta.appendChild(label);
+          meta.appendChild(note);
+
+          const tag = document.createElement("span");
+          tag.className = "history-tag";
+          tag.textContent =
+            item.mode === "focus"
+              ? "專注番茄"
+              : item.mode === "short"
+              ? "短休息"
+              : "長休息";
+
+          li.appendChild(meta);
+          li.appendChild(tag);
+
+          list.appendChild(li);
+        });
+      }
+    }
+
+    function initTaskBlock() {
+      const input = document.getElementById("taskInput");
+      const label = document.getElementById("currentTaskLabel");
+      const btn = document.getElementById("btnTaskSave");
+
+      function updateLabel() {
+        const value = input.value.trim();
+        if (!value) {
+          label.textContent = "目前專注目標：尚未設定";
+        } else {
+          label.textContent = "目前專注目標：" + value;
+        }
+      }
+
+      btn.addEventListener("click", () => {
+        updateLabel();
+      });
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          updateLabel();
+        }
+      });
+    }
+
+    function initHistoryClear() {
+      const btnClear = document.getElementById("btnClearHistory");
+      btnClear.addEventListener("click", () => {
+        if (!confirm("確定要清空今天的番茄紀錄嗎？")) return;
+        const stats = loadStats();
+        const key = todayKey();
+        if (stats.days[key]) {
+          stats.days[key].history = [];
+          stats.days[key].focusMinutes = 0;
+          stats.days[key].pomodoros = 0;
+          saveStats(stats);
+          renderStats();
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // init mode tabs
+      document.querySelectorAll(".mode-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setMode(btn.dataset.mode);
+        });
+      });
+
+      document.getElementById("btnStart").addEventListener("click", () => {
+        if (!isRunning) {
+          startTimer();
+        }
+      });
+      document.getElementById("btnPause").addEventListener("click", pauseTimer);
+      document.getElementById("btnReset").addEventListener("click", resetTimer);
+      document.getElementById("btnSkip").addEventListener("click", skipTimer);
+
+      initTaskBlock();
+      initHistoryClear();
+      setMode("focus");
+      renderStats();
+    });
+  </script>
+</body>
+</html>

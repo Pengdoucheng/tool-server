@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>自律控肉飯 · 自律任務主頁</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --accent-red: #ff4b4b;
+      --accent-red-dark: #d93636;
+      --bg-main: #f5f5f5;
+      --text-main: #111111;
+      --text-sub: #666666;
+      --card-radius: 18px;
+      --shadow-soft: 0 16px 35px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC",
+        "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-main);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 16px 56px;
+    }
+
+    /* 頂部導覽列 */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #111111, var(--accent-red));
+    }
+
+    .logo-text-main {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .logo-text-sub {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(17, 17, 17, 0.1);
+      background: #ffffff;
+    }
+
+    /* Hero 區 */
+    .hero {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .hero-kicker {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent-red-dark);
+      margin-bottom: 6px;
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .hero-sub {
+      font-size: 14px;
+      color: var(--text-sub);
+      max-width: 520px;
+      margin: 0 auto 16px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      background: #111111;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    .btn-primary-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--accent-red);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.45);
+      background: #000000;
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      padding: 9px 16px;
+      border: 1px solid rgba(17, 17, 17, 0.16);
+      background: #ffffff;
+      font-size: 13px;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hero-tags {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 6px;
+    }
+
+    .hero-tag {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px dashed rgba(17,17,17,0.16);
+      background: #ffffff;
+    }
+
+    /* 任務卡片區 */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 20px 0 12px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .task-card {
+      position: relative;
+      background: #ffffff;
+      border-radius: var(--card-radius);
+      padding: 16px 16px 18px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 150px;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 40px rgba(15, 23, 42, 0.2);
+      border-color: rgba(255, 75, 75, 0.65);
+    }
+
+    .task-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: #fff5f5;
+      border: 1px solid rgba(255, 75, 75, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: var(--accent-red-dark);
+    }
+
+    .task-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .task-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .task-meta {
+      font-size: 11px;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .task-meta-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-red);
+    }
+
+    .task-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .task-link {
+      border: none;
+      background: none;
+      padding: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-red);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+    }
+
+    .task-link::after {
+      content: "↗";
+      font-size: 11px;
+    }
+
+    .task-tag {
+      font-size: 11px;
+      color: #999999;
+    }
+
+    /* 底部註記 */
+    .footer-note {
+      margin-top: 22px;
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: right;
+    }
+
+    .footer-note span {
+      font-weight: 600;
+      color: #111111;
+    }
+
+    /* RWD */
+    @media (max-width: 960px) {
+      .task-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 20px 14px 40px;
+      }
+      .hero-title {
+        font-size: 23px;
+      }
+      .task-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+        /* 浮動視窗樣式 */
+        .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      z-index: 50;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .overlay-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(4px);
+    }
+
+    .overlay-dialog {
+      position: relative;
+      background: #ffffff;
+      border-radius: 22px;
+      box-shadow: 0 26px 55px rgba(15, 23, 42, 0.45);
+      max-width: 960px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 0 12px;
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+      font-size: 13px;
+    }
+
+    .overlay-close {
+      border: none;
+      background: none;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 999px;
+    }
+
+    .overlay-close:hover {
+      background: #f4f4f5;
+    }
+
+    .overlay-frame {
+      border: none;
+      width: 100%;
+      height: 70vh;
+      background: #f9fafb;
+    }
+
+    @media (max-width: 640px) {
+      .overlay-dialog {
+        border-radius: 16px;
+        max-height: 88vh;
+      }
+      .overlay-frame {
+        height: 72vh;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- 頂部 -->
+    <header class="topbar">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <div>
+          <div class="logo-text-main">ZILV · TOOLS</div>
+          <div class="logo-text-sub">自律控肉飯 · 時間任務主頁</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="pill">beta · 時間自律工具</span>
+        <a href="supabase-test.html" class="btn-ghost">登入 / 管理帳號</a>
+      </div>
+      
+    </header>
+
+    <!-- Hero 區 -->
+    <section class="hero">
+      <div class="hero-kicker">自律任務首頁</div>
+      <h1 class="hero-title">時間主控台 · 選一種節奏開始今天</h1>
+      <p class="hero-sub">
+        把今天的時間交給不同工具來處理：AI 幫你排程、番茄鐘陪你專注、或是用紀錄回顧自己的節奏。
+        先選一塊任務卡，慢慢把今天控回來。
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary">
+          <span class="btn-primary-dot"></span>
+          讓 AI 幫我排今天
+        </button>
+        <button class="btn-ghost">
+          查看本週紀錄 →
+        </button>
+      </div>
+      <div class="hero-tags">
+        <span class="hero-tag">控時間 · 控節奏 · 控肉飯</span>
+        <span class="hero-tag">適合大學生 · 打工人 · 自學仔</span>
+      </div>
+    </section>
+
+    <!-- 任務卡片區 -->
+    <section aria-labelledby="tasks-title">
+      <div class="section-header">
+        <div>
+          <h2 id="tasks-title" class="section-title">選擇你的自律任務</h2>
+          <p class="section-sub">依照你的需求，選一種工具開始。每張卡片都可以連到不同頁面或功能。</p>
+        </div>
+      </div>
+
+      <div class="task-grid">
+        <!-- 卡片 1：AI 排程工具 -->
+        <article class="task-card">
+          <div>
+            <div class="task-icon">🤖</div>
+            <h3 class="task-title">AI 排程工具</h3>
+            <p class="task-desc">
+              輸入今天的代辦與固定行程，讓 AI 幫你排出一份真的做得完的時間表。
+            </p>
+            <div class="task-meta">
+              <span class="task-meta-dot"></span>
+              <span>適合：事情太多、不知道從哪開始</span>
+            </div>
+          </div>
+          <div class="task-footer">
+            <span class="task-tag">模式：AI 節奏</span>
+        
+            <!-- 改這裡！！！ -->
+            <a class="task-link"
+            href="#"
+            data-url="https://tool-server-d695.onrender.com/tool.html"
+            data-title="AI 排程工具">進入工具</a>
+         
+        </article>
+        
+
+        <!-- 卡片 2：番茄鐘專注模式 -->
+        <article class="task-card">
+          <div>
+            <div class="task-icon">⏱</div>
+            <h3 class="task-title">番茄鐘 · 深度專注</h3>
+            <p class="task-desc">
+              25 分鐘專注 + 5 分鐘休息，像一顆一顆番茄，把大任務切碎慢慢完成。
+            </p>
+            <div class="task-meta">
+              <span class="task-meta-dot"></span>
+              <span>適合：寫報告、讀書、設計、Coding</span>
+            </div>
+          </div>
+          <div class="task-footer">
+            <span class="task-tag">模式：專注練習</span>
+            <a class="task-link"
+            href="#"
+            data-url="pomodoro.html"
+            data-title="番茄鐘 · 深度專注">開始專注</a>
+         
+          </div>
+        </article>
+
+        <!-- 卡片 3：時間紀錄 Dashboard -->
+        <article class="task-card">
+          <div>
+            <div class="task-icon">📊</div>
+            <h3 class="task-title">時間紀錄 Dashboard</h3>
+            <p class="task-desc">
+              回顧這週的專注時數與完成率，找出你常卡關或拖延的地方，當成下一步調整的參考。
+            </p>
+            <div class="task-meta">
+              <span class="task-meta-dot"></span>
+              <span>適合：睡前檢討今天</span>
+            </div>
+          </div>
+          <div class="task-footer">
+            <span class="task-tag">模式：回顧分析</span>
+            <a class="task-link" href="#" data-target="dashboard">打開儀表板</a>
+          </div>
+        </article>
+
+        <!-- 卡片 4：任務管理 / 模板 -->
+        <article class="task-card">
+          <div>
+            <div class="task-icon">🗂</div>
+            <h3 class="task-title">任務管理 / 模板</h3>
+            <p class="task-desc">
+              先把所有代辦整理好、估計時間，再丟給 AI 排程。也可以一鍵套用期末衝刺或考試週模板。
+            </p>
+            <div class="task-meta">
+              <span class="task-meta-dot"></span>
+              <span>適合：今天還沒開始、想先整理</span>
+            </div>
+          </div>
+          <div class="task-footer">
+            <span class="task-tag">模式：任務總管</span>
+            <a class="task-link" href="#" data-target="tasks">整理任務</a>
+          </div>
+        </article>
+
+        <!-- 卡片 5：自律挑戰 / 打卡 -->
+        <article class="task-card">
+          <div>
+            <div class="task-icon">🔥</div>
+            <h3 class="task-title">自律挑戰 · 打卡</h3>
+            <p class="task-desc">
+              設定連續自律天數目標，透過每日簡單打卡與紀錄，累積自己的完成感與成就感。
+            </p>
+            <div class="task-meta">
+              <span class="task-meta-dot"></span>
+              <span>適合：需要一點點外在督促的人</span>
+            </div>
+          </div>
+          <div class="task-footer">
+            <span class="task-tag">模式：挑戰系統</span>
+            <a class="task-link" href="#" data-target="challenge">加入挑戰</a>
+          </div>
+        </article>
+
+        <!-- 卡片 6：社群牆 / 靈感瀏覽 -->
+        <article class="task-card">
+          <div>
+            <div class="task-icon">💬</div>
+            <h3 class="task-title">社群牆 · 靈感瀏覽</h3>
+            <p class="task-desc">
+              看看別人的自律故事、時間排程範例，或分享自己的心得，把自律變成一種陪伴感。
+            </p>
+            <div class="task-meta">
+              <span class="task-meta-dot"></span>
+              <span>適合：需要一點陪伴感的晚上</span>
+            </div>
+          </div>
+          <div class="task-footer">
+            <span class="task-tag">模式：社群互動</span>
+            <a class="task-link" href="#" data-target="community">前往社群牆</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      ※ 按鈕目前預留為 <span>data-target</span> 屬性，你可以在 JavaScript 裡依照 data-target 轉跳到對應頁面或開啟新視窗。
+    </p>
+  </div>
+    <!-- 浮動視窗：疊在同一頁上 -->
+    <div id="overlay" class="overlay">
+      <div class="overlay-backdrop"></div>
+      <div class="overlay-dialog">
+        <div class="overlay-header">
+          <span id="overlay-title">載入中…</span>
+          <button id="overlay-close" class="overlay-close">✕</button>
+        </div>
+        <iframe id="overlay-frame" class="overlay-frame" src="about:blank" loading="lazy"></iframe>
+      </div>
+    </div>
+  
+
+    <script>
+      const overlay = document.getElementById('overlay');
+      const frame = document.getElementById('overlay-frame');
+      const title = document.getElementById('overlay-title');
+      const btnClose = document.getElementById('overlay-close');
+  
+      function openOverlay(label, url) {
+        if (!url) return; // 沒給 url 就不做事
+        title.textContent = label || '載入中…';
+        frame.src = url;
+        overlay.classList.add('show');
+      }
+  
+      function closeOverlay() {
+        overlay.classList.remove('show');
+        // 視情況決定要不要清空 src（清空會讓內頁重載）
+        // frame.src = 'about:blank';
+      }
+  
+      // 關閉按鈕
+      btnClose.addEventListener('click', closeOverlay);
+  
+      // 點背景關閉
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay || e.target.classList.contains('overlay-backdrop')) {
+          closeOverlay();
+        }
+      });
+  
+      // 綁定卡片按鈕
+      document.querySelectorAll('.task-link').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          const url = link.getAttribute('data-url');
+          const label =
+            link.getAttribute('data-title') ||
+            (link.closest('.task-card')?.querySelector('.task-title')?.textContent || '');
+          openOverlay(label, url);
+        });
+      });
+    </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const sb = supabase.createClient(
+      "https://rbtevdmunkjjevoeooli.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw"
+    );
+  
+    // 你的 openOverlay 邏輯前面，加這個判斷
+    document.querySelectorAll('.task-link').forEach(link => {
+      link.addEventListener('click', async function(e) {
+        e.preventDefault();
+  
+        const requireLogin = link.getAttribute('data-require-login') === 'true';
+        const { data: { user } } = await sb.auth.getUser();
+  
+        if (requireLogin && !user) {
+          if (confirm("要先登入才能使用這個工具，現在要去登入嗎？")) {
+            window.location.href = "supabase-test.html";
+          }
+          return;
+        }
+  
+        const url = link.getAttribute('data-url');
+        const label = link.getAttribute('data-title') 
+                   || link.closest('.task-card').querySelector('.task-title').textContent;
+        openOverlay(label, url);
+      });
+    });
+  </script>
+  
+</body>
+</html>
