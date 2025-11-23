@@ -6,143 +6,401 @@
   <title>AI 時間排程與成本分析</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      background-color: #f2f4f7;
-      font-family: 'Noto Sans TC', sans-serif;
-      color: #333;
+
+  <!-- 🔴⚫ 紅黑白主題樣式：只改 UI，不動功能 -->
+  <style> 
+    :root {
+      --cr-red: #e10600;
+      --cr-red-dark: #b00000;
+      --cr-black: #111111;
+      --cr-gray-bg: #f4f5f7;
+      --cr-card-bg: #ffffff;
+      --cr-border: #dedfe3;
     }
+
+    body {
+      background-color: var(--cr-gray-bg);
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: var(--cr-black);
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 整體容器：彈出小視窗 → 比較窄、垂直一頁式 */
     .container {
       max-width: 960px;
-      margin: auto;
+      margin: 0 auto 32px;
+      padding-inline: 12px;
     }
+
+    /* 頂部導覽：黑底 + 紅線 + 小步驟提示條 */
+    .app-navbar {
+      border-bottom: 3px solid var(--cr-red);
+      background-color: var(--cr-black) !important;
+      padding-block: 8px;
+    }
+
+    .app-navbar .navbar-brand {
+      color: #ffffff !important;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      font-size: 1rem;
+      text-transform: uppercase;
+    }
+
+    .app-steps {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.80);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .app-steps span {
+      white-space: nowrap;
+    }
+
+    .app-steps-dot {
+      margin-inline: 4px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* 卡片 UI：紅色左條、一頁式段落感 */
     .card-ui {
-      background-color: #ffffff;
+      background-color: var(--cr-card-bg);
       border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-      padding: 24px;
-      margin-bottom: 24px;
-      transition: all 0.2s ease-in-out;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      padding: 20px 20px 18px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--cr-border);
     }
+
+    .card-ui::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border-left: 4px solid var(--cr-red);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .card-ui h5 {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-ui h5::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      margin-left: 6px;
+      background: linear-gradient(to right, #000000, transparent);
+      opacity: 0.12;
+    }
+
     .card-ui:hover {
-      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.10);
+      transform: translateY(-1px);
+      transition: box-shadow 0.18s ease-out, transform 0.18s ease-out;
     }
+
+    /* 主要版面：在小視窗中改成「垂直一頁式」 */
+    @media (min-width: 768px) {
+      .layout-main {
+        display: grid;
+        grid-template-columns: minmax(0,1.05fr) minmax(0,1fr);
+        gap: 16px;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .layout-main {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+
+    /* 排程區：時間格子 */
     .time-grid {
       display: grid;
-      grid-template-columns: 80px 1fr;
+      grid-template-columns: 72px 1fr;
       gap: 4px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
+
     .time-row {
-      display: flex;
-      gap: 4px;
+      display: contents; /* 讓 label + cell 對齊 grid */
     }
+
     .time-label {
-      width: 80px;
       text-align: right;
       padding-right: 8px;
-      color: #555;
+      color: #777;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
     }
+
     .time-cell {
-      flex: 1;
-      background-color: #fff;
-      border: 1px solid #ccc;
-      min-height: 40px;
+      background-color: #fafbfc;
+      border: 1px solid #dcdfe5;
+      min-height: 36px;
       cursor: pointer;
       position: relative;
-      border-radius: 6px;
-      transition: all 0.2s ease-in-out;
+      border-radius: 8px;
+      transition: all 0.16s ease-out;
     }
+
+    .time-cell:hover {
+      border-color: var(--cr-red);
+      background-color: #fff7f7;
+    }
+
     .time-cell.active {
-      background-color: #e6f0ff;
-      border-left: 4px solid #4a90e2;
+      background-color: #fff3f3;
+      border-color: var(--cr-red-dark);
+      box-shadow: inset 0 0 0 1px rgba(225,6,0,0.15);
     }
+
     .cell-label {
       position: absolute;
-      top: 4px;
-      left: 6px;
-      font-size: 0.85rem;
+      top: 6px;
+      left: 8px;
+      font-size: 0.8rem;
       font-weight: 500;
-      color: #333;
+      color: var(--cr-black);
+      max-width: calc(100% - 16px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 三個主要按鈕：排成「自律流程」 */
+    .cr-actions {
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cr-actions .btn {
+      font-size: 0.88rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding-block: 8px;
+    }
+
+    .btn-success {
+      background-color: #198754 !important;
+      border-color: #198754 !important;
+    }
+
+    .btn-primary {
+      background-color: var(--cr-red) !important;
+      border-color: var(--cr-red) !important;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--cr-red-dark) !important;
+      border-color: var(--cr-red-dark) !important;
+    }
+
+    .btn-outline-secondary {
+      border-radius: 999px;
+    }
+
+    /* 右側卡片：文字區域排版 */
+    #aiResult,
+    #reviewArea,
+    #costResult {
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    #aiResult {
+      color: #222;
+    }
+
+    #costResult {
+      color: var(--cr-red-dark);
+    }
+
+    /* 圖表卡片微調 */
+    #statChart {
+      max-height: 200px;
+    }
+
+    /* 歷史紀錄 / 教學小卡：不改結構，微調顏色 */
+    .history-panel {
+      background-color: #111;
+      color: #fff;
+    }
+
+    .history-header h3 {
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .history-mode button[data-mode="week"],
+    .history-mode button[data-mode="month"] {
+      border-radius: 999px;
+    }
+
+    #crOnboarding .cr-onboard-card {
+      border-radius: 16px;
+      border: 1px solid var(--cr-border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+
+    #crOnboarding h2 {
+      font-size: 1.1rem;
+    }
+
+    /* 彈出式內頁：整體滾動體驗 */
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-root {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+
+    @media (max-width: 480px) {
+      .card-ui {
+        padding: 16px 14px 14px;
+        border-radius: 14px;
+      }
+      .time-grid {
+        max-height: 360px;
+      }
     }
   </style>
-  <link rel="stylesheet" href="cr-achievements.css"></head>
+
+  <link rel="stylesheet" href="cr-achievements.css">
+</head>
 <body>
-  <!-- 左側紀錄面板按鈕 -->
+  <div class="app-root">
+    <!-- 左側紀錄面板按鈕 -->
 
-
-<!-- 左側紀錄面板 -->
-<div id="history-panel" class="history-panel">
-  <div class="history-header">
-    <h3>任務完成紀錄</h3>
-    <button id="close-history">✖</button>
-  </div>
-
-  <div class="history-mode">
-    <button data-mode="week">本週</button>
-    <button data-mode="month">本月</button>
-  </div>
-
-  <div id="history-summary" class="history-summary">
-    <p>完成率：<span id="history-rate">0%</span></p>
-  </div>
-
-  <div id="history-days" class="history-days">
-    <!-- 動態插入每天的紀錄 -->
-  </div>
-</div>
-
-  <!-- ===== 使用者教學小卡 ===== -->
-<div id="crOnboarding" class="cr-onboard">
-  <div class="cr-onboard-card">
-    <h2>🎯 歡迎來到自律控肉飯！</h2>
-    <p>這裡有三個小技巧，幫助你更自律：</p>
-    <ol>
-      <li>✅ <b>完成任務</b> → 自動更新完成率</li>
-      <li>🏆 <b>連續完成</b> → 解鎖成就徽章</li>
-      <li>📅 <b>設定週目標</b> → 幫助養成好習慣</li>
-    </ol>
-    <button id="crOnboardBtn">開始挑戰 🚀</button>
-  </div>
-</div>
-
-  <nav class="navbar navbar-light bg-white shadow-sm mb-4">
-    <div class="container-fluid">
-      <span class="navbar-brand mb-0 h4">🧠 自律控肉飯 · 時間管家</span>
-    </div>
-  </nav>
-
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <div class="card-ui">
-          <h5>📅 今日任務排程</h5>
-          <div id="timeGrid" class="time-grid"></div>
-        </div>
-       
-        <button class="btn btn-success w-100 mb-2" onclick="analyzeByAI()">🔍 分析目前排程</button>
-        <button class="btn btn-outline-secondary w-100 mb-2" onclick="reviewDay()">📌 填寫完成情況</button>
-        <button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
+    <!-- 左側紀錄面板 -->
+    <div id="history-panel" class="history-panel">
+      <div class="history-header">
+        <h3>任務完成紀錄</h3>
+        <button id="close-history">✖</button>
       </div>
-      <div class="col-md-6">
-        <div class="card-ui">
-          <h5>🤖 AI 時間建議</h5>
-          <div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
-        </div>
-        <div class="card-ui">
-          <h5>📌 今日完成情況</h5>
-          <div id="reviewArea" class="mb-2"></div>
-        </div>
-        <div class="card-ui">
-          <h5>💸 成本分析回饋</h5>
-          <div id="costResult" class="text-danger" style="white-space: pre-wrap; min-height: 100px;"></div>
-        </div>
-        <div class="card-ui">
-          <h5>📈 任務完成率統計</h5>
-          <canvas id="statChart" width="400" height="200"></canvas>
-        </div>
+
+      <div class="history-mode">
+        <button data-mode="week">本週</button>
+        <button data-mode="month">本月</button>
+      </div>
+
+      <div id="history-summary" class="history-summary">
+        <p>完成率：<span id="history-rate">0%</span></p>
+      </div>
+
+      <div id="history-days" class="history-days">
+        <!-- 動態插入每天的紀錄 -->
       </div>
     </div>
-  </div>
+
+    <!-- ===== 使用者教學小卡 ===== -->
+    <div id="crOnboarding" class="cr-onboard">
+      <div class="cr-onboard-card">
+        <h2>🎯 歡迎來到自律控肉飯！</h2>
+        <p>這裡有三個小技巧，幫助你更自律：</p>
+        <ol>
+          <li>✅ <b>完成任務</b> → 自動更新完成率</li>
+          <li>🏆 <b>連續完成</b> → 解鎖成就徽章</li>
+          <li>📅 <b>設定週目標</b> → 幫助養成好習慣</li>
+        </ol>
+        <button id="crOnboardBtn">開始挑戰 🚀</button>
+      </div>
+    </div>
+
+    <!-- 🔝 導覽列：黑底紅線＋流程提示 -->
+    <nav class="navbar navbar-light shadow-sm mb-3 app-navbar">
+      <div class="container-fluid">
+        <div class="d-flex flex-column">
+          <span class="navbar-brand mb-1 h6">🧠 自律控肉飯 · 時間管家</span>
+          <div class="app-steps">
+            <span>① 排好今天</span><span class="app-steps-dot">•</span>
+            <span>② 勾選完成</span><span class="app-steps-dot">•</span>
+            <span>③ 看 AI 分析 & 成本</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="app-main-scroll">
+      <div class="container">
+        <div class="layout-main">
+          <!-- 左側：今日排程 + 行為按鈕 -->
+          <div>
+            <div class="card-ui">
+              <h5>📅 今日任務排程</h5>
+              <div id="timeGrid" class="time-grid"></div>
+            </div>
+
+            <div class="cr-actions">
+              <button class="btn btn-success w-100" onclick="analyzeByAI()">🔍 分析目前排程</button>
+              <button class="btn btn-outline-secondary w-100" onclick="reviewDay()">📌 填寫完成情況</button>
+              <button class="btn btn-primary w-100" onclick="submitReviewAndAnalyzeCost()">📊 分析未完成成本</button>
+            </div>
+          </div>
+
+          <!-- 右側：AI 回饋 / 完成情況 / 成本 / 圖表 -->
+          <div>
+            <div class="card-ui">
+              <h5>🤖 AI 時間建議</h5>
+              <div id="aiResult" style="white-space: pre-wrap; min-height: 120px;"></div>
+            </div>
+            <div class="card-ui">
+              <h5>📌 今日完成情況</h5>
+              <div id="reviewArea" class="mb-2"></div>
+            </div>
+            <div class="card-ui">
+              <h5>💸 成本分析回饋</h5>
+              <div id="costResult" style="white-space: pre-wrap; min-height: 100px;"></div>
+            </div>
+            <div class="card-ui">
+              <h5>📈 任務完成率統計</h5>
+              <canvas id="statChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /.app-main-scroll -->
+  </div><!-- /.app-root -->
+
+  <!-- ===== 下面開始：原本的 JS / Supabase / 工具區，完全不動功能，只改部分樣式 ===== -->
 
   <script>
     const timeGrid = document.getElementById("timeGrid");
@@ -174,11 +432,9 @@
             span.textContent = activity;
             cell.textContent = "";
             cell.appendChild(span);
-            
           }
         }
       };
-      
 
       row.appendChild(label);
       row.appendChild(cell);
@@ -284,476 +540,455 @@
     }
   </script>
 
-   
-          </div>
-        </div>
+  <!-- 成就 & Bootstrap 擴充 -->
+  <script src="cr-achievements.js"></script>
+  <script src="cr-bootstrap.js"></script>
+
+  <!-- ⌛ 時間工具：浮動按鈕 -->
+  <div id="tools-toggle" class="tools-btn">⌛ 時間工具</div>
+
+  <!-- ⌛ 時間工具：左側面板（結構不動，只改顏色在後面 style） -->
+  <aside id="tools-panel" class="tools-panel">
+    <div class="tools-head">
+      <div class="tools-title">時間工具</div>
+      <button id="tools-close" class="tools-close">✕</button>
+    </div>
+
+    <div class="tools-tabs">
+      <button class="tools-tab is-active" data-tab="pomodoro">蕃茄時鐘</button>
+      <button class="tools-tab" data-tab="countdown">倒數</button>
+      <button class="tools-tab" data-tab="stopwatch">碼錶</button>
+    </div>
+
+    <!-- 蕃茄時鐘 -->
+    <section class="tools-pane" id="pane-pomodoro" style="display:block;">
+      <div class="tools-row">
+        <label>專注(分)</label><input id="pomo-focus" type="number" min="1" value="25">
+        <label>休息(分)</label><input id="pomo-break" type="number" min="1" value="5">
+        <label>長休(分)</label><input id="pomo-long" type="number" min="1" value="15">
+        <label>循環</label><input id="pomo-rounds" type="number" min="1" value="4">
+      </div>
+      <div class="tools-timer" id="pomo-display">25:00</div>
+      <div class="tools-actions">
+        <button id="pomo-start" class="tools-btn-primary">開始</button>
+        <button id="pomo-pause">暫停</button>
+        <button id="pomo-reset">重設</button>
+        <button id="pomo-skip">跳過階段</button>
+        <label class="tools-inline"><input id="pomo-autonext" type="checkbox" checked> 自動進下一階段</label>
+      </div>
+      <div class="tools-sub">模式：<span id="pomo-mode">專注</span>｜完成循環：<span id="pomo-done">0</span></div>
+      <div class="tools-sub">今日完成番茄數：<span id="pomo-today">0</span></div>
+    </section>
+
+    <!-- 倒數 -->
+    <section class="tools-pane" id="pane-countdown">
+      <div class="tools-row">
+        <label>倒數分鐘</label><input id="cd-min" type="number" min="0" value="10">
+        <label>秒</label><input id="cd-sec" type="number" min="0" max="59" value="0">
+      </div>
+      <div class="tools-timer" id="cd-display">10:00</div>
+      <div class="tools-actions">
+        <button id="cd-start" class="tools-btn-primary">開始</button>
+        <button id="cd-pause">暫停</button>
+        <button id="cd-reset">重設</button>
       </div>
     </section>
-    <script src="cr-achievements.js"></script><script src="cr-bootstrap.js"></script>
-  <!-- ⌛ 時間工具：浮動按鈕 -->
-<div id="tools-toggle" class="tools-btn">⌛ 時間工具</div>
 
-<!-- ⌛ 時間工具：左側面板 -->
-<aside id="tools-panel" class="tools-panel">
-  <div class="tools-head">
-    <div class="tools-title">時間工具</div>
-    <button id="tools-close" class="tools-close">✕</button>
-  </div>
+    <!-- 碼錶 -->
+    <section class="tools-pane" id="pane-stopwatch">
+      <div class="tools-timer" id="sw-display">00:00.0</div>
+      <div class="tools-actions">
+        <button id="sw-start" class="tools-btn-primary">開始</button>
+        <button id="sw-lap">圈數</button>
+        <button id="sw-pause">暫停</button>
+        <button id="sw-reset">重設</button>
+      </div>
+      <ol id="sw-laps" class="tools-laps"></ol>
+    </section>
+  </aside>
 
-  <div class="tools-tabs">
-    <button class="tools-tab is-active" data-tab="pomodoro">蕃茄時鐘</button>
-    <button class="tools-tab" data-tab="countdown">倒數</button>
-    <button class="tools-tab" data-tab="stopwatch">碼錶</button>
-  </div>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  <!-- 蕃茄時鐘 -->
-  <section class="tools-pane" id="pane-pomodoro" style="display:block;">
-    <div class="tools-row">
-      <label>專注(分)</label><input id="pomo-focus" type="number" min="1" value="25">
-      <label>休息(分)</label><input id="pomo-break" type="number" min="1" value="5">
-      <label>長休(分)</label><input id="pomo-long" type="number" min="1" value="15">
-      <label>循環</label><input id="pomo-rounds" type="number" min="1" value="4">
-    </div>
-    <div class="tools-timer" id="pomo-display">25:00</div>
-    <div class="tools-actions">
-      <button id="pomo-start" class="tools-btn-primary">開始</button>
-      <button id="pomo-pause">暫停</button>
-      <button id="pomo-reset">重設</button>
-      <button id="pomo-skip">跳過階段</button>
-      <label class="tools-inline"><input id="pomo-autonext" type="checkbox" checked> 自動進下一階段</label>
-    </div>
-    <div class="tools-sub">模式：<span id="pomo-mode">專注</span>｜完成循環：<span id="pomo-done">0</span></div>
-    <div class="tools-sub">今日完成番茄數：<span id="pomo-today">0</span></div>
-  </section>
+    const LS_KEY = "crProgressV1";
+    const LOGIN_PAGE = "https://pengdoucheng.github.io/supabase-test.html";
 
-  <!-- 倒數 -->
-  <section class="tools-pane" id="pane-countdown">
-    <div class="tools-row">
-      <label>倒數分鐘</label><input id="cd-min" type="number" min="0" value="10">
-      <label>秒</label><input id="cd-sec" type="number" min="0" max="59" value="0">
-    </div>
-    <div class="tools-timer" id="cd-display">10:00</div>
-    <div class="tools-actions">
-      <button id="cd-start" class="tools-btn-primary">開始</button>
-      <button id="cd-pause">暫停</button>
-      <button id="cd-reset">重設</button>
-    </div>
-  </section>
-
-  <!-- 碼錶 -->
-  <section class="tools-pane" id="pane-stopwatch">
-    <div class="tools-timer" id="sw-display">00:00.0</div>
-    <div class="tools-actions">
-      <button id="sw-start" class="tools-btn-primary">開始</button>
-      <button id="sw-lap">圈數</button>
-      <button id="sw-pause">暫停</button>
-      <button id="sw-reset">重設</button>
-    </div>
-    <ol id="sw-laps" class="tools-laps"></ol>
-  </section>
-</aside>
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // ✅ 和登入頁同一組專案參數（你可以直接沿用這兩個）
-  const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // 你目前本機進度用的 key（cr-achievements.js 已在用）
-  const LS_KEY = "crProgressV1";
-
-  // 沒登入就導回登入頁（放你的 GitHub Pages 登入檔網址）
-  const LOGIN_PAGE = "https://pengdoucheng.github.io/supabase-test.html";
-
-  // --- 啟動：檢查登入，灌雲端資料，綁定同步 ---
-  document.addEventListener("DOMContentLoaded", async () => {
-    const { data } = await sb.auth.getUser();
-    const user = data.user;
-    if (!user) {
-      alert("請先登入");
-      window.location.href = LOGIN_PAGE;
-      return;
-    }
-
-    // 1) 先把雲端的進度灌回本機（若有）
-    const hadCloud = await hydrateFromCloud(user);
-
-    // 2) 如果雲端沒有，而本機有舊資料 → 主動上傳一次，建立第一份雲端備份
-    if (!hadCloud) {
-      const local = safeParse(localStorage.getItem(LS_KEY));
-      if (local) {
-        await upsertProgress(user, local);
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data } = await sb.auth.getUser();
+      const user = data.user;
+      if (!user) {
+        alert("請先登入");
+        window.location.href = LOGIN_PAGE;
+        return;
       }
-    }
 
-    // 3) 監聽你原本程式每次更新進度時拋出的事件 → 上傳到雲端
-    attachCloudSync(user);
-  });
+      const hadCloud = await hydrateFromCloud(user);
 
-  // 下載雲端 → 灌本機（成功回傳 true，否則 false）
-  async function hydrateFromCloud(user){
-    try {
-      const { data, error } = await sb.from("cr_progress")
-        .select("progress, updated_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data || !data.progress) return false;
-
-      // 如果你未存本機或雲端較新 → 覆蓋本機
-      const local = safeParse(localStorage.getItem(LS_KEY));
-      const cloudNewer = newer(data.updated_at, local?.updated_at);
-      if (!local || cloudNewer) {
-        localStorage.setItem(LS_KEY, JSON.stringify(data.progress));
-        // 通知現有 UI 重算/重畫（你原本程式有在聽這個事件）
-        try {
-          window.dispatchEvent(new CustomEvent("cr:progress-updated", { detail: data.progress }));
-        } catch {}
+      if (!hadCloud) {
+        const local = safeParse(localStorage.getItem(LS_KEY));
+        if (local) {
+          await upsertProgress(user, local);
+        }
       }
-      return true;
-    } catch (e) {
-      console.warn("讀取雲端進度失敗：", e);
-      return false;
-    }
-  }
 
-  function newer(cloudTs, localTs){
-    if (!cloudTs) return false;
-    if (!localTs) return true;
-    return new Date(cloudTs).getTime() > new Date(localTs).getTime();
-  }
-
-  function safeParse(s){ try { return JSON.parse(s || ""); } catch { return null; } }
-
-  async function upsertProgress(user, progress){
-    try {
-      // 你本機 JSON 若沒有 updated_at，我們在這裡補一個時間戳
-      if (typeof progress === "object" && progress) {
-        if (!progress.updated_at) progress.updated_at = new Date().toISOString();
-      }
-      const { error } = await sb.from("cr_progress").upsert({
-        user_id: user.id,
-        progress,
-        updated_at: new Date().toISOString()
-      });
-      if (error) throw error;
-      // console.log("✅ 已同步雲端");
-    } catch (e) {
-      console.warn("同步雲端失敗：", e);
-    }
-  }
-
-  function attachCloudSync(user){
-    // 你的 cr-achievements.js 每次儲存後會丟出這個事件
-    window.addEventListener("cr:progress-updated", async (ev) => {
-      const progress = ev?.detail || safeParse(localStorage.getItem(LS_KEY)) || {};
-      await upsertProgress(user, progress);
+      attachCloudSync(user);
     });
-  }
-</script>
 
-<script>
-  // 若前面已有 sb、getUser()，可刪這兩個重複的實作
-  // const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
+    async function hydrateFromCloud(user){
+      try {
+        const { data, error } = await sb.from("cr_progress")
+          .select("progress, updated_at")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data || !data.progress) return false;
 
-  // 時間工具：字串<->分鐘
-  function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60 + (m||0); }
-  function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`; }
-  function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
-
-  // CRUD 封裝
-  async function addSchedule({ date, startHHMM, endHHMM, title }){
-    const u = await getUser(); if(!u) throw new Error("尚未登入");
-    const start_min = toMin(startHHMM), end_min = toMin(endHHMM);
-    if (end_min <= start_min) throw new Error("結束時間需大於開始時間");
-    const { data, error } = await sb.from("schedules").insert([{
-      user_id: u.id, date, start_min, end_min, title
-    }]).select().single();
-    if (error) throw error;
-    return data;
-  }
-
-  async function loadSchedulesByDate(date){
-    const u = await getUser(); if(!u) throw new Error("尚未登入");
-    const { data, error } = await sb.from("schedules")
-      .select("*")
-      .eq("user_id", u.id)
-      .eq("date", date)
-      .order("start_min", { ascending: true });
-    if (error) throw error;
-    return data;
-  }
-
-  async function updateSchedule(id, patch){ // patch: { startHHMM?, endHHMM?, title? }
-    const upd = {};
-    if (patch.startHHMM) upd.start_min = toMin(patch.startHHMM);
-    if (patch.endHHMM)   upd.end_min   = toMin(patch.endHHMM);
-    if (patch.title != null) upd.title = patch.title;
-    upd.updated_at = new Date().toISOString();
-    const { data, error } = await sb.from("schedules").update(upd).eq("id", id).select().single();
-    if (error) throw error;
-    return data;
-  }
-
-  async function deleteSchedule(id){
-    const { error } = await sb.from("schedules").delete().eq("id", id);
-    if (error) throw error;
-  }
-
-  // 臨時面板的 UI 綁定（驗證用）
-  document.addEventListener("DOMContentLoaded", async () => {
-    const user = await getUser();
-    if (!user) return; // 你前面的登入檢查會導回登入頁
-
-    const $date = document.querySelector("#sch-date");
-    const $start = document.querySelector("#sch-start");
-    const $end = document.querySelector("#sch-end");
-    const $title = document.querySelector("#sch-title");
-    const $add = document.querySelector("#sch-add");
-    const $reload = document.querySelector("#sch-reload");
-    const $list = document.querySelector("#sch-list");
-
-    if ($date) $date.value = todayStr();
-
-    async function render(){
-      if (!$date) return;
-      const rows = await loadSchedulesByDate($date.value);
-      $list.innerHTML = rows.map(r => `
-        <li style="display:flex;gap:8px;align-items:center;border:1px solid #eee;border-radius:8px;padding:8px 12px">
-          <b>${r.title}</b>
-          <span style="color:#666">${toHHMM(r.start_min)}–${toHHMM(r.end_min)}</span>
-          <span style="margin-left:auto;display:flex;gap:6px">
-            <button data-id="${r.id}" class="sch-edit">編輯</button>
-            <button data-id="${r.id}" class="sch-del">刪除</button>
-          </span>
-        </li>
-      `).join(rows.length ? "" : "<li style='color:#666'>這天還沒有排程</li>");
+        const local = safeParse(localStorage.getItem(LS_KEY));
+        const cloudNewer = newer(data.updated_at, local?.updated_at);
+        if (!local || cloudNewer) {
+          localStorage.setItem(LS_KEY, JSON.stringify(data.progress));
+          try {
+            window.dispatchEvent(new CustomEvent("cr:progress-updated", { detail: data.progress }));
+          } catch {}
+        }
+        return true;
+      } catch (e) {
+        console.warn("讀取雲端進度失敗：", e);
+        return false;
+      }
     }
 
-    if ($add) $add.addEventListener("click", async () => {
-      try{
-        const row = await addSchedule({
-          date: $date.value,
-          startHHMM: $start.value,
-          endHHMM: $end.value,
-          title: $title.value.trim() || "未命名"
+    function newer(cloudTs, localTs){
+      if (!cloudTs) return false;
+      if (!localTs) return true;
+      return new Date(cloudTs).getTime() > new Date(localTs).getTime();
+    }
+
+    function safeParse(s){ try { return JSON.parse(s || ""); } catch { return null; } }
+
+    async function upsertProgress(user, progress){
+      try {
+        if (typeof progress === "object" && progress) {
+          if (!progress.updated_at) progress.updated_at = new Date().toISOString();
+        }
+        const { error } = await sb.from("cr_progress").upsert({
+          user_id: user.id,
+          progress,
+          updated_at: new Date().toISOString()
         });
-        $title.value = "";
-        await render();
-      }catch(e){ alert(e.message || e); }
-    });
+        if (error) throw error;
+      } catch (e) {
+        console.warn("同步雲端失敗：", e);
+      }
+    }
 
-    if ($reload) $reload.addEventListener("click", render);
+    function attachCloudSync(user){
+      window.addEventListener("cr:progress-updated", async (ev) => {
+        const progress = ev?.detail || safeParse(localStorage.getItem(LS_KEY)) || {};
+        await upsertProgress(user, progress);
+      });
+    }
+  </script>
 
-    // 刪除 / 編輯（簡單示例）
-    if ($list) $list.addEventListener("click", async (ev) => {
-      const id = ev.target?.dataset?.id;
-      if (!id) return;
-      if (ev.target.classList.contains("sch-del")) {
-        if (confirm("確定刪除？")) { await deleteSchedule(id); await render(); }
-      } else if (ev.target.classList.contains("sch-edit")) {
-        const newTitle = prompt("新標題？（留空不改）");
-        const newStart = prompt("新開始時間？(HH:MM，留空不改)");
-        const newEnd   = prompt("新結束時間？(HH:MM，留空不改)");
+  <script>
+    async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
+
+    function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60 + (m||0); }
+    function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`; }
+    function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+
+    async function addSchedule({ date, startHHMM, endHHMM, title }){
+      const u = await getUser(); if(!u) throw new Error("尚未登入");
+      const start_min = toMin(startHHMM), end_min = toMin(endHHMM);
+      if (end_min <= start_min) throw new Error("結束時間需大於開始時間");
+      const { data, error } = await sb.from("schedules").insert([{
+        user_id: u.id, date, start_min, end_min, title
+      }]).select().single();
+      if (error) throw error;
+      return data;
+    }
+
+    async function loadSchedulesByDate(date){
+      const u = await getUser(); if(!u) throw new Error("尚未登入");
+      const { data, error } = await sb.from("schedules")
+        .select("*")
+        .eq("user_id", u.id)
+        .eq("date", date)
+        .order("start_min", { ascending: true });
+      if (error) throw error;
+      return data;
+    }
+
+    async function updateSchedule(id, patch){
+      const upd = {};
+      if (patch.startHHMM) upd.start_min = toMin(patch.startHHMM);
+      if (patch.endHHMM)   upd.end_min   = toMin(patch.endHHMM);
+      if (patch.title != null) upd.title = patch.title;
+      upd.updated_at = new Date().toISOString();
+      const { data, error } = await sb.from("schedules").update(upd).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    }
+
+    async function deleteSchedule(id){
+      const { error } = await sb.from("schedules").delete().eq("id", id);
+      if (error) throw error;
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const user = await getUser();
+      if (!user) return;
+
+      const $date = document.querySelector("#sch-date");
+      const $start = document.querySelector("#sch-start");
+      const $end = document.querySelector("#sch-end");
+      const $title = document.querySelector("#sch-title");
+      const $add = document.querySelector("#sch-add");
+      const $reload = document.querySelector("#sch-reload");
+      const $list = document.querySelector("#sch-list");
+
+      if ($date) $date.value = todayStr();
+
+      async function render(){
+        if (!$date) return;
+        const rows = await loadSchedulesByDate($date.value);
+        $list.innerHTML = rows.map(r => `
+          <li style="display:flex;gap:8px;align-items:center;border:1px solid #eee;border-radius:8px;padding:8px 12px">
+            <b>${r.title}</b>
+            <span style="color:#666">${toHHMM(r.start_min)}–${toHHMM(r.end_min)}</span>
+            <span style="margin-left:auto;display:flex;gap:6px">
+              <button data-id="${r.id}" class="sch-edit">編輯</button>
+              <button data-id="${r.id}" class="sch-del">刪除</button>
+            </span>
+          </li>
+        `).join(rows.length ? "" : "<li style='color:#666'>這天還沒有排程</li>");
+      }
+
+      if ($add) $add.addEventListener("click", async () => {
         try{
-          await updateSchedule(id, {
-            title: newTitle === "" ? undefined : newTitle,
-            startHHMM: newStart || undefined,
-            endHHMM: newEnd || undefined
+          const row = await addSchedule({
+            date: $date.value,
+            startHHMM: $start.value,
+            endHHMM: $end.value,
+            title: $title.value.trim() || "未命名"
           });
+          $title.value = "";
           await render();
         }catch(e){ alert(e.message || e); }
+      });
+
+      if ($reload) $reload.addEventListener("click", render);
+
+      if ($list) $list.addEventListener("click", async (ev) => {
+        const id = ev.target?.dataset?.id;
+        if (!id) return;
+        if (ev.target.classList.contains("sch-del")) {
+          if (confirm("確定刪除？")) { await deleteSchedule(id); await render(); }
+        } else if (ev.target.classList.contains("sch-edit")) {
+          const newTitle = prompt("新標題？（留空不改）");
+          const newStart = prompt("新開始時間？(HH:MM，留空不改)");
+          const newEnd   = prompt("新結束時間？(HH:MM，留空不改)");
+          try{
+            await updateSchedule(id, {
+              title: newTitle === "" ? undefined : newTitle,
+              startHHMM: newStart || undefined,
+              endHHMM: newEnd || undefined
+            });
+            await render();
+          }catch(e){ alert(e.message || e); }
+        }
+      });
+
+      await render();
+
+      sb.channel('schedules-rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
+          if (document.hasFocus()) await render();
+        })
+        .subscribe();
+    });
+  </script>
+
+  <!-- 雲端同步 modal ＋ RWD 調整：不動功能，只是樣式 -->
+  <section id="sched-dev-panel" style="margin:24px 0;">
+    <button id="open-cloud-sync"
+            style="padding:10px 14px;border-radius:10px;border:1px solid #e6e7eb;background:#0a7;color:#fff;cursor:pointer;">
+      ☁️ 開啟雲端同步工具
+    </button>
+
+    <div id="cloud-modal" aria-hidden="true" role="dialog" aria-modal="true" style="display:none;
+         position:fixed; inset:0; z-index:9999;">
+      <div id="cloud-backdrop" style="position:absolute; inset:0; background:rgba(15,17,21,.55);"></div>
+
+      <div id="cloud-dialog" style="
+           position:relative; margin:4vh auto 0; width:min(1100px, 94vw);
+           background:#fff; border-radius:14px; border:1px solid #e6e7eb; box-shadow:0 12px 50px rgba(0,0,0,.35);
+           display:flex; flex-direction:column; max-height:92vh; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #e6e7eb;">
+          <div style="font-weight:700;">雲端同步工具</div>
+          <button id="close-cloud-sync" aria-label="關閉視窗"
+                  style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;">✕</button>
+        </div>
+        <div style="flex:1; display:flex;">
+          <iframe id="cloud-iframe" src="cloud-sync-widget.html"
+                  style="width:100%; height:85vh; border:0; display:block;"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  (() => {
+    const openBtn   = document.getElementById('open-cloud-sync');
+    const modal     = document.getElementById('cloud-modal');
+    const backdrop  = document.getElementById('cloud-backdrop');
+    const dialog    = document.getElementById('cloud-dialog');
+    const closeBtn  = document.getElementById('close-cloud-sync');
+    const iframe    = document.getElementById('cloud-iframe');
+
+    const lockScroll = () => { document.documentElement.style.overflow = 'hidden'; };
+    const unlockScroll = () => { document.documentElement.style.overflow = ''; };
+
+    function resizeIframe() {
+      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+      const iframeH = Math.max(320, Math.min(vh * 0.86, vh - 64));
+      iframe.style.height = iframeH + 'px';
+    }
+
+    function openModal() {
+      modal.style.display = 'block';
+      modal.setAttribute('aria-hidden', 'false');
+      lockScroll();
+      resizeIframe();
+      closeBtn.focus({ preventScroll: true });
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+      unlockScroll();
+      openBtn.focus?.();
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+    window.addEventListener('resize', resizeIframe);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
+        closeModal();
       }
     });
 
-    // 初次載入
-    await render();
-
-    // （可選）Realtime：多人/多裝置時自動刷新
-    sb.channel('schedules-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, async () => {
-        if (document.hasFocus()) await render();
-      })
-      .subscribe();
-  });
-</script>
-
-
-<!-- 臨時：排程面板（先驗證功能，之後可移除或換成你的時間格 UI） -->
-<!-- 替換原本的 <section id="sched-dev-panel">…</section> 整段為以下內容 -->
-<section id="sched-dev-panel" style="margin:24px 0;">
-  <!-- 觸發按鈕 -->
-  <button id="open-cloud-sync"
-          style="padding:10px 14px;border-radius:10px;border:1px solid #e6e7eb;background:#0a7;color:#fff;cursor:pointer;">
-    ☁️ 開啟雲端同步工具
-  </button>
-
-  <!-- Modal：預設隱藏 -->
-  <div id="cloud-modal" aria-hidden="true" role="dialog" aria-modal="true" style="display:none;
-       position:fixed; inset:0; z-index:9999;">
-    <!-- 背景 -->
-    <div id="cloud-backdrop" style="position:absolute; inset:0; background:rgba(15,17,21,.55);"></div>
-
-    <!-- 置中容器 -->
-    <div id="cloud-dialog" style="
-         position:relative; margin:4vh auto 0; width:min(1100px, 94vw);
-         background:#fff; border-radius:14px; border:1px solid #e6e7eb; box-shadow:0 12px 50px rgba(0,0,0,.35);
-         display:flex; flex-direction:column; max-height:92vh; overflow:hidden;">
-      <!-- 標頭 -->
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #e6e7eb;">
-        <div style="font-weight:700;">雲端同步工具</div>
-        <button id="close-cloud-sync" aria-label="關閉視窗"
-                style="border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;">✕</button>
-      </div>
-      <!-- 內容（iframe 自動撐滿） -->
-      <div style="flex:1; display:flex;">
-        <iframe id="cloud-iframe" src="cloud-sync-widget.html"
-                style="width:100%; height:85vh; border:0; display:block;"></iframe>
-      </div>
-    </div>
-  </div>
-</section>
-
-<script>
-(() => {
-  const openBtn   = document.getElementById('open-cloud-sync');
-  const modal     = document.getElementById('cloud-modal');
-  const backdrop  = document.getElementById('cloud-backdrop');
-  const dialog    = document.getElementById('cloud-dialog');
-  const closeBtn  = document.getElementById('close-cloud-sync');
-  const iframe    = document.getElementById('cloud-iframe');
-
-  // 防止背景滾動
-  const lockScroll = () => { document.documentElement.style.overflow = 'hidden'; };
-  const unlockScroll = () => { document.documentElement.style.overflow = ''; };
-
-  // 依視窗高度動態調整 iframe 高度
-  function resizeIframe() {
-    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-    // 頂部邊距約 4vh、標頭 ~ 48px
-    const iframeH = Math.max(320, Math.min(vh * 0.86, vh - 64));
-    iframe.style.height = iframeH + 'px';
-  }
-
-  function openModal() {
-    modal.style.display = 'block';
-    modal.setAttribute('aria-hidden', 'false');
-    lockScroll();
-    resizeIframe();
-    // 將焦點移到關閉鍵，提升可及性
-    closeBtn.focus({ preventScroll: true });
-  }
-
-  function closeModal() {
-    modal.style.display = 'none';
-    modal.setAttribute('aria-hidden', 'true');
-    unlockScroll();
-    openBtn.focus?.();
-  }
-
-  // 事件
-  openBtn.addEventListener('click', openModal);
-  closeBtn.addEventListener('click', closeModal);
-  backdrop.addEventListener('click', closeModal);
-  window.addEventListener('resize', resizeIframe);
-
-  // ESC 關閉
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
-      closeModal();
-    }
-  });
-
-  // 防止按鍵事件冒泡關閉（點擊內容不會關閉）
-  dialog.addEventListener('click', (e) => e.stopPropagation());
-})();
-</script>
-
-<!-- 行動版微調：小螢幕近似全螢幕 -->
-<style>
-@media (max-width: 640px) {
-  #cloud-dialog{ width:96vw; margin:2vh auto 0; border-radius:12px; }
-  #cloud-dialog iframe{ height:84vh !important; }
-}
-</style>
-
-<style>
-  /* 你的工具列：把選擇器換成實際的那個（擇一或都保留） */
-  #tools-bar, .tools-toggle, .tools-tabs {
-    position: sticky;      /* 或改 fixed；sticky 通常體驗較佳 */
-    top: 0;
-    z-index: 40;           /* 確保在 panes 之上 */
-    background: var(--bg, #fff);
-    border-bottom: 1px solid var(--line, #e6e7eb);
-  }
-
-  /* 讓每個 pane 自動避開工具列高度 */
-  .tools-pane {
-    position: relative;
-    z-index: 1;
-    margin-top: var(--tools-offset, 12px); /* 由 JS 動態設定高度 */
-    scroll-margin-top: var(--tools-offset, 12px); /* 滑到錨點時也不被蓋住 */
-  }
-
-  /* 機能列排版更穩定，避免擠成一行重疊 */
-  .tools-row,
-  .tools-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;       /* 小螢幕自動換行 */
-  }
-
-  /* 計時字樣大小與間距，避免碰到上緣 */
-  .tools-timer {
-    font-variant-numeric: tabular-nums;
-    letter-spacing: .5px;
-    font-size: clamp(28px, 4vw, 40px);
-    line-height: 1;
-    margin: 8px 0 10px;
-  }
-
-  /* 按鈕與輸入框的最小尺寸，避免擠壓 */
-  .tools-actions button,
-  .tools-row input[type="number"],
-  .tools-row input[type="time"] {
-    min-height: 36px;
-  }
-</style>
-
-<script>
-  (function () {
-    // 找到你的工具列（擇一就好；保留多個選擇器以增加相容性）
-    const bar = document.querySelector('#tools-bar, .tools-toggle, .tools-tabs');
-    if (!bar) return;
-
-    const setOffset = () => {
-      // +12 是向下留點空白，避免貼得太緊
-      const h = bar.offsetHeight + 12;
-      document.documentElement.style.setProperty('--tools-offset', h + 'px');
-    };
-
-    setOffset();
-    // 視窗改變尺寸、字體載入、工具列行數變動時更新
-    window.addEventListener('resize', setOffset);
-    // 如果工具列內容動態展開/收合，監聽高度變化
-    const ro = new ResizeObserver(setOffset);
-    ro.observe(bar);
+    dialog.addEventListener('click', (e) => e.stopPropagation());
   })();
-</script>
+  </script>
 
+  <!-- 行動版微調＋工具條／按鈕紅黑白化 -->
+  <style>
+    @media (max-width: 640px) {
+      #cloud-dialog{ width:96vw; margin:2vh auto 0; border-radius:12px; }
+      #cloud-dialog iframe{ height:84vh !important; }
+    }
 
+    /* 工具列 + tabs 採紅黑白 */
+    #tools-bar, .tools-toggle, .tools-tabs {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: #ffffff;
+      border-bottom: 1px solid #e1e2e7;
+    }
 
+    .tools-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: var(--cr-black);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
 
+    .tools-tabs button {
+      border-radius: 0;
+      border: none;
+      padding-inline: 12px;
+      font-size: 0.85rem;
+    }
 
+    .tools-tabs .tools-tab.is-active {
+      color: var(--cr-red);
+      border-bottom: 2px solid var(--cr-red);
+      font-weight: 600;
+    }
 
+    .tools-pane {
+      position: relative;
+      z-index: 1;
+      margin-top: var(--tools-offset, 12px);
+      scroll-margin-top: var(--tools-offset, 12px);
+    }
 
+    .tools-row,
+    .tools-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
+    .tools-timer {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .5px;
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 1;
+      margin: 8px 0 10px;
+    }
 
-  </body>
+    .tools-actions button,
+    .tools-row input[type="number"],
+    .tools-row input[type="time"] {
+      min-height: 34px;
+    }
+
+    .tools-btn-primary {
+      background: var(--cr-red);
+      color: #fff;
+      border-radius: 999px;
+      border: 0;
+      padding-inline: 16px;
+    }
+
+    .tools-btn-primary:hover {
+      background: var(--cr-red-dark);
+    }
+  </style>
+
+  <script>
+    (function () {
+      const bar = document.querySelector('#tools-bar, .tools-toggle, .tools-tabs');
+      if (!bar) return;
+
+      const setOffset = () => {
+        const h = bar.offsetHeight + 12;
+        document.documentElement.style.setProperty('--tools-offset', h + 'px');
+      };
+
+      setOffset();
+      window.addEventListener('resize', setOffset);
+      const ro = new ResizeObserver(setOffset);
+      ro.observe(bar);
+    })();
+  </script>
+</body>
 </html>
-
-
 
