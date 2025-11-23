@@ -5,6 +5,77 @@
   <title>自律控肉飯 · 自律任務主頁</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+
+/* 浮動聊天室外框 */
+.time-chat-window {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
+  height: 520px;
+  background: #111;
+  border-radius: 16px;
+  border: 1px solid #e31b23;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.75);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", system-ui, sans-serif;
+  z-index: 9999;
+  display: none;          /* 預設隱藏，按按鈕才出現 */
+}
+
+/* 聊天室標題列（抓這裡拖移） */
+.time-chat-header {
+  height: 38px;
+  background: #181818;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #333;
+  cursor: move;          /* 滑鼠變成可拖移 */
+}
+
+.time-chat-header span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 關閉按鈕 */
+.time-chat-close {
+  border: none;
+  background: transparent;
+  color: #aaa;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.time-chat-close:hover {
+  color: #fff;
+}
+
+/* 內嵌聊天室 iframe */
+.time-chat-iframe {
+  width: 100%;
+  height: calc(100% - 38px); /* 扣掉標題列高度 */
+  border: none;
+}
+
+/* 手機時縮小視窗 */
+@media (max-width: 600px) {
+  .time-chat-window {
+    width: 95vw;
+    height: 60vh;
+    bottom: 10px;
+    right: 10px;
+  }
+}
+
+
     :root {
       --accent-red: #ff4b4b;
       --accent-red-dark: #d93636;
@@ -429,10 +500,11 @@
         先選一塊任務卡，慢慢把今天控回來。
       </p>
       <div class="hero-actions">
-        <button class="btn-primary">
+        <button class="btn-primary" id="openTimeChatBtn">
           <span class="btn-primary-dot"></span>
           讓 AI 幫我排今天
         </button>
+        
         <button class="btn-ghost">
           查看本週紀錄 →
         </button>
@@ -683,6 +755,81 @@
       });
     });
   </script>
-  
+  <!-- 浮動時間管理聊天室 -->
+<div id="timeChatWindow" class="time-chat-window">
+  <div class="time-chat-header" id="timeChatHeader">
+    <span>Time Coach · 時間管理聊天室</span>
+    <button class="time-chat-close" id="closeTimeChatBtn">×</button>
+  </div>
+  <iframe
+    src="/time-chat.html" 
+    class="time-chat-iframe"
+    frameborder="0">
+  </iframe>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const openBtn = document.getElementById('openTimeChatBtn');
+    const chatWin = document.getElementById('timeChatWindow');
+    const closeBtn = document.getElementById('closeTimeChatBtn');
+    const header  = document.getElementById('timeChatHeader');
+
+    // 打開聊天室
+    openBtn.addEventListener('click', () => {
+      chatWin.style.display = 'block';
+    });
+
+    // 關閉聊天室
+    closeBtn.addEventListener('click', () => {
+      chatWin.style.display = 'none';
+    });
+
+    // === 以下是拖移功能 ===
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+
+      // 目前的位置（固定座標）
+      const rect = chatWin.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+
+      startX = e.clientX;
+      startY = e.clientY;
+
+      // 拖動時，用 left/top 控制位置
+      chatWin.style.left = startLeft + 'px';
+      chatWin.style.top = startTop + 'px';
+      chatWin.style.right = 'auto';
+      chatWin.style.bottom = 'auto';
+
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', stopDrag);
+    });
+
+    function onDrag(e) {
+      if (!isDragging) return;
+
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      chatWin.style.left = startLeft + dx + 'px';
+      chatWin.style.top  = startTop + dy + 'px';
+    }
+
+    function stopDrag() {
+      if (!isDragging) return;
+      isDragging = false;
+      document.removeEventListener('mousemove', onDrag);
+      document.removeEventListener('mouseup', stopDrag);
+    }
+  });
+</script>
+
 </body>
 </html>
