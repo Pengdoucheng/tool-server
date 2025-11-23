@@ -185,7 +185,8 @@
       if (error) return alert(error.message);
 
       // ✅ 登入成功 → 跳轉到你的 tool.html（依你原本程式）
-      window.location.href = "https://pengdoucheng.github.io/home.html";
+      window.location.href = "/home.html";
+
     }
 
     async function logout(){ await sb.auth.signOut(); render(); }
@@ -250,8 +251,9 @@
       const { error } = await sb.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://pengdoucheng.github.io/home.html"
-        }
+  redirectTo: "https://tool-server-d695.onrender.com/home.html"
+}
+
       });
       if (error) alert(error.message);
     }
