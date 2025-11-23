@@ -2,337 +2,383 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>自律控肉飯 · 社群牆</title>
+  <title>自律控肉飯 · 社群部落格</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root{
       --red:#ff4b4b;
       --red-dark:#e11d48;
-      --bg:#050505;
-      --panel:#101010;
-      --panel-soft:#18181b;
-      --border:#27272a;
-      --text:#f9fafb;
-      --sub:#9ca3af;
+      --bg:#f5f5f5;
+      --text:#111827;
+      --sub:#6b7280;
+      --border:#e5e7eb;
+      --card:#ffffff;
+      --shadow-soft:0 18px 45px rgba(15,23,42,.14);
       --radius:18px;
-      --shadow:0 26px 60px rgba(0,0,0,.85);
       --font:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
     *{box-sizing:border-box;font-family:var(--font);}
-    html,body{margin:0;padding:0;height:100%;}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
     body{
-      background:
-       radial-gradient(circle at top,rgba(248,113,113,.18),transparent 65%),
-       radial-gradient(circle at bottom,rgba(15,23,42,.9),#020617);
-      color:var(--text);
-      padding:20px 12px;
+      min-height:100vh;
       display:flex;
-      justify-content:center;
-      align-items:flex-start;
-    }
-    .page{
-      width:100%;
-      max-width:1100px;
-      display:grid;
-      grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);
-      gap:18px;
-    }
-    @media(max-width:880px){
-      body{padding:16px 10px;}
-      .page{grid-template-columns:minmax(0,1fr);}
+      flex-direction:column;
     }
 
-    /* Header */
-    .card-main{
-      background:linear-gradient(140deg,#18181b,#020617 60%,#101010 100%);
-      border-radius:var(--radius);
-      padding:18px 18px 16px;
-      box-shadow:var(--shadow);
-      border:1px solid rgba(248,113,113,.35);
-      position:relative;
-      overflow:hidden;
+    /* Header + nav */
+    .site-header{
+      background:#111827;
+      color:#f9fafb;
+      padding:10px 0;
+      box-shadow:0 1px 0 rgba(15,23,42,.4);
     }
-    .card-main::before{
-      content:"";
-      position:absolute;
-      right:-140px;top:-140px;
-      width:360px;height:360px;
-      border-radius:50%;
-      background:radial-gradient(circle,rgba(248,113,113,.3),transparent 65%);
-      mix-blend-mode:screen;
-      pointer-events:none;
+    .wrap{
+      width:100%;
+      max-width:1140px;
+      margin:0 auto;
+      padding:0 16px;
     }
-    .topbar{
-      position:relative;z-index:1;
-      display:flex;justify-content:space-between;align-items:center;gap:10px;
-      margin-bottom:8px;
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-    .logo{display:flex;align-items:center;gap:10px;}
+    .nav-left{display:flex;align-items:center;gap:10px;}
     .logo-mark{
       width:26px;height:26px;border-radius:10px;
-      background:conic-gradient(from 220deg,#020617,var(--red));
-      box-shadow:0 0 18px rgba(248,113,113,.7);
+      background:linear-gradient(135deg,#111827,var(--red));
       position:relative;
+      box-shadow:0 0 14px rgba(248,113,113,.9);
     }
     .logo-mark::after{
       content:"";position:absolute;inset:4px;border-radius:8px;
-      border:1px solid rgba(248,250,252,.7);
+      border:1px solid rgba(249,250,251,.7);
     }
-    .logo-main{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;}
-    .logo-sub{font-size:11px;color:var(--sub);}
-    .pill{
+    .nav-title{
+      font-size:14px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    }
+    .nav-sub{font-size:11px;color:#9ca3af;}
+    .nav-links{
+      display:flex;align-items:center;gap:14px;
+      font-size:13px;color:#e5e7eb;
+    }
+    .nav-links span{
+      opacity:.7;
+    }
+    .nav-links span.active{
+      opacity:1;font-weight:600;border-bottom:2px solid var(--red);
+      padding-bottom:2px;
+    }
+    .btn-login{
+      border-radius:999px;border:1px solid rgba(249,250,251,.85);
+      background:#f9fafb;color:#111827;
+      padding:6px 14px;font-size:12px;font-weight:600;
+      cursor:pointer;
+      display:inline-flex;align-items:center;gap:6px;
+    }
+    .btn-login-dot{
+      width:10px;height:10px;border-radius:999px;background:var(--red);
+    }
+
+    /* hero */
+    .hero{
+      background:linear-gradient(135deg,#ff5b5b,#ff9f5b);
+      color:#111827;
+      border-radius:0 0 28px 28px;
+      padding:22px 0 26px;
+      box-shadow:0 18px 40px rgba(248,113,113,.35);
+      margin-bottom:18px;
+    }
+    .hero-inner{
+      max-width:1140px;margin:0 auto;padding:0 16px;
+      display:flex;flex-direction:column;gap:10px;
+    }
+    .hero-kicker{
+      font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#1f2937;
+    }
+    .hero-title{
+      margin:0;font-size:26px;font-weight:800;
+    }
+    .hero-sub{
+      margin:0;font-size:13px;color:#1f2937;max-width:640px;line-height:1.7;
+    }
+    .hero-tags{
+      display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;font-size:11px;color:#1f2937;
+    }
+    .hero-tag{
       padding:4px 10px;border-radius:999px;
-      border:1px solid rgba(248,113,113,.6);
-      background:rgba(10,10,10,.9);
-      font-size:11px;color:var(--text);
-      display:inline-flex;align-items:center;gap:6px;
+      border:1px solid rgba(15,23,42,.18);
+      background:rgba(249,250,251,.85);
     }
-    .pill-dot{width:7px;height:7px;border-radius:999px;background:var(--red);}
-
-    .hero{position:relative;z-index:1;margin:4px 0 10px;}
-    .hero-kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(248,113,113,.9);margin-bottom:4px;}
-    .hero-title{margin:0 0 4px;font-size:22px;font-weight:700;}
-    .hero-sub{margin:0;font-size:13px;color:var(--sub);max-width:520px;line-height:1.7;}
-    .hero-sub strong{color:#f97373;font-weight:600;}
-
-    .status-bar{
-      position:relative;z-index:1;
-      margin-top:6px;margin-bottom:8px;
-      display:flex;justify-content:space-between;align-items:center;gap:10px;
-      font-size:11px;color:var(--sub);
+    .hero-status{
+      font-size:12px;color:#111827;margin-top:6px;
     }
-    .status-user span.name{color:var(--text);font-weight:600;}
-    .btn-small{
-      border-radius:999px;border:1px solid var(--border);
-      background:#111827;color:var(--sub);
-      padding:4px 10px;font-size:11px;cursor:pointer;
-      display:inline-flex;align-items:center;gap:5px;
-    }
-    .btn-small:hover{border-color:rgba(248,113,113,.7);color:var(--text);}
+    .hero-status span.name{font-weight:600;}
+    .hero-status span.hint{color:#4b5563;font-size:11px;margin-left:6px;}
 
-    /* layout inside main card */
-    .main-grid{
-      position:relative;z-index:1;
+    /* layout */
+    .main{
+      flex:1;
+      max-width:1140px;
+      margin:0 auto;
+      padding:18px 16px 32px;
+    }
+    .grid{
       display:grid;
-      grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr);
-      gap:14px;
+      grid-template-columns: minmax(0,2.1fr) minmax(0,1fr);
+      gap:18px;
+      align-items:flex-start;
     }
-    @media(max-width:720px){
-      .main-grid{grid-template-columns:minmax(0,1fr);}
+    @media(max-width:880px){
+      .grid{grid-template-columns: minmax(0,1fr);}
     }
 
-    /* post composer */
-    .composer{
-      background:rgba(10,10,10,.9);
-      border-radius:16px;
-      border:1px solid rgba(39,39,42,.9);
-      padding:10px 10px 8px;
+    /* composer */
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      border:1px solid var(--border);
+      box-shadow:var(--shadow-soft);
     }
-    .composer label{font-size:11px;color:var(--sub);display:block;margin-bottom:4px;}
-    .composer textarea{
-      width:100%;min-height:80px;resize:vertical;
-      background:#020617;border-radius:12px;
-      border:1px solid #27272a;color:var(--text);
-      padding:8px 10px;font-size:13px;line-height:1.6;
+    .card-header{
+      padding:14px 16px 10px;
+      border-bottom:1px solid #f3f4f6;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
     }
-    .composer textarea:focus{outline:none;border-color:rgba(248,113,113,.8);box-shadow:0 0 0 1px rgba(248,113,113,.5);}
-    .composer-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center;}
-    .tag-select{
-      flex:1;min-width:120px;
-      border-radius:999px;border:1px solid #27272a;
-      background:#020617;color:var(--sub);
-      padding:6px 10px;font-size:11px;
+    .card-title{font-size:15px;font-weight:700;}
+    .card-sub{font-size:12px;color:var(--sub);}
+    .card-body{padding:12px 16px 14px;}
+
+    .composer-textarea{
+      width:100%;min-height:90px;resize:vertical;
+      border-radius:12px;border:1px solid #d1d5db;
+      padding:8px 10px;font-size:13px;line-height:1.7;
+      outline:none;
     }
-    .btn-main{
-      border-radius:999px;border:1px solid rgba(248,250,252,.9);
-      background:#f9fafb;color:#020617;font-size:13px;font-weight:600;
-      padding:7px 14px;cursor:pointer;
+    .composer-textarea:focus{
+      border-color:var(--red);box-shadow:0 0 0 1px rgba(248,113,113,.55);
+    }
+
+    .composer-row{
+      margin-top:8px;
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+    }
+    .select-tag{
+      flex:1;min-width:140px;
+      border-radius:999px;border:1px solid #d4d4d8;
+      padding:6px 10px;font-size:11px;color:#4b5563;
+      background:#f9fafb;
+    }
+    .btn-post{
+      border-radius:999px;
+      border:1px solid #111827;
+      background:#111827;color:#f9fafb;
+      padding:7px 16px;font-size:13px;font-weight:600;
+      cursor:pointer;
       display:inline-flex;align-items:center;gap:6px;
-      box-shadow:0 14px 34px rgba(0,0,0,.85);
     }
-    .btn-main-dot{width:12px;height:12px;border-radius:999px;background:var(--red);}
-    .btn-main:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
+    .btn-post-dot{
+      width:12px;height:12px;border-radius:999px;background:var(--red);
+    }
+    .btn-post:disabled{opacity:.5;cursor:not-allowed;}
 
-    .composer-tip{margin-top:4px;font-size:10px;color:var(--sub);}
+    .composer-tip{margin-top:5px;font-size:11px;color:var(--sub);}
+    .error{margin-top:4px;font-size:11px;color:#b91c1c;}
 
     /* feed */
-    .feed{
-      max-height:420px;overflow-y:auto;
-      padding-right:4px;
+    .feed-list{margin:0;padding:0;list-style:none;}
+    .feed-empty{font-size:12px;color:var(--sub);padding:8px 0;}
+    .post{
+      border-bottom:1px solid #f3f4f6;
+      padding:10px 0 10px;
     }
-    .feed::-webkit-scrollbar{width:6px;}
-    .feed::-webkit-scrollbar-thumb{background:#27272a;border-radius:999px;}
-
-    .post-card{
-      background:rgba(8,8,8,.96);
-      border-radius:14px;
-      border:1px solid #27272a;
-      padding:9px 10px 8px;
-      margin-bottom:8px;
-      font-size:12px;
+    .post:last-child{border-bottom:none;}
+    .post-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:4px;font-size:11px;color:var(--sub);
     }
-    .post-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-    .post-user{font-size:11px;color:var(--sub);}
-    .post-user span{color:var(--text);font-weight:600;}
-    .post-time{font-size:11px;color:#6b7280;}
-    .post-content{font-size:12px;line-height:1.7;margin-bottom:4px;white-space:pre-wrap;}
-    .post-tags{font-size:11px;color:#9ca3af;margin-bottom:4px;}
+    .post-user span.name{font-weight:600;color:#111827;}
+    .post-time{color:#9ca3af;}
+    .post-content{font-size:13px;line-height:1.7;margin-bottom:5px;white-space:pre-wrap;}
+    .post-tags{font-size:11px;color:#6b7280;margin-bottom:4px;}
     .post-tags span{
       display:inline-flex;align-items:center;gap:4px;
       padding:2px 8px;border-radius:999px;
-      border:1px solid #27272a;background:#020617;margin-right:4px;
+      border:1px solid #e5e7eb;background:#f9fafb;margin-right:4px;
     }
     .post-actions{
-      display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#9ca3af;
+      display:flex;justify-content:space-between;align-items:center;margin-top:2px;font-size:11px;color:#6b7280;
     }
     .btn-like{
-      border:none;background:transparent;color:#9ca3af;
+      border:none;background:transparent;
+      padding:0;cursor:pointer;
       display:inline-flex;align-items:center;gap:4px;
-      cursor:pointer;font-size:11px;padding:2px 0;
+      font-size:11px;color:#6b7280;
     }
-    .btn-like.liked{color:var(--red);}
     .btn-like span.heart{font-size:13px;}
-    .empty{font-size:11px;color:#6b7280;padding:8px 2px;}
+    .btn-like.liked{color:var(--red);}
+    .post-meta-hint{font-size:11px;color:#9ca3af;}
 
-    /* side card: ranking */
-    .side-card{
-      background:#050509;border-radius:var(--radius);
-      padding:14px 14px 10px;
-      box-shadow:0 22px 60px rgba(0,0,0,1);
-      border:1px solid #27272a;
-      display:flex;flex-direction:column;gap:8px;
-    }
-    .side-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
-    .side-header span.sub{font-size:11px;color:var(--sub);}
+    /* sidebar */
+    .side-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+    .side-sub{font-size:12px;color:var(--sub);margin-bottom:8px;}
     .badge{
-      padding:3px 8px;border-radius:999px;border:1px solid #4b5563;
-      font-size:10px;color:#e5e7eb;
+      font-size:10px;padding:3px 8px;border-radius:999px;
+      border:1px solid #d4d4d8;background:#f9fafb;color:#4b5563;
     }
-    .rank-list{list-style:none;margin:4px 0 0;padding:0;}
+    .rank-list{margin:8px 0 4px;padding:0;list-style:none;}
     .rank-item{
       display:flex;justify-content:space-between;align-items:center;
-      padding:5px 0;border-bottom:1px dashed #1f2937;font-size:11px;
+      padding:4px 0;border-bottom:1px dashed #e5e7eb;font-size:11px;
     }
     .rank-item:last-child{border-bottom:none;}
     .rank-name{display:flex;align-items:center;gap:6px;}
-    .rank-dot{
-      width:8px;height:8px;border-radius:999px;
-      background:#4b5563;
-    }
-    .rank-score{font-size:11px;color:#f97373;}
-    .rank-empty{font-size:11px;color:#6b7280;margin-top:3px;}
+    .rank-dot{width:8px;height:8px;border-radius:999px;background:#9ca3af;}
+    .rank-score{font-size:11px;color:var(--red-dark);}
+    .rank-empty{font-size:11px;color:#9ca3af;margin-top:4px;}
     .rank-1 .rank-dot{background:var(--red);}
     .rank-1 .rank-name span{color:var(--red);}
     .rank-2 .rank-dot{background:#fb923c;}
-    .rank-2 .rank-name span{color:#fb923c;}
-    .rank-3 .rank-dot{background:#e5e7eb;}
-    .rank-3 .rank-name span{color:#e5e7eb;}
+    .rank-2 .rank-name span{color:#ea580c;}
+    .rank-3 .rank-dot{background:#111827;}
+    .rank-3 .rank-name span{color:#111827;}
 
-    .side-footer{font-size:10px;color:#4b5563;text-align:right;margin-top:2px;}
-    .error{font-size:11px;color:#fecaca;margin-top:4px;}
+    .side-footer{font-size:10px;color:#9ca3af;margin-top:4px;text-align:right;}
   </style>
 </head>
 <body>
-  <div class="page">
-    <!-- 左側：社群牆主區 -->
-    <section class="card-main" aria-label="社群牆">
-      <header class="topbar">
-        <div class="logo">
-          <div class="logo-mark"></div>
-          <div>
-            <div class="logo-main">ZILV · COMMUNITY</div>
-            <div class="logo-sub">自律控肉飯 · 社群牆</div>
-          </div>
+  <!-- 頂部導覽列 -->
+  <header class="site-header">
+    <div class="wrap nav">
+      <div class="nav-left">
+        <div class="logo-mark"></div>
+        <div>
+          <div class="nav-title">ZILV · TIME BLOG</div>
+          <div class="nav-sub">自律控肉飯 · 時間自律社群部落格</div>
         </div>
-        <div class="pill">
-          <span class="pill-dot"></span>
-          <span>紅 / 黑 / 白 · 自律分享區</span>
-        </div>
-      </header>
-
-      <div class="hero">
-        <div class="hero-kicker">21-DAY HABIT FEED</div>
-        <h1 class="hero-title">把你的自律紀錄丟上牆，讓別人幫你按個讚。</h1>
-        <p class="hero-sub">
-          每一篇貼文可以是今天完成的任務、番茄鐘成果、或是失敗的小抱怨都沒關係。
-          <strong>重點是你有回來看自己在做什麼。</strong>
-        </p>
       </div>
-
-      <div class="status-bar">
-        <div class="status-user" id="statusUser">尚未取得登入資訊…</div>
-        <button class="btn-small" onclick="goLogin()">
-          前往登入 / 管理帳號 →
+      <div style="display:flex;align-items:center;gap:16px;">
+        <nav class="nav-links">
+          <span>AI 工具</span>
+          <span>時間工具</span>
+          <span class="active">社群</span>
+          <span>關於計畫</span>
+        </nav>
+        <button class="btn-login" onclick="goLogin()">
+          <span class="btn-login-dot"></span>
+          登入 / 管理帳號
         </button>
       </div>
+    </div>
+  </header>
 
-      <div class="main-grid">
-        <!-- 發文區 -->
-        <section class="composer" aria-label="發文區">
-          <label for="postContent">今天想分享什麼？</label>
-          <textarea id="postContent" placeholder="例如：今天完成 3 顆番茄鐘，終於把報告寫完一半。"></textarea>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-kicker">TIME · DISCIPLINE · FEED</div>
+      <h1 class="hero-title">時間自律工具部落格 · 把你的 21 天紀錄留在這裡。</h1>
+      <p class="hero-sub">
+        這裡是自律控肉飯的社群牆，你可以丟上今天的任務進度、番茄鐘成果、或是沒完成也沒關係的小抱怨。
+        重點是每天回來看一眼，知道自己在往哪裡走。
+      </p>
+      <div class="hero-tags">
+        <span class="hero-tag">紅 / 白 / 黑 · 乾淨介面</span>
+        <span class="hero-tag">適合：大學生 · 打工人 · 自學仔</span>
+      </div>
+      <p class="hero-status" id="heroStatus">
+        尚未取得登入資訊…
+      </p>
+    </div>
+  </section>
 
-          <div class="composer-row">
-            <select id="habitTag" class="tag-select">
-              <option value="">選擇一個標籤（可留白）</option>
-              <option value="讀書">讀書 / 作業</option>
-              <option value="早起">早起 / 作息</option>
-              <option value="運動">運動 / 健身</option>
-              <option value="專注">專注 / 番茄鐘</option>
-              <option value="整理">整理房間 / 整理人生</option>
-              <option value="其他">其他自律小事</option>
-            </select>
-            <button class="btn-main" id="btnPost" onclick="createPost()">
-              <span class="btn-main-dot"></span>
-              發佈到社群牆
-            </button>
+  <!-- 主內容 -->
+  <main class="main">
+    <div class="grid">
+      <!-- 左：發文 + 最新文章 -->
+      <section>
+        <!-- 發文卡 -->
+        <article class="card" aria-label="發文區">
+          <header class="card-header">
+            <div>
+              <div class="card-title">寫一篇今天的自律紀錄</div>
+              <div class="card-sub">不用很厲害，像寫貼文就好。每天寫一點點，21 天後就會有一整頁的你。</div>
+            </div>
+          </header>
+          <div class="card-body">
+            <textarea id="postContent" class="composer-textarea"
+              placeholder="例如：今天硬著頭皮打開 Time Grid 排了一整天，居然全部都有做到八成以上。"></textarea>
+            <div class="composer-row">
+              <select id="habitTag" class="select-tag">
+                <option value="">選一個標籤（可留白）</option>
+                <option value="讀書">讀書 / 作業</option>
+                <option value="早起">早起 / 作息</option>
+                <option value="運動">運動 / 健身</option>
+                <option value="專注">專注 / 番茄鐘</option>
+                <option value="整理">整理房間 / 整理生活</option>
+                <option value="其他">其他自律小事</option>
+              </select>
+              <button id="btnPost" class="btn-post" onclick="createPost()">
+                <span class="btn-post-dot"></span>
+                發佈貼文
+              </button>
+            </div>
+            <p class="composer-tip">
+              小提醒：內容會公開出現在社群牆上，之後我們也可以讓 AI 幫你回一段短評。
+            </p>
+            <div id="composerError" class="error" style="display:none;"></div>
+          </div>
+        </article>
+
+        <!-- 最新貼文 -->
+        <article class="card" style="margin-top:16px;" aria-label="最新貼文">
+          <header class="card-header">
+            <div class="card-title">最新貼文</div>
+            <div class="card-sub">依時間由新到舊排序 · 大家一起在這裡練自律。</div>
+          </header>
+          <div class="card-body">
+            <ul id="feed" class="feed-list"></ul>
+          </div>
+        </article>
+      </section>
+
+      <!-- 右：排行榜 -->
+      <aside class="card" aria-label="排行榜">
+        <div class="card-body">
+          <div class="side-title">本週被按讚最多的使用者</div>
+          <div class="side-sub">統計最近貼文的按讚數，只是小小榮耀，不是壓力。</div>
+          <span class="badge" id="badgeCount">尚未載入</span>
+
+          <ul id="rankList" class="rank-list"></ul>
+          <div id="rankEmpty" class="rank-empty" style="display:none;">
+            目前還沒有讚的紀錄，先去幫別人按個讚，說不定你也會被回訪。
           </div>
 
-          <p class="composer-tip">
-            提示：不用寫得很厲害，就像跟未來的自己說一句話。之後我們可以讓 AI 幫你回一段短評。
-          </p>
-          <div id="composerError" class="error" style="display:none;"></div>
-        </section>
-
-        <!-- 貼文列表 -->
-        <section aria-label="最新貼文">
-          <div class="feed" id="feed"></div>
-        </section>
-      </div>
-    </section>
-
-    <!-- 右側：排行榜 -->
-    <aside class="side-card" aria-label="排行榜">
-      <div class="side-header">
-        <div>
-          <div>本週被按讚最多的自律使用者</div>
-          <span class="sub">依照最近貼文被按讚的次數計算 · 只做展示用</span>
+          <div class="side-footer">
+            之後可以把排行榜連到 21 天挑戰或解鎖特別徽章。
+          </div>
         </div>
-        <span class="badge" id="badgeCount">尚未載入</span>
-      </div>
-
-      <ul class="rank-list" id="rankList"></ul>
-      <div class="rank-empty" id="rankEmpty" style="display:none;">還沒有任何讚，先去當第一個按讚的人。</div>
-      <div class="side-footer">之後可以把榜單連結到 21 天挑戰或周邊解鎖。</div>
-    </aside>
-  </div>
+      </aside>
+    </div>
+  </main>
 
   <script>
-    // === 1. Supabase 初始化（記得換成你的專案） ===
-    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co"; // TODO: 換成你的
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";            // TODO: 換成你的
+    // === Supabase 初始化（記得換成你的 URL / Key） ===
+    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";   // TODO: 換成你的
+    const SUPABASE_KEY = "YOUR_ANON_KEY_HERE";                         // TODO: 換成你的 anon public key
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
     let loadingFeed = false;
 
     function goLogin(){
-      // 這裡改成你實際的登入頁路徑（在 Render 上）
-      window.location.href = "https://tool-server-d695.onrender.com/supabase-test.html";
+      // 這裡接你在 Render 上的登入頁
+      window.location.href = "/supabase-test.html";
     }
 
-    // === 2. 初始化：抓使用者 + 載入貼文 ===
+    // 初始化
     document.addEventListener("DOMContentLoaded", async () => {
       await fetchUser();
       await loadFeed();
@@ -343,23 +389,44 @@
     });
 
     async function fetchUser(){
+      const heroStatus = document.getElementById("heroStatus");
       const { data, error } = await sb.auth.getUser();
       if(error){
         console.error(error);
-        document.getElementById("statusUser").textContent = "無法取得登入狀態。";
+        heroStatus.textContent = "無法取得登入狀態。";
+        currentUser = null;
         return;
       }
       currentUser = data.user || null;
+
       if(currentUser){
-        document.getElementById("statusUser").innerHTML =
-          `已登入：<span class="name">${currentUser.email}</span>`;
+        heroStatus.innerHTML =
+          `已登入：<span class="name">${currentUser.email}</span><span class="hint">可以直接發文與按讚。</span>`;
+        await ensureProfile();
       }else{
-        document.getElementById("statusUser").textContent =
-          "尚未登入：發文與按讚需要先登入。";
+        heroStatus.textContent = "尚未登入：你可以先看看別人的貼文，要發文或按讚再登入也可以。";
       }
     }
 
-    // === 3. 發文 ===
+    // 確保 profiles 裡有這個使用者（解決外鍵問題）
+    async function ensureProfile(){
+      if(!currentUser) return;
+      const email = currentUser.email || "";
+      const defaultName = email ? email.split("@")[0] : "未命名使用者";
+
+      const { error } = await sb.from("profiles").upsert(
+        {
+          id: currentUser.id,
+          display_name: defaultName
+        },
+        { onConflict: "id" }
+      );
+      if(error){
+        console.error("upsert profile error", error);
+      }
+    }
+
+    // 發文
     async function createPost(){
       const errorBox = document.getElementById("composerError");
       errorBox.style.display = "none";
@@ -404,30 +471,37 @@
       await loadFeed();
     }
 
-    // === 4. 載入貼文 + 按讚狀態 + 排行榜 ===
+    // 載入貼文 + 讚 + 排行榜
     async function loadFeed(){
       if(loadingFeed) return;
       loadingFeed = true;
 
       const feedEl = document.getElementById("feed");
-      feedEl.innerHTML = '<div class="empty">載入中…</div>';
+      feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
 
-      // 4-1 先載入貼文
+      // 讀貼文 + 連 profiles
       const { data: posts, error } = await sb
         .from("posts")
-        .select("*")
+        .select(`
+          id,
+          user_id,
+          content,
+          habit_tag,
+          created_at,
+          profiles ( display_name )
+        `)
         .order("created_at", { ascending:false })
         .limit(50);
 
       if(error){
         console.error(error);
-        feedEl.innerHTML = '<div class="empty">載入貼文失敗。</div>';
+        feedEl.innerHTML = '<li class="feed-empty">載入貼文失敗。</li>';
         loadingFeed = false;
         return;
       }
 
       if(!posts || posts.length === 0){
-        feedEl.innerHTML = '<div class="empty">還沒有任何貼文，當第一個發文的人吧。</div>';
+        feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
         updateRankingFromData(posts, []);
         loadingFeed = false;
         return;
@@ -435,7 +509,6 @@
 
       const postIds = posts.map(p => p.id);
 
-      // 4-2 載入這些貼文的所有 likes
       const { data: likes, error: likesError } = await sb
         .from("likes")
         .select("post_id, user_id")
@@ -456,14 +529,13 @@
         });
       }
 
-      // 4-3 渲染貼文
       feedEl.innerHTML = "";
-      const mapPostsById = {};
-      posts.forEach(p => { mapPostsById[p.id] = p; });
+      const postsById = {};
+      posts.forEach(p => postsById[p.id] = p);
 
       posts.forEach(p => {
-        const card = document.createElement("article");
-        card.className = "post-card";
+        const li = document.createElement("li");
+        li.className = "post";
 
         const likeCount = likesByPost[p.id] || 0;
         const isLiked = likedByMe.has(p.id);
@@ -474,8 +546,9 @@
 
         const userLabel = document.createElement("div");
         userLabel.className = "post-user";
-        const shortId = (p.user_id || '').slice(0, 4);
-        userLabel.innerHTML = `<span>User #${shortId || '????'}</span> · 自律使用者`;
+        const name = (p.profiles && p.profiles.display_name) ||
+                     (p.user_id ? "User #" + p.user_id.slice(0,4) : "匿名使用者");
+        userLabel.innerHTML = `<span class="name">${name}</span> · 自律使用者`;
 
         const timeLabel = document.createElement("div");
         timeLabel.className = "post-time";
@@ -488,19 +561,16 @@
         header.appendChild(userLabel);
         header.appendChild(timeLabel);
 
-        // content
         const content = document.createElement("div");
         content.className = "post-content";
         content.textContent = p.content;
 
-        // tags
         const tags = document.createElement("div");
         tags.className = "post-tags";
         if(p.habit_tag){
           tags.innerHTML = `<span>習慣 · ${p.habit_tag}</span>`;
         }
 
-        // actions
         const actions = document.createElement("div");
         actions.className = "post-actions";
 
@@ -510,25 +580,25 @@
         likeBtn.onclick = () => toggleLike(p.id, isLiked);
 
         const meta = document.createElement("div");
-        meta.textContent = "這是一個對外公開的自律牆，請溫柔互動。";
+        meta.className = "post-meta-hint";
+        meta.textContent = "請友善互動：這裡是大家練習自律的地方，不是比賽。";
 
         actions.appendChild(likeBtn);
         actions.appendChild(meta);
 
-        card.appendChild(header);
-        card.appendChild(content);
-        if(p.habit_tag) card.appendChild(tags);
-        card.appendChild(actions);
+        li.appendChild(header);
+        li.appendChild(content);
+        if(p.habit_tag) li.appendChild(tags);
+        li.appendChild(actions);
 
-        feedEl.appendChild(card);
+        feedEl.appendChild(li);
       });
 
-      // 4-4 用 posts + likes 計算「使用者排行榜」
       updateRankingFromData(posts, likes || []);
       loadingFeed = false;
     }
 
-    // === 5. 按讚 / 取消讚 ===
+    // 按讚 / 取消讚
     async function toggleLike(postId, alreadyLiked){
       if(!currentUser){
         alert("請先登入再按讚。");
@@ -551,19 +621,16 @@
           post_id: postId,
           user_id: currentUser.id
         });
-        if(error){
-          // unique constraint 也會進來，直接忽略即可
-          if(!error.message.includes("duplicate key")){
-            console.error(error);
-            alert("按讚失敗：" + error.message);
-          }
+        if(error && !String(error.message).includes("duplicate key")){
+          console.error(error);
+          alert("按讚失敗：" + error.message);
         }
       }
 
       await loadFeed();
     }
 
-    // === 6. 依照 likes 計算「被按讚最多的使用者」排行榜 ===
+    // 排行榜
     function updateRankingFromData(posts, likes){
       const rankListEl = document.getElementById("rankList");
       const rankEmptyEl = document.getElementById("rankEmpty");
@@ -571,7 +638,7 @@
 
       rankListEl.innerHTML = "";
       const postsById = {};
-      posts.forEach(p => postsById[p.id] = p);
+      (posts || []).forEach(p => postsById[p.id] = p);
 
       if(!likes || likes.length === 0){
         badgeEl.textContent = "沒有讚的紀錄";
@@ -590,32 +657,34 @@
 
       const entries = Object.entries(scoreByUser)
         .map(([userId, score]) => ({ userId, score }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5);
+        .sort((a,b) => b.score - a.score)
+        .slice(0,5);
 
       badgeEl.textContent = `共 ${Object.keys(scoreByUser).length} 位使用者有被按讚`;
       rankEmptyEl.style.display = entries.length ? "none" : "block";
 
-      entries.forEach((e, index) => {
+      entries.forEach((e, idx) => {
         const li = document.createElement("li");
-        li.className = "rank-item rank-" + (index+1);
+        li.className = "rank-item rank-" + (idx+1);
 
-        const name = document.createElement("div");
-        name.className = "rank-name";
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "rank-name";
+
         const dot = document.createElement("div");
         dot.className = "rank-dot";
-        const shortId = e.userId.slice(0,4);
+
         const span = document.createElement("span");
-        span.textContent = `User #${shortId || "????"}`;
-        name.appendChild(dot);
-        name.appendChild(span);
+        span.textContent = `User #${e.userId.slice(0,4)}`;
 
-        const score = document.createElement("div");
-        score.className = "rank-score";
-        score.textContent = `${e.score} 個讚`;
+        nameDiv.appendChild(dot);
+        nameDiv.appendChild(span);
 
-        li.appendChild(name);
-        li.appendChild(score);
+        const scoreDiv = document.createElement("div");
+        scoreDiv.className = "rank-score";
+        scoreDiv.textContent = `${e.score} 個讚`;
+
+        li.appendChild(nameDiv);
+        li.appendChild(scoreDiv);
         rankListEl.appendChild(li);
       });
 
