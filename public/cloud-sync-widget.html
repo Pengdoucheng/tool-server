@@ -6,121 +6,478 @@
 <title>任務紀錄</title>
 <link rel="preconnect" href="{SUPABASE_URL}">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-  :root { --bg:#fff; --card:#f8f9fb; --line:#e6e7eb; --txt:#222; --sub:#666; --pri:#0a7; }
-  html,body { margin:0; font-family: ui-sans-serif, -apple-system, 'Noto Sans TC', system-ui; color:var(--txt); background:var(--bg); }
-  .wrap { max-width: 840px; margin: 16px auto; padding: 12px; }
-  .grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.04);}
-  h3 { margin:0 0 8px; font-size:18px; }
-  .row { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap; }
-  input[type=time], input[type=text] { padding:8px; border:1px solid var(--line); border-radius:8px; background:#fff; }
-  input[type=time] { width:120px; }
-  input[type=text] { flex:1; min-width:180px; }
-  button { padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; }
-  .btn-pri { background:var(--pri); color:#fff; border-color:transparent; }
-  .list { display:grid; gap:8px; margin-top:6px; }
-  .item { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; }
-  .sub { color:var(--sub); font-size:12px; }
-  .muted { color:var(--sub); }
-  .pill { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--line); font-size:12px; }
-  .toolbar { display:flex; gap:8px; align-items:center; justify-content:space-between; }
-  .history-list { display:grid; gap:6px; max-height: 380px; overflow:auto; }
-  .history-item { padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
-  .right .card { height: fit-content; }
-  .empty { color:var(--sub); padding:8px; }
-  .sep { height:1px; background:var(--line); margin:10px 0; }
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --line: #e1e2e7;
+    --txt: #111111;
+    --sub: #666666;
+    --pri: #e10600;
+    --pri-soft: #fff3f3;
+    --black: #111111;
+  }
+
+  html, body {
+    margin: 0;
+    font-family: ui-sans-serif, -apple-system, 'Noto Sans TC', system-ui, sans-serif;
+    color: var(--txt);
+    background: radial-gradient(circle at top left, #ffffff 0, #f5f5f7 40%, #f0f1f5 100%);
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 16px auto 24px;
+    padding: 12px 12px 24px;
+  }
+
+  /* 頂部標題列 */
+  .toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .toolbar h2 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolbar h2::before {
+    content: "";
+    width: 20px;
+    height: 2px;
+    background: var(--pri);
+    display: inline-block;
+  }
+
+  #who {
+    font-size: 12px;
+    color: var(--sub);
+  }
+
+  /* 兩欄布局（左：編輯，右：KPI / 歷史） */
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: 0 12px 30px rgba(0,0,0,.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border-top: 3px solid var(--black);
+    border-left: 3px solid var(--pri);
+    opacity: 0.85;
+    pointer-events: none;
+  }
+
+  .card h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card h3::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    margin-left: 4px;
+    background: linear-gradient(to right, #000, transparent);
+    opacity: 0.10;
+  }
+
+  .sub {
+    color: var(--sub);
+    font-size: 12px;
+  }
+
+  .muted {
+    color: var(--sub);
+    font-size: 12px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0;
+    flex-wrap: wrap;
+  }
+
+  /* 輸入區：讓時間輸入更直覺 */
+  .row-time {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .row-time-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .row-time-label {
+    font-size: 11px;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  input[type=time],
+  input[type=text],
+  input[type=date] {
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, background 0.15s;
+  }
+
+  input[type=time] {
+    width: 110px;
+  }
+
+  input[type=text] {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  input[type=date] {
+    border-radius: 999px;
+  }
+
+  input:focus {
+    border-color: var(--pri);
+    box-shadow: 0 0 0 1px rgba(225, 6, 0, 0.15);
+    background: #fffdfd;
+  }
+
+  button {
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease-out, color 0.15s, border-color 0.15s, transform 0.08s;
+  }
+
+  button:hover {
+    background: #f5f5f7;
+    transform: translateY(-0.5px);
+  }
+
+  .btn-pri {
+    background: var(--pri);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .btn-pri:hover {
+    background: #b00000;
+    transform: translateY(-1px);
+  }
+
+  .btn-outlined {
+    border-radius: 999px;
+  }
+
+  .list {
+    display: grid;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 11px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    gap: 8px;
+  }
+
+  .item b {
+    font-size: 13px;
+  }
+
+  .item .sub {
+    font-size: 11px;
+  }
+
+  .empty {
+    color: var(--sub);
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 11px;
+    background: #fff;
+  }
+
+  .pill-strong {
+    border-color: var(--pri);
+    color: var(--pri);
+    background: var(--pri-soft);
+  }
+
+  .history-list {
+    display: grid;
+    gap: 6px;
+    max-height: 380px;
+    overflow: auto;
+  }
+
+  .history-item {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .history-item:hover {
+    border-color: var(--pri);
+    background: #fff7f7;
+  }
+
+  .right .card {
+    height: fit-content;
+  }
+
+  .sep {
+    height: 1px;
+    background: var(--line);
+    margin: 10px 0;
+  }
+
+  /* KPI 卡片專用：progress bar 改成紅色 */
+  .bar {
+    width: 100%;
+    height: 8px;
+    background: #f0f1f5;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    background: var(--pri);
+    width: 0%;
+    border-radius: inherit;
+    transition: width 0.25s ease-out;
+  }
+
+  /* KPI 成就格子：用淡線框 + 兩欄 */
+  #achGrid .item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-block: 8px;
+  }
+
+  #achGrid .item .row {
+    margin: 0;
+  }
+
+  /* 小螢幕優化：把下半部按鈕排整齊 */
+  @media (max-width: 640px) {
+    .row-actions-bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .history-list {
+      max-height: 260px;
+    }
+
+    .card {
+      padding-inline: 12px;
+    }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="toolbar">
-    <h2 style="margin:0;">任務紀錄</h2>
+    <h2>任務紀錄</h2>
     <div class="sub" id="who"></div>
   </div>
+
   <div class="grid">
+    <!-- 左側：今日任務 + 任意日期檢視 -->
     <section class="left">
       <div class="card">
         <h3>今天的任務</h3>
-        <div class="row">
-          <input type="time" id="start" value="09:00">
-          <span>—</span>
-          <input type="time" id="end" value="10:00">
-          <input type="text" id="title" placeholder="輸入任務... 例如：寫企劃、練胸背">
-          <button class="btn-pri" id="add">新增</button>
-          <button id="reload">重新整理</button>
+        <p class="muted" style="margin:2px 0 6px;font-size:11px;">
+          先輸入 <b>開始時間 / 結束時間 / 任務名稱</b>，按「新增」即可同步到雲端。
+        </p>
+
+        <!-- 輸入列：時間 + 任務名稱 -->
+        <div class="row row-time">
+          <div class="row-time-group">
+            <span class="row-time-label">開始</span>
+            <input type="time" id="start" value="09:00">
+          </div>
+          <span style="font-size:12px;color:var(--sub);margin-top:18px;">—</span>
+          <div class="row-time-group">
+            <span class="row-time-label">結束</span>
+            <input type="time" id="end" value="10:00">
+          </div>
+          <div class="row-time-group" style="flex:1;min-width:180px;">
+            <span class="row-time-label">任務</span>
+            <input type="text" id="title" placeholder="例如：寫企劃、練胸背、讀 30 分鐘書">
+          </div>
+          <div class="row-time-group" style="align-self:flex-end;">
+            <button class="btn-pri" id="add">＋ 新增</button>
+          </div>
         </div>
+
+        <div class="row" style="justify-content:flex-end;margin-top:4px;">
+          <button id="reload" class="btn-outlined">重新整理</button>
+        </div>
+
+        <!-- 今日清單 -->
         <div id="todayList" class="list"></div>
-        <div class="row" style="justify-content:space-between;margin-top:10px;">
-          <div class="muted">完成率：<b id="rate">0%</b>（<span id="doneCnt">0</span>/<span id="totalCnt">0</span>）</div>
-          <div style="display:flex;gap:8px;">
-            <button id="saveDone">儲存完成情況</button>
+
+        <!-- 完成率 ＋ 存檔 -->
+        <div class="row row-actions-bottom" style="justify-content:space-between;margin-top:10px;">
+          <div class="muted">
+            完成率：
+            <b id="rate">0%</b>
+            （<span id="doneCnt">0</span>/<span id="totalCnt">0</span>）
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="saveDone" class="btn-outlined">💾 儲存完成情況</button>
             <button class="btn-pri" id="archive">📌 存入歷史（今日）</button>
           </div>
         </div>
+
         <div class="sep"></div>
-        <div class="muted">小提醒：本區塊專注「雲端同步」。你原本的 AI 分析與主畫面功能不受影響。</div>
+        <div class="muted" style="font-size:11px;">
+          小提醒：這裡只負責 <b>雲端同步與歷史紀錄</b>，你主網站上的 AI 分析與時間工具不會被影響。
+        </div>
       </div>
+
       <div class="card">
         <h3>檢視任務（任何一天）</h3>
         <div class="row">
           <input type="date" id="pickDay">
-          <button id="viewPicked">查看</button>
+          <button id="viewPicked" class="btn-outlined">查看這一天</button>
         </div>
         <div id="pickedList" class="list"></div>
       </div>
     </section>
+
+    <!-- 右側：完成率 KPI + 成就 + 歷史 -->
     <section class="right">
       <!-- 完成率 KPI + 成就 -->
-<div class="card" id="kpiCard">
-  <div class="row" style="justify-content:space-between;">
-    <h3>完成率與成就</h3>
-    <div class="row">
-      <span class="pill" id="kpiMonthLabel">本月</span>
-      <span class="pill" id="kpiWeekLabel">本週</span>
-    </div>
-  </div>
+      <div class="card" id="kpiCard">
+        <div class="row" style="justify-content:space-between;align-items:flex-end;">
+          <h3>完成率與成就</h3>
+          <div class="row" style="gap:6px;">
+            <span class="pill" id="kpiMonthLabel">本月</span>
+            <span class="pill pill-strong" id="kpiWeekLabel">本週</span>
+          </div>
+        </div>
 
-  <!-- KPI 區 -->
-  <div class="list" style="gap:10px">
-    <div>
-      <div class="row" style="justify-content:space-between">
-        <div class="muted">本月完成率</div>
-        <div class="muted"><b id="mRatio">--%</b>（<span id="mDone">0</span>/<span id="mTotal">0</span>）</div>
+        <!-- KPI 區 -->
+        <div class="list" style="gap:10px;margin-top:6px;">
+          <div>
+            <div class="row" style="justify-content:space-between;margin:0 0 4px;">
+              <div class="muted">本月完成率</div>
+              <div class="muted">
+                <b id="mRatio">--%</b>
+                （<span id="mDone">0</span>/<span id="mTotal">0</span>）
+              </div>
+            </div>
+            <div class="bar"><span id="mBar"></span></div>
+          </div>
+
+          <div>
+            <div class="row" style="justify-content:space-between;margin:0 0 4px;">
+              <div class="muted">本週完成率</div>
+              <div class="muted">
+                <b id="wRatio">--%</b>
+                （<span id="wDone">0</span>/<span id="wTotal">0</span>）
+              </div>
+            </div>
+            <div class="bar"><span id="wBar"></span></div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- 成就區 -->
+        <div class="row" style="justify-content:space-between;margin-top:2px;">
+          <div class="muted">成就系統</div>
+          <div class="muted" id="achDbg"></div>
+        </div>
+        <div id="achGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:6px;"></div>
       </div>
-      <div class="bar"><span id="mBar" style="display:block;height:8px;background:#0a7;width:0%;border-radius:999px"></span></div>
-    </div>
 
-    <div>
-      <div class="row" style="justify-content:space-between">
-        <div class="muted">本週完成率</div>
-        <div class="muted"><b id="wRatio">--%</b>（<span id="wDone">0</span>/<span id="wTotal">0</span>）</div>
-      </div>
-      <div class="bar"><span id="wBar" style="display:block;height:8px;background:#0a7;width:0%;border-radius:999px"></span></div>
-    </div>
-  </div>
-
-  <div class="sep"></div>
-
-  <!-- 成就區 -->
-  <div class="row" style="justify-content:space-between">
-    <div class="muted">成就系統</div>
-    <div class="muted" id="achDbg"></div>
-  </div>
-  <div id="achGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></div>
-</div>
-
+      <!-- 歷史清單 -->
       <div class="card">
         <div class="row" style="justify-content:space-between;">
           <h3>歷史（本週 / 本月）</h3>
           <div class="row">
-            <button id="showWeek">本週</button>
-            <button id="showMonth">本月</button>
+            <button id="showWeek" class="btn-outlined">本週</button>
+            <button id="showMonth" class="btn-outlined">本月</button>
           </div>
         </div>
         <div class="history-list" id="history"></div>
         <div class="sep"></div>
-        <div class="muted">點任一日期可展開細節。</div>
+        <div class="muted">點任一日期可展開當天的任務細節。</div>
       </div>
     </section>
   </div>
@@ -267,20 +624,19 @@
     await renderHistory('week');
   })();
 </script>
+
 <script>
   document.addEventListener('DOMContentLoaded', ()=>{
     const btn = document.getElementById('saveButton');
     if(btn) btn.addEventListener('click', Save_Cloud_Archive_Achievements);
   });
-  </script>
+</script>
 
 <script>
   // ====== 週/月完成率 + 成就（使用 cloud_tasks_archive） ======
   (function(){
-    // 不動你原有 sb / 登入流程；直接沿用現有的 sb 與 getUser()
     const el = id => document.getElementById(id);
   
-    // 週一為一週起點
     const mondayOf = (d) => { const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; };
     const sundayOf = (d) => { const m=mondayOf(d); const x=new Date(m); x.setDate(m.getDate()+6); x.setHours(23,59,59,999); return x; };
     const iso = (d) => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -293,7 +649,6 @@
     function weekRange(base=new Date()){ return { s: mondayOf(base), e: sundayOf(base) }; }
   
     async function fetchArchiveRange(userId, from, to){
-      // 只抓需要的欄位（你表就是這兩個欄 + 其他）
       const { data, error } = await sb.from("cloud_tasks_archive")
         .select("date, done")
         .eq("user_id", userId)
@@ -314,17 +669,14 @@
   
     function renderAchievements({ month, week }){
       const list = [];
-      // 這裡的條件你可自由改；我先給一組實用的
       list.push({ id:"m10",  title:"暖身完成者", desc:"本月完成 ≥ 10 件", ok: month.done >= 10, need:10 });
       list.push({ id:"m25",  title:"穩定輸出",   desc:"本月完成 ≥ 25 件", ok: month.done >= 25, need:25 });
       list.push({ id:"m50",  title:"效率達人",   desc:"本月完成 ≥ 50 件", ok: month.done >= 50, need:50 });
       list.push({ id:"m70",  title:"本月七成達標", desc:"本月完成率 ≥ 70%", ok: month.ratio >= 70, need:"70%" });
       list.push({ id:"w80",  title:"本週八成達標", desc:"本週完成率 ≥ 80%", ok: week.ratio >= 80, need:"80%" });
   
-      // 連續完成天數（以「cloud_tasks_archive 一天至少 1 件 done」為一日有完成）
-      // 以本月範圍計算
       const { s:ms, e:me } = monthRange(new Date());
-      const days = new Map(); // "YYYY-MM-DD" -> {done,total}
+      const days = new Map();
       month.rows.forEach(r=>{
         const k = r.date;
         const v = days.get(k) || { done:0, total:0 };
@@ -341,22 +693,17 @@
       list.push({ id:"s3", title:"連三好日子", desc:"連續 3 天有完成（本月）", ok: streak >= 3, need:"3天" });
       list.push({ id:"s7", title:"一週穩穩來", desc:"連續 7 天有完成（本月）", ok: streak >= 7, need:"7天" });
   
-      // 繪製
       const grid = el("achGrid");
       if (!grid) return;
       grid.innerHTML = "";
       list.forEach(a=>{
         const card = document.createElement("div");
         card.className = "item";
-        card.style.display="flex";
-        card.style.flexDirection="column";
-        card.style.alignItems="stretch";
-        card.style.gap="4px";
-        card.style.opacity = a.ok ? "1" : ".55";
+        card.style.opacity = a.ok ? "1" : ".52";
         card.innerHTML = `
-          <div style="font-weight:700">${a.title}</div>
-          <div class="sub">${a.desc}</div>
-          <div class="row" style="justify-content:space-between;margin-top:4px">
+          <div style="font-weight:700;font-size:13px;">${a.title}</div>
+          <div class="sub" style="font-size:11px;">${a.desc}</div>
+          <div class="row" style="justify-content:space-between;margin-top:4px;">
             <span class="muted">${a.ok ? "已解鎖" : "未解鎖"}</span>
             <span class="pill">${a.need}</span>
           </div>
@@ -367,23 +714,18 @@
     }
   
     async function refreshKPI(){
-      // 沿用你原本的 getUser()
       const u = await (typeof getUser === "function" ? getUser() : (await sb.auth.getUser()).data.user);
       if (!u) return;
   
       const now = new Date();
-  
-      // 本月
       const { s:ms, e:me } = monthRange(now);
       const mRows = await fetchArchiveRange(u.id, ms, me);
       const mStat = computeRate(mRows);
   
-      // 本週
       const { s:ws, e:we } = weekRange(now);
       const wRows = await fetchArchiveRange(u.id, ws, we);
       const wStat = computeRate(wRows);
   
-      // 更新 KPI
       el("mRatio").textContent = mStat.ratio + "%";
       el("mDone").textContent  = mStat.done;
       el("mTotal").textContent = mStat.total;
@@ -394,23 +736,17 @@
       el("wTotal").textContent = wStat.total;
       renderBar(el("wBar"), wStat.ratio);
   
-      // 成就
       renderAchievements({ month: { ...mStat, rows: mRows }, week: wStat });
   
-      // 標籤（顯示日期範圍）
       el("kpiMonthLabel").textContent = `本月 ${iso(ms)} ~ ${iso(me)}`;
       el("kpiWeekLabel").textContent  = `本週 ${iso(ws)} ~ ${iso(we)}`;
     }
   
-    // 與你原本流程串接：初次載入、按「存入歷史」後、點「本週/本月」按鈕後，都刷新 KPI
     document.addEventListener("DOMContentLoaded", ()=>{
-      // 初次載入完你原本的流程之後再跑一次（避免搶到 sb 初始化）
       setTimeout(refreshKPI, 300);
   
-      // 你原本的按鈕 hook（若日後你改 id，只要再呼叫 refreshKPI 即可）
       const oldArchive = window.archiveToday;
       if (typeof oldArchive === "function"){
-        // 包一層：執行原函式後刷新 KPI
         window.archiveToday = async function(){
           const n = await oldArchive.apply(this, arguments);
           await refreshKPI();
@@ -423,12 +759,10 @@
       btnW && btnW.addEventListener("click", ()=> setTimeout(refreshKPI, 100));
       btnM && btnM.addEventListener("click", ()=> setTimeout(refreshKPI, 100));
   
-      // 週期性自動刷新（與你左側今日任務互動時，也可能會存入歷史）
       setInterval(refreshKPI, 5000);
     });
   })();
-  </script>
-  
-  
+</script>
 </body>
 </html>
+
