@@ -666,8 +666,8 @@
         
           <div class="task-footer">
             <span class="task-tag">模式：社群互動</span>
-        
-            <!-- 🟥🟥🟥 直接跳轉新分頁：用 href + target="_blank" -->
+          
+            <!-- 這顆完全不走 overlay，直接開新分頁 -->
             <a class="task-link"
                href="/community.html"
                target="_blank"
@@ -675,6 +675,7 @@
                前往社群牆
             </a>
           </div>
+          
         </article>
         
       </div>
@@ -728,15 +729,15 @@
   
       // 綁定卡片按鈕
     // 只綁定「有 data-url 的 task-link」→ 用 overlay 開
-document.querySelectorAll('.task-link[data-url]').forEach(link => {
-  link.addEventListener('click', function(e) {
+    document.querySelectorAll('.task-link[data-url]').forEach(link => {
+  link.addEventListener('click', (e) => {
     e.preventDefault();
-    const url = link.getAttribute('data-url');
-    const label =
-      link.getAttribute('data-title') ||
+    const url = link.dataset.url;
+    const title =
+      link.dataset.title ||
       link.closest('.task-card').querySelector('.task-title').textContent;
 
-    openOverlay(label, url); // 你的 overlay 函式
+    openOverlay(title, url);
   });
 });
 
