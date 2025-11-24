@@ -267,9 +267,10 @@
           <span class="active">社群</span>
           <span>關於計畫</span>
         </nav>
-        <button onclick="window.location.href='/supabase-test.html?redirect=/community.html'">
+        <button onclick="window.location.href='https:/tool-server-d695.onrender.com/supabase-test.html?redirect=/community.html'">
             登入後才能發文
           </button>
+          
           
       </div>
     </div>
@@ -366,9 +367,10 @@
 
   <script>
     // === Supabase 初始化（記得換成你的 URL / Key） ===
-    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";   // TODO: 換成你的
-    const SUPABASE_KEY = "YOUR_ANON_KEY_HERE";                         // TODO: 換成你的 anon public key
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
     let currentUser = null;
     let loadingFeed = false;
