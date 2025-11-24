@@ -473,131 +473,143 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
     // 載入貼文 + 讚 + 排行榜
-    async function loadFeed(){
-      if(loadingFeed) return;
-      loadingFeed = true;
+   // 載入貼文 + 讚 + 排行榜
+async function loadFeed(){
+  if(loadingFeed) return;
+  loadingFeed = true;
 
-      const feedEl = document.getElementById("feed");
-      feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
+  const feedEl = document.getElementById("feed");
+  feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
 
-      // 讀貼文 + 連 profiles
-      const { data: posts, error } = await sb
-        .from("posts")
-        .select(`
-          id,
-          user_id,
-          content,
-          habit_tag,
-          created_at,
-          profiles ( display_name )
-        `)
-        .order("created_at", { ascending:false })
-        .limit(50);
+  // 1) 先讀貼文（不做 profiles join）
+  const { data: posts, error } = await sb
+    .from("posts")
+    .select("id, user_id, content, habit_tag, created_at")
+    .order("created_at", { ascending:false })
+    .limit(50);
 
-      if(error){
-        console.error(error);
-        feedEl.innerHTML = '<li class="feed-empty">載入貼文失敗。</li>';
-        loadingFeed = false;
-        return;
-      }
+  if(error){
+    console.error("load posts error", error);
+    feedEl.innerHTML = '<li class="feed-empty">載入貼文失敗。</li>';
+    loadingFeed = false;
+    return;
+  }
 
-      if(!posts || posts.length === 0){
-        feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
-        updateRankingFromData(posts, []);
-        loadingFeed = false;
-        return;
-      }
+  if(!posts || posts.length === 0){
+    feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
+    updateRankingFromData(posts, []);
+    loadingFeed = false;
+    return;
+  }
 
-      const postIds = posts.map(p => p.id);
+  // 2) 把所有 user_id 蒐集起來，一次去 profiles 查暱稱
+  const userIds = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
+  let profileMap = {};
+  if(userIds.length){
+    const { data: profiles, error: profileError } = await sb
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", userIds);
 
-      const { data: likes, error: likesError } = await sb
-        .from("likes")
-        .select("post_id, user_id")
-        .in("post_id", postIds);
-
-      if(likesError){
-        console.error(likesError);
-      }
-
-      const likesByPost = {};
-      const likedByMe = new Set();
-      if(likes && likes.length){
-        likes.forEach(l => {
-          likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
-          if(currentUser && l.user_id === currentUser.id){
-            likedByMe.add(l.post_id);
-          }
-        });
-      }
-
-      feedEl.innerHTML = "";
-      const postsById = {};
-      posts.forEach(p => postsById[p.id] = p);
-
-      posts.forEach(p => {
-        const li = document.createElement("li");
-        li.className = "post";
-
-        const likeCount = likesByPost[p.id] || 0;
-        const isLiked = likedByMe.has(p.id);
-
-        // header
-        const header = document.createElement("div");
-        header.className = "post-header";
-
-        const userLabel = document.createElement("div");
-        userLabel.className = "post-user";
-        const name = (p.profiles && p.profiles.display_name) ||
-                     (p.user_id ? "User #" + p.user_id.slice(0,4) : "匿名使用者");
-        userLabel.innerHTML = `<span class="name">${name}</span> · 自律使用者`;
-
-        const timeLabel = document.createElement("div");
-        timeLabel.className = "post-time";
-        const t = new Date(p.created_at);
-        timeLabel.textContent = t.toLocaleString("zh-TW", {
-          month:"2-digit",day:"2-digit",
-          hour:"2-digit",minute:"2-digit"
-        });
-
-        header.appendChild(userLabel);
-        header.appendChild(timeLabel);
-
-        const content = document.createElement("div");
-        content.className = "post-content";
-        content.textContent = p.content;
-
-        const tags = document.createElement("div");
-        tags.className = "post-tags";
-        if(p.habit_tag){
-          tags.innerHTML = `<span>習慣 · ${p.habit_tag}</span>`;
-        }
-
-        const actions = document.createElement("div");
-        actions.className = "post-actions";
-
-        const likeBtn = document.createElement("button");
-        likeBtn.className = "btn-like" + (isLiked ? " liked" : "");
-        likeBtn.innerHTML = `<span class="heart">❤</span><span>${likeCount} 個讚</span>`;
-        likeBtn.onclick = () => toggleLike(p.id, isLiked);
-
-        const meta = document.createElement("div");
-        meta.className = "post-meta-hint";
-        meta.textContent = "請友善互動：這裡是大家練習自律的地方，不是比賽。";
-
-        actions.appendChild(likeBtn);
-        actions.appendChild(meta);
-
-        li.appendChild(header);
-        li.appendChild(content);
-        if(p.habit_tag) li.appendChild(tags);
-        li.appendChild(actions);
-
-        feedEl.appendChild(li);
+    if(profileError){
+      console.error("load profiles error", profileError);
+    }else{
+      profiles.forEach(p => {
+        profileMap[p.id] = p.display_name;
       });
-
-      updateRankingFromData(posts, likes || []);
-      loadingFeed = false;
     }
+  }
+
+  // 3) 再讀 likes
+  const postIds = posts.map(p => p.id);
+  const { data: likes, error: likesError } = await sb
+    .from("likes")
+    .select("post_id, user_id")
+    .in("post_id", postIds);
+
+  if(likesError){
+    console.error("load likes error", likesError);
+  }
+
+  const likesByPost = {};
+  const likedByMe = new Set();
+  if(likes && likes.length){
+    likes.forEach(l => {
+      likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
+      if(currentUser && l.user_id === currentUser.id){
+        likedByMe.add(l.post_id);
+      }
+    });
+  }
+
+  // 4) 組出畫面
+  feedEl.innerHTML = "";
+  posts.forEach(p => {
+    const li = document.createElement("li");
+    li.className = "post";
+
+    const likeCount = likesByPost[p.id] || 0;
+    const isLiked = likedByMe.has(p.id);
+
+    const header = document.createElement("div");
+    header.className = "post-header";
+
+    const userLabel = document.createElement("div");
+    userLabel.className = "post-user";
+    const displayName =
+      profileMap[p.user_id] ||
+      (p.user_id ? "User #" + p.user_id.slice(0,4) : "匿名使用者");
+    userLabel.innerHTML = `<span class="name">${displayName}</span> · 自律使用者`;
+
+    const timeLabel = document.createElement("div");
+    timeLabel.className = "post-time";
+    const t = new Date(p.created_at);
+    timeLabel.textContent = t.toLocaleString("zh-TW", {
+      month:"2-digit",day:"2-digit",
+      hour:"2-digit",minute:"2-digit"
+    });
+
+    header.appendChild(userLabel);
+    header.appendChild(timeLabel);
+
+    const content = document.createElement("div");
+    content.className = "post-content";
+    content.textContent = p.content;
+
+    const tags = document.createElement("div");
+    tags.className = "post-tags";
+    if(p.habit_tag){
+      tags.innerHTML = `<span>習慣 · ${p.habit_tag}</span>`;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "post-actions";
+
+    const likeBtn = document.createElement("button");
+    likeBtn.className = "btn-like" + (isLiked ? " liked" : "");
+    likeBtn.innerHTML = `<span class="heart">❤</span><span>${likeCount} 個讚</span>`;
+    likeBtn.onclick = () => toggleLike(p.id, isLiked);
+
+    const meta = document.createElement("div");
+    meta.className = "post-meta-hint";
+    meta.textContent = "請友善互動：這裡是大家練習自律的地方，不是比賽。";
+
+    actions.appendChild(likeBtn);
+    actions.appendChild(meta);
+
+    li.appendChild(header);
+    li.appendChild(content);
+    if(p.habit_tag) li.appendChild(tags);
+    li.appendChild(actions);
+
+    feedEl.appendChild(li);
+  });
+
+  // 5) 更新排行榜
+  updateRankingFromData(posts, likes || []);
+  loadingFeed = false;
+}
+
 
     // 按讚 / 取消讚
     async function toggleLike(postId, alreadyLiked){
