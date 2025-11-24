@@ -729,17 +729,7 @@
   
       // 綁定卡片按鈕
     // 只綁定「有 data-url 的 task-link」→ 用 overlay 開
-    document.querySelectorAll('.task-link[data-url]').forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const url = link.dataset.url;
-    const title =
-      link.dataset.title ||
-      link.closest('.task-card').querySelector('.task-title').textContent;
-
-    openOverlay(title, url);
-  });
-});
+ 
 
     </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -749,28 +739,34 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw"
     );
   
-    // 你的 openOverlay 邏輯前面，加這個判斷
-    document.querySelectorAll('.task-link').forEach(link => {
+    // ✅ 只綁「有 data-url 的」→ overlay + 登入檢查
+    document.querySelectorAll('.task-link[data-url]').forEach(link => {
       link.addEventListener('click', async function(e) {
         e.preventDefault();
   
         const requireLogin = link.getAttribute('data-require-login') === 'true';
-        const { data: { user } } = await sb.auth.getUser();
   
-        if (requireLogin && !user) {
-          if (confirm("要先登入才能使用這個工具，現在要去登入嗎？")) {
-            window.location.href = "supabase-test.html";
+        if (requireLogin) {
+          const { data: { user } } = await sb.auth.getUser();
+          if (!user) {
+            if (confirm("要先登入才能使用這個工具，現在要去登入嗎？")) {
+              // 可以順便加 redirect 參數
+              window.location.href = "/supabase-test.html?redirect=/home.html";
+            }
+            return;
           }
-          return;
         }
   
         const url = link.getAttribute('data-url');
-        const label = link.getAttribute('data-title') 
-                   || link.closest('.task-card').querySelector('.task-title').textContent;
+        const label =
+          link.getAttribute('data-title') ||
+          link.closest('.task-card').querySelector('.task-title').textContent;
+  
         openOverlay(label, url);
       });
     });
   </script>
+  
   <!-- 浮動時間管理聊天室 -->
 <div id="timeChatWindow" class="time-chat-window">
   <div class="time-chat-header" id="timeChatHeader">
