@@ -17,7 +17,7 @@
       --card:#ffffff;
       --shadow-soft:0 18px 45px rgba(15,23,42,.14);
       --radius:18px;
-      --font:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      --font:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
     *{box-sizing:border-box;font-family:var(--font);}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
@@ -501,7 +501,7 @@
       window.location.href = "/supabase-test.html";
     }
 
-    // 假 AI 評語生成器（之後可以改成真的 AI）
+    // 假 AI 評語生成器：當後端壞掉時當作 fallback
     function makeAiComment(content, habitTag){
       const base = content.length > 80 ? "看得出來你今天寫得蠻詳細的，" : "雖然篇幅不長，";
       let tagPart = "";
@@ -620,7 +620,7 @@
       await loadFeed();
     }
 
-    // 發文 + 自動加一則 AI 評語
+    // 發文 + 呼叫後端 AI，失敗則用假 AI，最後寫進 comments
     async function createPost(){
       const errorBox = document.getElementById("composerError");
       errorBox.style.display = "none";
@@ -667,8 +667,28 @@
 
       const postId = data.id;
 
-      // 2) 插入一則 AI 評語到 comments
-      const aiText = makeAiComment(content, habitTag);
+      // 2) 叫後端 /api/ai-comment 拿真的 AI 評語，失敗就退回 makeAiComment
+      let aiText = "";
+      try{
+        const resp = await fetch("/api/ai-comment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content, habitTag })
+        });
+        if(resp.ok){
+          const json = await resp.json();
+          aiText = (json && json.text) || "";
+        }else{
+          console.error("AI API 回傳非 200", resp.status);
+        }
+      }catch(err){
+        console.error("呼叫 /api/ai-comment 發生錯誤", err);
+      }
+
+      if(!aiText){
+        aiText = makeAiComment(content, habitTag);
+      }
+
       const { error: cError } = await sb.from("comments").insert({
         post_id: postId,
         user_id: currentUser.id, // 先用自己的 user_id，RLS 比較單純
@@ -1056,3 +1076,4 @@
   </script>
 </body>
 </html>
+
