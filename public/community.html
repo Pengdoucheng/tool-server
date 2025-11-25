@@ -119,6 +119,36 @@
     .hero-status span.name{font-weight:600;}
     .hero-status span.hint{color:#4b5563;font-size:11px;margin-left:6px;}
 
+    /* 暱稱列 */
+    #nicknameBar{
+      display:none;
+      margin-top:6px;
+      font-size:12px;
+      color:#111827;
+    }
+    #displayNameInput{
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid #d4d4d8;
+      font-size:12px;
+      max-width:160px;
+    }
+    #btnSaveName{
+      margin-left:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid #111827;
+      background:#111827;
+      color:#fff;
+      font-size:11px;
+      cursor:pointer;
+    }
+    #nameHint{
+      margin-left:6px;
+      font-size:11px;
+      color:#6b7280;
+    }
+
     /* layout */
     .main{
       flex:1;
@@ -247,6 +277,86 @@
     .rank-3 .rank-name span{color:#111827;}
 
     .side-footer{font-size:10px;color:#9ca3af;margin-top:4px;text-align:right;}
+
+    /* 排行榜顏色用在貼文名字上 */
+    .name-rank-1{ color:#ef4444; font-weight:800; }
+    .name-rank-2{ color:#ea580c; font-weight:700; }
+    .name-rank-3{ color:#111827; font-weight:700; }
+    .rank-tag{
+      margin-left:4px;
+      padding:1px 6px;
+      border-radius:999px;
+      border:1px solid #fecaca;
+      background:#fef2f2;
+      font-size:10px;
+      color:#b91c1c;
+    }
+
+    /* 留言區 */
+    .post-comments{
+      margin-top:8px;
+      padding-top:6px;
+      border-top:1px dashed #e5e7eb;
+    }
+    .comment-list{
+      list-style:none;
+      margin:0;
+      padding:0;
+      display:grid;
+      gap:4px;
+    }
+    .comment-item{
+      font-size:11px;
+      color:#4b5563;
+      padding:4px 6px;
+      border-radius:8px;
+      background:#f9fafb;
+    }
+    .comment-meta{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:2px;
+    }
+    .comment-name{
+      font-weight:600;
+    }
+    .comment-time{
+      font-size:10px;
+      color:#9ca3af;
+    }
+    .comment-content{
+      white-space:pre-wrap;
+    }
+    .comment-ai{
+      background:#111827;
+      color:#fef2f2;
+      border-left:3px solid #f97373;
+    }
+    .comment-ai .comment-name{
+      color:#fecaca;
+    }
+    .comment-new{
+      margin-top:6px;
+      display:flex;
+      gap:6px;
+    }
+    .comment-input{
+      flex:1;
+      border-radius:999px;
+      border:1px solid #d4d4d8;
+      padding:4px 8px;
+      font-size:11px;
+    }
+    .comment-btn{
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid #111827;
+      background:#111827;
+      color:#fff;
+      font-size:11px;
+      cursor:pointer;
+    }
   </style>
 </head>
 <body>
@@ -267,10 +377,10 @@
           <span class="active">社群</span>
           <span>關於計畫</span>
         </nav>
+        <!-- 這顆照你原本的網址寫法 -->
         <button onclick="window.location.href='/supabase-test.html?redirect=/community.html'">
-            登入後才能發文
-          </button>
-          
+          登入後才能發文
+        </button>
       </div>
     </div>
   </header>
@@ -291,6 +401,18 @@
       <p class="hero-status" id="heroStatus">
         尚未取得登入資訊…
       </p>
+
+      <!-- 暱稱設定列：登入後才會顯示 -->
+      <div id="nicknameBar">
+        <span>暱稱：</span>
+        <input
+          id="displayNameInput"
+          type="text"
+          placeholder="輸入你想被叫的名字"
+        />
+        <button id="btnSaveName">儲存暱稱</button>
+        <span id="nameHint"></span>
+      </div>
     </div>
   </section>
 
@@ -365,24 +487,46 @@
   </main>
 
   <script>
-    // === Supabase 初始化（記得換成你的 URL / Key） ===
+    // === Supabase 初始化 ===
     const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
     let loadingFeed = false;
+    let profileMapGlobal = {}; // user_id -> display_name
+    let rankByUser = {};       // user_id -> 排名
 
     function goLogin(){
-      // 這裡接你在 Render 上的登入頁
       window.location.href = "/supabase-test.html";
+    }
+
+    // 假 AI 評語生成器（之後可以改成真的 AI）
+    function makeAiComment(content, habitTag){
+      const base = content.length > 80 ? "看得出來你今天寫得蠻詳細的，" : "雖然篇幅不長，";
+      let tagPart = "";
+      switch(habitTag){
+        case "讀書": tagPart = "在讀書這塊能維持紀律很不容易，"; break;
+        case "早起": tagPart = "調整作息會很痛苦，但你有在動，"; break;
+        case "運動": tagPart = "有動就贏過一大票人了，"; break;
+        case "專注": tagPart = "專注是所有進步的根本，"; break;
+        case "整理": tagPart = "把環境整理好真的會讓心情安靜很多，"; break;
+        default: tagPart = "";
+      }
+      const tail = "明天不一定要更好，但至少維持今天這個版型就很強。";
+      return base + tagPart + tail;
     }
 
     // 初始化
     document.addEventListener("DOMContentLoaded", async () => {
+      const btnSaveName = document.getElementById("btnSaveName");
+      if(btnSaveName){
+        btnSaveName.addEventListener("click", updateDisplayName);
+      }
+
       await fetchUser();
       await loadFeed();
+
       sb.auth.onAuthStateChange(async () => {
         await fetchUser();
         await loadFeed();
@@ -391,11 +535,16 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function fetchUser(){
       const heroStatus = document.getElementById("heroStatus");
+      const nicknameBar = document.getElementById("nicknameBar");
+      const nameInput  = document.getElementById("displayNameInput");
+      const nameHint   = document.getElementById("nameHint");
+
       const { data, error } = await sb.auth.getUser();
       if(error){
         console.error(error);
         heroStatus.textContent = "無法取得登入狀態。";
         currentUser = null;
+        if(nicknameBar) nicknameBar.style.display = "none";
         return;
       }
       currentUser = data.user || null;
@@ -403,31 +552,75 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       if(currentUser){
         heroStatus.innerHTML =
           `已登入：<span class="name">${currentUser.email}</span><span class="hint">可以直接發文與按讚。</span>`;
-        await ensureProfile();
+
+        const email = currentUser.email || "";
+        const fallbackName = email ? email.split("@")[0] : "未命名使用者";
+
+        // 讀取或建立 profile
+        const { data: profileRows, error: pError } = await sb
+          .from("profiles")
+          .select("id, display_name")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+
+        if(pError){
+          console.error("load profile error", pError);
+        }
+
+        let displayName = profileRows?.display_name || fallbackName;
+
+        await sb.from("profiles").upsert({
+          id: currentUser.id,
+          display_name: displayName
+        }, { onConflict: "id" });
+
+        if(nicknameBar){
+          nicknameBar.style.display = "block";
+          if(nameInput) nameInput.value = displayName;
+          if(nameHint){
+            nameHint.textContent = "暱稱會出現在貼文與排行榜上。";
+            nameHint.style.color = "#6b7280";
+          }
+        }
       }else{
         heroStatus.textContent = "尚未登入：你可以先看看別人的貼文，要發文或按讚再登入也可以。";
+        if(nicknameBar) nicknameBar.style.display = "none";
       }
     }
 
-    // 確保 profiles 裡有這個使用者（解決外鍵問題）
-    async function ensureProfile(){
-      if(!currentUser) return;
-      const email = currentUser.email || "";
-      const defaultName = email ? email.split("@")[0] : "未命名使用者";
+    async function updateDisplayName(){
+      if(!currentUser){
+        alert("請先登入再改暱稱。");
+        return;
+      }
+      const input = document.getElementById("displayNameInput");
+      const hint  = document.getElementById("nameHint");
+      const newName = (input.value || "").trim();
+      if(!newName){
+        hint.textContent = "暱稱不能是空白。";
+        hint.style.color = "#b91c1c";
+        return;
+      }
 
-      const { error } = await sb.from("profiles").upsert(
-        {
-          id: currentUser.id,
-          display_name: defaultName
-        },
-        { onConflict: "id" }
-      );
+      const { error } = await sb
+        .from("profiles")
+        .update({ display_name: newName })
+        .eq("id", currentUser.id);
+
       if(error){
-        console.error("upsert profile error", error);
+        console.error(error);
+        hint.textContent = "更新失敗：" + error.message;
+        hint.style.color = "#b91c1c";
+        return;
       }
+
+      hint.textContent = "已更新暱稱！";
+      hint.style.color = "#16a34a";
+
+      await loadFeed();
     }
 
-    // 發文
+    // 發文 + 自動加一則 AI 評語
     async function createPost(){
       const errorBox = document.getElementById("composerError");
       errorBox.style.display = "none";
@@ -452,11 +645,16 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       document.getElementById("btnPost").disabled = true;
 
-      const { error } = await sb.from("posts").insert({
-        user_id: currentUser.id,
-        content,
-        habit_tag: habitTag
-      });
+      // 1) 先寫入 posts
+      const { data, error } = await sb
+        .from("posts")
+        .insert({
+          user_id: currentUser.id,
+          content,
+          habit_tag: habitTag
+        })
+        .select("id")
+        .single();
 
       document.getElementById("btnPost").disabled = false;
 
@@ -467,149 +665,294 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         return;
       }
 
+      const postId = data.id;
+
+      // 2) 插入一則 AI 評語到 comments
+      const aiText = makeAiComment(content, habitTag);
+      const { error: cError } = await sb.from("comments").insert({
+        post_id: postId,
+        user_id: currentUser.id, // 先用自己的 user_id，RLS 比較單純
+        content: aiText,
+        is_ai: true
+      });
+      if(cError){
+        console.error("insert ai comment error", cError);
+      }
+
       contentEl.value = "";
       tagEl.value = "";
       await loadFeed();
     }
 
-    // 載入貼文 + 讚 + 排行榜
-   // 載入貼文 + 讚 + 排行榜
-async function loadFeed(){
-  if(loadingFeed) return;
-  loadingFeed = true;
+    // 載入貼文 + 暱稱 + 讚 + 留言 + 排行榜
+    async function loadFeed(){
+      if(loadingFeed) return;
+      loadingFeed = true;
 
-  const feedEl = document.getElementById("feed");
-  feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
+      const feedEl = document.getElementById("feed");
+      feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
 
-  // 1) 先讀貼文（不做 profiles join）
-  const { data: posts, error } = await sb
-    .from("posts")
-    .select("id, user_id, content, habit_tag, created_at")
-    .order("created_at", { ascending:false })
-    .limit(50);
+      // 1) 貼文
+      const { data: posts, error } = await sb
+        .from("posts")
+        .select("id, user_id, content, habit_tag, created_at")
+        .order("created_at", { ascending:false })
+        .limit(50);
 
-  if(error){
-    console.error("load posts error", error);
-    feedEl.innerHTML = '<li class="feed-empty">載入貼文失敗。</li>';
-    loadingFeed = false;
-    return;
-  }
-
-  if(!posts || posts.length === 0){
-    feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
-    updateRankingFromData(posts, []);
-    loadingFeed = false;
-    return;
-  }
-
-  // 2) 把所有 user_id 蒐集起來，一次去 profiles 查暱稱
-  const userIds = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
-  let profileMap = {};
-  if(userIds.length){
-    const { data: profiles, error: profileError } = await sb
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", userIds);
-
-    if(profileError){
-      console.error("load profiles error", profileError);
-    }else{
-      profiles.forEach(p => {
-        profileMap[p.id] = p.display_name;
-      });
-    }
-  }
-
-  // 3) 再讀 likes
-  const postIds = posts.map(p => p.id);
-  const { data: likes, error: likesError } = await sb
-    .from("likes")
-    .select("post_id, user_id")
-    .in("post_id", postIds);
-
-  if(likesError){
-    console.error("load likes error", likesError);
-  }
-
-  const likesByPost = {};
-  const likedByMe = new Set();
-  if(likes && likes.length){
-    likes.forEach(l => {
-      likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
-      if(currentUser && l.user_id === currentUser.id){
-        likedByMe.add(l.post_id);
+      if(error){
+        console.error("load posts error", error);
+        feedEl.innerHTML = '<li class="feed-empty">載入貼文失敗。</li>';
+        updateRankingFromData([], []);
+        loadingFeed = false;
+        return;
       }
-    });
-  }
 
-  // 4) 組出畫面
-  feedEl.innerHTML = "";
-  posts.forEach(p => {
-    const li = document.createElement("li");
-    li.className = "post";
+      if(!posts || posts.length === 0){
+        feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
+        updateRankingFromData([], []);
+        loadingFeed = false;
+        return;
+      }
 
-    const likeCount = likesByPost[p.id] || 0;
-    const isLiked = likedByMe.has(p.id);
+      // 2) 一次查所有 user 的暱稱
+      const userIds = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
+      profileMapGlobal = {};
+      if(userIds.length){
+        const { data: profiles, error: profileError } = await sb
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", userIds);
 
-    const header = document.createElement("div");
-    header.className = "post-header";
+        if(profileError){
+          console.error("load profiles error", profileError);
+        }else if(profiles){
+          profiles.forEach(p => {
+            profileMapGlobal[p.id] = p.display_name;
+          });
+        }
+      }
 
-    const userLabel = document.createElement("div");
-    userLabel.className = "post-user";
-    const displayName =
-      profileMap[p.user_id] ||
-      (p.user_id ? "User #" + p.user_id.slice(0,4) : "匿名使用者");
-    userLabel.innerHTML = `<span class="name">${displayName}</span> · 自律使用者`;
+      // 3) likes
+      const postIds = posts.map(p => p.id);
+      let likes = [];
+      if(postIds.length){
+        const { data: likesData, error: likesError } = await sb
+          .from("likes")
+          .select("post_id, user_id")
+          .in("post_id", postIds);
 
-    const timeLabel = document.createElement("div");
-    timeLabel.className = "post-time";
-    const t = new Date(p.created_at);
-    timeLabel.textContent = t.toLocaleString("zh-TW", {
-      month:"2-digit",day:"2-digit",
-      hour:"2-digit",minute:"2-digit"
-    });
+        if(likesError){
+          console.error("load likes error", likesError);
+        }else{
+          likes = likesData || [];
+        }
+      }
 
-    header.appendChild(userLabel);
-    header.appendChild(timeLabel);
+      const likesByPost = {};
+      const likedByMe = new Set();
+      if(likes && likes.length){
+        likes.forEach(l => {
+          likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
+          if(currentUser && l.user_id === currentUser.id){
+            likedByMe.add(l.post_id);
+          }
+        });
+      }
 
-    const content = document.createElement("div");
-    content.className = "post-content";
-    content.textContent = p.content;
+      // 4) comments
+      let commentsByPost = {};
+      if(postIds.length){
+        const { data: comments, error: cError } = await sb
+          .from("comments")
+          .select("id, post_id, user_id, content, is_ai, created_at")
+          .in("post_id", postIds)
+          .order("created_at", { ascending:true });
 
-    const tags = document.createElement("div");
-    tags.className = "post-tags";
-    if(p.habit_tag){
-      tags.innerHTML = `<span>習慣 · ${p.habit_tag}</span>`;
+        if(cError){
+          console.error("load comments error", cError);
+        }else if(comments){
+          comments.forEach(c => {
+            if(!commentsByPost[c.post_id]) commentsByPost[c.post_id] = [];
+            commentsByPost[c.post_id].push(c);
+          });
+        }
+      }
+
+      // 5) 更新排行榜（順便填 rankByUser）
+      updateRankingFromData(posts, likes || []);
+
+      // 6) 組畫面
+      feedEl.innerHTML = "";
+      posts.forEach(p => {
+        const li = document.createElement("li");
+        li.className = "post";
+
+        const likeCount = likesByPost[p.id] || 0;
+        const isLiked = likedByMe.has(p.id);
+
+        const header = document.createElement("div");
+        header.className = "post-header";
+
+        const userLabel = document.createElement("div");
+        userLabel.className = "post-user";
+
+        const baseName =
+          profileMapGlobal[p.user_id] ||
+          (p.user_id ? "User #" + p.user_id.slice(0,4) : "匿名使用者");
+
+        const rank = rankByUser[p.user_id];
+        const nameClass = rank ? `name name-rank-${rank}` : "name";
+        const rankBadge = rank && rank <= 3
+          ? `<span class="rank-tag">TOP ${rank}</span>`
+          : "";
+
+        userLabel.innerHTML =
+          `<span class="${nameClass}">${baseName}</span>${rankBadge} · 自律使用者`;
+
+        const timeLabel = document.createElement("div");
+        timeLabel.className = "post-time";
+        const t = new Date(p.created_at);
+        timeLabel.textContent = t.toLocaleString("zh-TW", {
+          month:"2-digit",day:"2-digit",
+          hour:"2-digit",minute:"2-digit"
+        });
+
+        header.appendChild(userLabel);
+        header.appendChild(timeLabel);
+
+        const content = document.createElement("div");
+        content.className = "post-content";
+        content.textContent = p.content;
+
+        const tags = document.createElement("div");
+        tags.className = "post-tags";
+        if(p.habit_tag){
+          tags.innerHTML = `<span>習慣 · ${p.habit_tag}</span>`;
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "post-actions";
+
+        const likeBtn = document.createElement("button");
+        likeBtn.className = "btn-like" + (isLiked ? " liked" : "");
+        likeBtn.innerHTML = `<span class="heart">❤</span><span>${likeCount} 個讚</span>`;
+        likeBtn.onclick = () => toggleLike(p.id, isLiked);
+
+        const meta = document.createElement("div");
+        meta.className = "post-meta-hint";
+        meta.textContent = "請友善互動：這裡是大家練習自律的地方，不是比賽。";
+
+        actions.appendChild(likeBtn);
+        actions.appendChild(meta);
+
+        li.appendChild(header);
+        li.appendChild(content);
+        if(p.habit_tag) li.appendChild(tags);
+        li.appendChild(actions);
+
+        // ===== 留言區 =====
+        const commentsWrapper = document.createElement("div");
+        commentsWrapper.className = "post-comments";
+
+        const list = document.createElement("ul");
+        list.className = "comment-list";
+
+        const comments = commentsByPost[p.id] || [];
+        if(comments.length === 0){
+          const emptyLi = document.createElement("li");
+          emptyLi.className = "comment-item";
+          emptyLi.textContent = "還沒有留言，可以留一句給未來的自己或鼓勵別人。";
+          list.appendChild(emptyLi);
+        }else{
+          comments.forEach(c => {
+            const liC = document.createElement("li");
+            liC.className = "comment-item" + (c.is_ai ? " comment-ai" : "");
+
+            const metaC = document.createElement("div");
+            metaC.className = "comment-meta";
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "comment-name";
+            if(c.is_ai){
+              nameSpan.textContent = "AI 回應";
+            }else{
+              const commentName =
+                profileMapGlobal[c.user_id] ||
+                (c.user_id ? "User #" + c.user_id.slice(0,4) : "留言者");
+              nameSpan.textContent = commentName;
+            }
+
+            const timeSpan = document.createElement("span");
+            timeSpan.className = "comment-time";
+            const ct = new Date(c.created_at);
+            timeSpan.textContent = ct.toLocaleTimeString("zh-TW", {
+              hour:"2-digit", minute:"2-digit"
+            });
+
+            metaC.appendChild(nameSpan);
+            metaC.appendChild(timeSpan);
+
+            const bodyC = document.createElement("div");
+            bodyC.className = "comment-content";
+            bodyC.textContent = c.content;
+
+            liC.appendChild(metaC);
+            liC.appendChild(bodyC);
+            list.appendChild(liC);
+          });
+        }
+
+        const newBox = document.createElement("div");
+        newBox.className = "comment-new";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "寫一句話回覆這篇貼文…";
+        input.className = "comment-input";
+        input.dataset.postId = p.id;
+
+        const btn = document.createElement("button");
+        btn.className = "comment-btn";
+        btn.textContent = "留言";
+        btn.onclick = () => createComment(p.id, input);
+
+        newBox.appendChild(input);
+        newBox.appendChild(btn);
+
+        commentsWrapper.appendChild(list);
+        commentsWrapper.appendChild(newBox);
+
+        li.appendChild(commentsWrapper);
+
+        feedEl.appendChild(li);
+      });
+
+      loadingFeed = false;
     }
 
-    const actions = document.createElement("div");
-    actions.className = "post-actions";
+    async function createComment(postId, inputEl){
+      if(!currentUser){
+        alert("請先登入再留言。");
+        return;
+      }
+      const text = (inputEl.value || "").trim();
+      if(!text) return;
 
-    const likeBtn = document.createElement("button");
-    likeBtn.className = "btn-like" + (isLiked ? " liked" : "");
-    likeBtn.innerHTML = `<span class="heart">❤</span><span>${likeCount} 個讚</span>`;
-    likeBtn.onclick = () => toggleLike(p.id, isLiked);
+      const { error } = await sb.from("comments").insert({
+        post_id: postId,
+        user_id: currentUser.id,
+        content: text,
+        is_ai: false
+      });
+      if(error){
+        console.error("create comment error", error);
+        alert("留言失敗：" + error.message);
+        return;
+      }
 
-    const meta = document.createElement("div");
-    meta.className = "post-meta-hint";
-    meta.textContent = "請友善互動：這裡是大家練習自律的地方，不是比賽。";
-
-    actions.appendChild(likeBtn);
-    actions.appendChild(meta);
-
-    li.appendChild(header);
-    li.appendChild(content);
-    if(p.habit_tag) li.appendChild(tags);
-    li.appendChild(actions);
-
-    feedEl.appendChild(li);
-  });
-
-  // 5) 更新排行榜
-  updateRankingFromData(posts, likes || []);
-  loadingFeed = false;
-}
-
+      inputEl.value = "";
+      await loadFeed();
+    }
 
     // 按讚 / 取消讚
     async function toggleLike(postId, alreadyLiked){
@@ -643,13 +986,15 @@ async function loadFeed(){
       await loadFeed();
     }
 
-    // 排行榜
+    // 排行榜 + 排名記錄
     function updateRankingFromData(posts, likes){
-      const rankListEl = document.getElementById("rankList");
+      const rankListEl  = document.getElementById("rankList");
       const rankEmptyEl = document.getElementById("rankEmpty");
-      const badgeEl = document.getElementById("badgeCount");
+      const badgeEl     = document.getElementById("badgeCount");
 
       rankListEl.innerHTML = "";
+      rankByUser = {};
+
       const postsById = {};
       (posts || []).forEach(p => postsById[p.id] = p);
 
@@ -677,8 +1022,11 @@ async function loadFeed(){
       rankEmptyEl.style.display = entries.length ? "none" : "block";
 
       entries.forEach((e, idx) => {
+        const rank = idx + 1;
+        rankByUser[e.userId] = rank;
+
         const li = document.createElement("li");
-        li.className = "rank-item rank-" + (idx+1);
+        li.className = "rank-item rank-" + rank;
 
         const nameDiv = document.createElement("div");
         nameDiv.className = "rank-name";
