@@ -357,6 +357,36 @@
       font-size:11px;
       cursor:pointer;
     }
+
+    /* 日期篩選列（最新貼文右手邊） */
+    .date-filter-bar{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      gap:6px;
+    }
+    .date-chip{
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      padding:4px 8px;
+      font-size:11px;
+      cursor:pointer;
+      color:#4b5563;
+      transition:all .15s ease-out;
+    }
+    .date-chip span{
+      opacity:.9;
+    }
+    .date-chip-active{
+      border-color:#111827;
+      background:#111827;
+      color:#f9fafb;
+      box-shadow:0 0 0 1px rgba(15,23,42,.06);
+    }
+    .date-chip-active span{
+      opacity:1;
+    }
   </style>
 </head>
 <body>
@@ -457,8 +487,14 @@
         <!-- 最新貼文 -->
         <article class="card" style="margin-top:16px;" aria-label="最新貼文">
           <header class="card-header">
-            <div class="card-title">最新貼文</div>
-            <div class="card-sub">依時間由新到舊排序 · 大家一起在這裡練自律。</div>
+            <div>
+              <div class="card-title">最新貼文</div>
+              <div class="card-sub">依日期收納 · 點上方日期切換當天貼文。</div>
+            </div>
+            <!-- 這裡是日期按鈕列 -->
+            <div id="dateFilterBar" class="date-filter-bar">
+              <!-- JS 動態塞日期 chip -->
+            </div>
           </header>
           <div class="card-body">
             <ul id="feed" class="feed-list"></ul>
@@ -497,8 +533,33 @@
     let profileMapGlobal = {}; // user_id -> display_name
     let rankByUser = {};       // user_id -> 排名
 
+    // 這幾個是用來做「日期收納」跟重新渲染的
+    let allPosts = [];                 // 全部貼文
+    let likesByPostGlobal = {};        // post_id -> 讚數
+    let likedByMeGlobal = new Set();   // 我按過讚的 post_id
+    let commentsByPostGlobal = {};     // post_id -> comments[]
+    let availableDates = [];           // ["2025-11-25", ...]
+    let currentFilterDate = null;      // 現在選到哪一天
+
     function goLogin(){
       window.location.href = "/supabase-test.html";
+    }
+
+    // 把 created_at 轉成「YYYY-MM-DD」方便分組
+    function toDateKey(isoString){
+      const t = new Date(isoString);
+      const y = t.getFullYear();
+      const m = String(t.getMonth() + 1).padStart(2,"0");
+      const d = String(t.getDate()).padStart(2,"0");
+      return `${y}-${m}-${d}`;
+    }
+
+    // 顯示在按鈕上的文字（今天顯示「今天」，其他顯示 mm/dd）
+    function formatDateLabel(dateKey){
+      const today = toDateKey(new Date().toISOString());
+      if(dateKey === today) return "今天";
+      const [y,m,d] = dateKey.split("-");
+      return `${m}/${d}`;
     }
 
     // 假 AI 評語生成器：當後端壞掉時當作 fallback
@@ -653,7 +714,7 @@
           content,
           habit_tag: habitTag
         })
-        .select("id")
+        .select("id, created_at")
         .single();
 
       document.getElementById("btnPost").disabled = false;
@@ -701,16 +762,22 @@
 
       contentEl.value = "";
       tagEl.value = "";
+
+      // 重新載入，會自動把「最新日期」設為目前篩選
+      const newDateKey = toDateKey(data.created_at);
+      currentFilterDate = newDateKey;
       await loadFeed();
     }
 
-    // 載入貼文 + 暱稱 + 讚 + 留言 + 排行榜
+    // 載入貼文 + 暱稱 + 讚 + 留言 + 排行榜（只打 DB 一次）然後用日期再切畫面
     async function loadFeed(){
       if(loadingFeed) return;
       loadingFeed = true;
 
       const feedEl = document.getElementById("feed");
       feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
+
+      const prevFilter = currentFilterDate;
 
       // 1) 貼文
       const { data: posts, error } = await sb
@@ -728,11 +795,19 @@
       }
 
       if(!posts || posts.length === 0){
+        allPosts = [];
         feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
         updateRankingFromData([], []);
+        buildDateFilterBar(); // 清空日期列
         loadingFeed = false;
         return;
       }
+
+      // 處理 dateKey
+      posts.forEach(p => {
+        p._dateKey = toDateKey(p.created_at);
+      });
+      allPosts = posts;
 
       // 2) 一次查所有 user 的暱稱
       const userIds = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
@@ -755,6 +830,9 @@
       // 3) likes
       const postIds = posts.map(p => p.id);
       let likes = [];
+      likesByPostGlobal = {};
+      likedByMeGlobal = new Set();
+
       if(postIds.length){
         const { data: likesData, error: likesError } = await sb
           .from("likes")
@@ -768,19 +846,17 @@
         }
       }
 
-      const likesByPost = {};
-      const likedByMe = new Set();
       if(likes && likes.length){
         likes.forEach(l => {
-          likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
+          likesByPostGlobal[l.post_id] = (likesByPostGlobal[l.post_id] || 0) + 1;
           if(currentUser && l.user_id === currentUser.id){
-            likedByMe.add(l.post_id);
+            likedByMeGlobal.add(l.post_id);
           }
         });
       }
 
       // 4) comments
-      let commentsByPost = {};
+      commentsByPostGlobal = {};
       if(postIds.length){
         const { data: comments, error: cError } = await sb
           .from("comments")
@@ -792,8 +868,8 @@
           console.error("load comments error", cError);
         }else if(comments){
           comments.forEach(c => {
-            if(!commentsByPost[c.post_id]) commentsByPost[c.post_id] = [];
-            commentsByPost[c.post_id].push(c);
+            if(!commentsByPostGlobal[c.post_id]) commentsByPostGlobal[c.post_id] = [];
+            commentsByPostGlobal[c.post_id].push(c);
           });
         }
       }
@@ -801,14 +877,76 @@
       // 5) 更新排行榜（順便填 rankByUser）
       updateRankingFromData(posts, likes || []);
 
-      // 6) 組畫面
+      // 6) 整理所有有貼文的日期，用來做右上角的按鈕
+      availableDates = [...new Set(allPosts.map(p => p._dateKey))].sort((a,b) => b.localeCompare(a)); // 新到舊
+      if(!availableDates.length){
+        buildDateFilterBar();
+        document.getElementById("feed").innerHTML =
+          '<li class="feed-empty">目前沒有符合條件的貼文。</li>';
+        loadingFeed = false;
+        return;
+      }
+
+      // 如果之前有選過某個日期，而且這次仍然存在，就維持；否則就改成最新那天
+      if(prevFilter && availableDates.includes(prevFilter)){
+        currentFilterDate = prevFilter;
+      }else if(!currentFilterDate || !availableDates.includes(currentFilterDate)){
+        currentFilterDate = availableDates[0];
+      }
+
+      buildDateFilterBar();
+      renderFeedForDate(currentFilterDate);
+
+      loadingFeed = false;
+    }
+
+    // 右上角日期按鈕列
+    function buildDateFilterBar(){
+      const bar = document.getElementById("dateFilterBar");
+      if(!bar) return;
+      bar.innerHTML = "";
+
+      if(!availableDates || availableDates.length === 0){
+        return;
+      }
+
+      availableDates.forEach(dateKey => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-chip" + (dateKey === currentFilterDate ? " date-chip-active" : "");
+        btn.innerHTML = `<span>${formatDateLabel(dateKey)}</span>`;
+        btn.onclick = () => {
+          currentFilterDate = dateKey;
+          renderFeedForDate(dateKey);
+          buildDateFilterBar();
+        };
+        bar.appendChild(btn);
+      });
+    }
+
+    // 依日期 render 貼文區
+    function renderFeedForDate(dateKey){
+      const feedEl = document.getElementById("feed");
+      if(!feedEl){
+        return;
+      }
+
+      const posts = allPosts.filter(p => p._dateKey === dateKey);
+
+      if(!posts || posts.length === 0){
+        feedEl.innerHTML =
+          '<li class="feed-empty">這一天還沒有貼文，留一篇給未來回來看的自己吧。</li>';
+        return;
+      }
+
       feedEl.innerHTML = "";
+
       posts.forEach(p => {
         const li = document.createElement("li");
         li.className = "post";
 
-        const likeCount = likesByPost[p.id] || 0;
-        const isLiked = likedByMe.has(p.id);
+        const likeCount = likesByPostGlobal[p.id] || 0;
+        const isLiked = likedByMeGlobal.has(p.id);
 
         const header = document.createElement("div");
         header.className = "post-header";
@@ -877,7 +1015,7 @@
         const list = document.createElement("ul");
         list.className = "comment-list";
 
-        const comments = commentsByPost[p.id] || [];
+        const comments = commentsByPostGlobal[p.id] || [];
         if(comments.length === 0){
           const emptyLi = document.createElement("li");
           emptyLi.className = "comment-item";
@@ -946,8 +1084,6 @@
 
         feedEl.appendChild(li);
       });
-
-      loadingFeed = false;
     }
 
     async function createComment(postId, inputEl){
@@ -981,6 +1117,8 @@
         return;
       }
 
+      const keepDate = currentFilterDate;
+
       if(alreadyLiked){
         const { error } = await sb
           .from("likes")
@@ -1003,6 +1141,7 @@
         }
       }
 
+      currentFilterDate = keepDate;
       await loadFeed();
     }
 
@@ -1076,4 +1215,5 @@
   </script>
 </body>
 </html>
+
 
