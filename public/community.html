@@ -1194,7 +1194,8 @@
         dot.className = "rank-dot";
 
         const span = document.createElement("span");
-        span.textContent = `User #${e.userId.slice(0,4)}`;
+span.textContent = profileMapGlobal[e.userId] || `User #${e.userId.slice(0,4)}`;
+
 
         nameDiv.appendChild(dot);
         nameDiv.appendChild(span);
