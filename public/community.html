@@ -17,7 +17,7 @@
       --card:#ffffff;
       --shadow-soft:0 18px 45px rgba(15,23,42,.14);
       --radius:18px;
-      --font:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      --font:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
     *{box-sizing:border-box;font-family:var(--font);}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
@@ -71,16 +71,6 @@
     .nav-links span.active{
       opacity:1;font-weight:600;border-bottom:2px solid var(--red);
       padding-bottom:2px;
-    }
-    .btn-login{
-      border-radius:999px;border:1px solid rgba(249,250,251,.85);
-      background:#f9fafb;color:#111827;
-      padding:6px 14px;font-size:12px;font-weight:600;
-      cursor:pointer;
-      display:inline-flex;align-items:center;gap:6px;
-    }
-    .btn-login-dot{
-      width:10px;height:10px;border-radius:999px;background:var(--red);
     }
 
     /* hero */
@@ -218,6 +208,36 @@
     .composer-tip{margin-top:5px;font-size:11px;color:var(--sub);}
     .error{margin-top:4px;font-size:11px;color:#b91c1c;}
 
+    /* 篩選提示區（最新貼文卡片內） */
+    #feedFilterInfo{
+      display:none;
+      font-size:11px;
+      color:#b91c1c;
+      margin-bottom:6px;
+      padding:4px 8px;
+      border-radius:999px;
+      background:#fef2f2;
+      border:1px solid #fecaca;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+    }
+    #feedFilterInfo span.label{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    #btnClearFilter{
+      border-radius:999px;
+      border:1px solid #b91c1c;
+      background:#fff;
+      color:#b91c1c;
+      font-size:11px;
+      padding:2px 8px;
+      cursor:pointer;
+    }
+
     /* feed */
     .feed-list{margin:0;padding:0;list-style:none;}
     .feed-empty{font-size:12px;color:var(--sub);padding:8px 0;}
@@ -262,26 +282,73 @@
     .rank-list{margin:8px 0 4px;padding:0;list-style:none;}
     .rank-item{
       display:flex;justify-content:space-between;align-items:center;
-      padding:4px 0;border-bottom:1px dashed #e5e7eb;font-size:11px;
+      padding:4px 8px;
+      border-bottom:1px dashed #e5e7eb;font-size:11px;
+      border-radius:10px;
+      transition:background .15s ease, transform .08s ease, box-shadow .15s ease;
+      cursor:pointer;
     }
     .rank-item:last-child{border-bottom:none;}
-    .rank-name{display:flex;align-items:center;gap:6px;}
+    .rank-item:hover{
+      background:#fff7f7;
+      transform:translateY(-1px);
+      box-shadow:0 4px 12px rgba(248,113,113,.18);
+    }
+    .rank-name{
+      display:flex;align-items:center;gap:6px;
+      min-width:0;
+    }
     .rank-dot{width:8px;height:8px;border-radius:999px;background:#9ca3af;}
-    .rank-score{font-size:11px;color:var(--red-dark);}
+    .rank-score{font-size:11px;color:#b91c1c;white-space:nowrap;}
     .rank-empty{font-size:11px;color:#9ca3af;margin-top:4px;}
     .rank-1 .rank-dot{background:var(--red);}
-    .rank-1 .rank-name span{color:var(--red);}
     .rank-2 .rank-dot{background:#fb923c;}
-    .rank-2 .rank-name span{color:#ea580c;}
     .rank-3 .rank-dot{background:#111827;}
-    .rank-3 .rank-name span{color:#111827;}
 
     .side-footer{font-size:10px;color:#9ca3af;margin-top:4px;text-align:right;}
 
-    /* 排行榜顏色用在貼文名字上 */
+    /* 排行榜顏色用在暱稱 + 小頭像 */
     .name-rank-1{ color:#ef4444; font-weight:800; }
     .name-rank-2{ color:#ea580c; font-weight:700; }
     .name-rank-3{ color:#111827; font-weight:700; }
+
+    .rank-avatar{
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:700;
+      background:#f3f4f6;
+      color:#4b5563;
+      border:1px solid #e5e7eb;
+      flex-shrink:0;
+    }
+    .rank-1 .rank-avatar{
+      background:#fee2e2;
+      border-color:#fecaca;
+      color:#b91c1c;
+    }
+    .rank-2 .rank-avatar{
+      background:#ffedd5;
+      border-color:#fed7aa;
+      color:#c2410c;
+    }
+    .rank-3 .rank-avatar{
+      background:#e5e7eb;
+      border-color:#d4d4d8;
+      color:#111827;
+    }
+
+    .rank-name-span{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:120px;
+    }
+
     .rank-tag{
       margin-left:4px;
       padding:1px 6px;
@@ -290,6 +357,7 @@
       background:#fef2f2;
       font-size:10px;
       color:#b91c1c;
+      white-space:nowrap;
     }
 
     /* 留言區 */
@@ -358,34 +426,16 @@
       cursor:pointer;
     }
 
-    /* 日期篩選列（最新貼文右手邊） */
-    .date-filter-bar{
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-      gap:6px;
-    }
-    .date-chip{
+    /* 貼文中的 TOP 標籤 */
+    .rank-tag-inline{
+      margin-left:4px;
+      padding:1px 6px;
       border-radius:999px;
-      border:1px solid #e5e7eb;
-      background:#f9fafb;
-      padding:4px 8px;
-      font-size:11px;
-      cursor:pointer;
-      color:#4b5563;
-      transition:all .15s ease-out;
-    }
-    .date-chip span{
-      opacity:.9;
-    }
-    .date-chip-active{
-      border-color:#111827;
-      background:#111827;
-      color:#f9fafb;
-      box-shadow:0 0 0 1px rgba(15,23,42,.06);
-    }
-    .date-chip-active span{
-      opacity:1;
+      border:1px solid #fecaca;
+      background:#fef2f2;
+      font-size:10px;
+      color:#b91c1c;
+      white-space:nowrap;
     }
   </style>
 </head>
@@ -487,16 +537,17 @@
         <!-- 最新貼文 -->
         <article class="card" style="margin-top:16px;" aria-label="最新貼文">
           <header class="card-header">
-            <div>
-              <div class="card-title">最新貼文</div>
-              <div class="card-sub">依日期收納 · 點上方日期切換當天貼文。</div>
-            </div>
-            <!-- 這裡是日期按鈕列 -->
-            <div id="dateFilterBar" class="date-filter-bar">
-              <!-- JS 動態塞日期 chip -->
-            </div>
+            <div class="card-title">最新貼文</div>
+            <div class="card-sub">依時間由新到舊排序 · 大家一起在這裡練自律。</div>
           </header>
           <div class="card-body">
+            <!-- 篩選提示 -->
+            <div id="feedFilterInfo">
+              <span class="label">
+                目前正在查看：<span id="feedFilterName"></span> 的貼文
+              </span>
+              <button id="btnClearFilter" type="button">清除</button>
+            </div>
             <ul id="feed" class="feed-list"></ul>
           </div>
         </article>
@@ -515,7 +566,7 @@
           </div>
 
           <div class="side-footer">
-            之後可以把排行榜連到 21 天挑戰或解鎖特別徽章。
+            點排行榜使用者可直接篩選他的貼文。之後可以把這裡連到 21 天挑戰或解鎖特別徽章。
           </div>
         </div>
       </aside>
@@ -532,37 +583,14 @@
     let loadingFeed = false;
     let profileMapGlobal = {}; // user_id -> display_name
     let rankByUser = {};       // user_id -> 排名
-
-    // 這幾個是用來做「日期收納」跟重新渲染的
-    let allPosts = [];                 // 全部貼文
-    let likesByPostGlobal = {};        // post_id -> 讚數
-    let likedByMeGlobal = new Set();   // 我按過讚的 post_id
-    let commentsByPostGlobal = {};     // post_id -> comments[]
-    let availableDates = [];           // ["2025-11-25", ...]
-    let currentFilterDate = null;      // 現在選到哪一天
+    let filterUserId = null;   // 目前篩選的 user_id（來自排行榜）
+    let filterUserName = "";   // 篩選時顯示用名稱（避免還沒載 profile）
 
     function goLogin(){
       window.location.href = "/supabase-test.html";
     }
 
-    // 把 created_at 轉成「YYYY-MM-DD」方便分組
-    function toDateKey(isoString){
-      const t = new Date(isoString);
-      const y = t.getFullYear();
-      const m = String(t.getMonth() + 1).padStart(2,"0");
-      const d = String(t.getDate()).padStart(2,"0");
-      return `${y}-${m}-${d}`;
-    }
-
-    // 顯示在按鈕上的文字（今天顯示「今天」，其他顯示 mm/dd）
-    function formatDateLabel(dateKey){
-      const today = toDateKey(new Date().toISOString());
-      if(dateKey === today) return "今天";
-      const [y,m,d] = dateKey.split("-");
-      return `${m}/${d}`;
-    }
-
-    // 假 AI 評語生成器：當後端壞掉時當作 fallback
+    // 假 AI 評語生成器（之後可以改成真的 AI）
     function makeAiComment(content, habitTag){
       const base = content.length > 80 ? "看得出來你今天寫得蠻詳細的，" : "雖然篇幅不長，";
       let tagPart = "";
@@ -583,6 +611,15 @@
       const btnSaveName = document.getElementById("btnSaveName");
       if(btnSaveName){
         btnSaveName.addEventListener("click", updateDisplayName);
+      }
+
+      const btnClearFilter = document.getElementById("btnClearFilter");
+      if(btnClearFilter){
+        btnClearFilter.addEventListener("click", () => {
+          filterUserId = null;
+          filterUserName = "";
+          loadFeed();
+        });
       }
 
       await fetchUser();
@@ -681,7 +718,7 @@
       await loadFeed();
     }
 
-    // 發文 + 呼叫後端 AI，失敗則用假 AI，最後寫進 comments
+    // 發文 + 自動加一則 AI 評語
     async function createPost(){
       const errorBox = document.getElementById("composerError");
       errorBox.style.display = "none";
@@ -714,7 +751,7 @@
           content,
           habit_tag: habitTag
         })
-        .select("id, created_at")
+        .select("id")
         .single();
 
       document.getElementById("btnPost").disabled = false;
@@ -728,28 +765,8 @@
 
       const postId = data.id;
 
-      // 2) 叫後端 /api/ai-comment 拿真的 AI 評語，失敗就退回 makeAiComment
-      let aiText = "";
-      try{
-        const resp = await fetch("/api/ai-comment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, habitTag })
-        });
-        if(resp.ok){
-          const json = await resp.json();
-          aiText = (json && json.text) || "";
-        }else{
-          console.error("AI API 回傳非 200", resp.status);
-        }
-      }catch(err){
-        console.error("呼叫 /api/ai-comment 發生錯誤", err);
-      }
-
-      if(!aiText){
-        aiText = makeAiComment(content, habitTag);
-      }
-
+      // 2) 插入一則 AI 評語到 comments
+      const aiText = makeAiComment(content, habitTag);
       const { error: cError } = await sb.from("comments").insert({
         post_id: postId,
         user_id: currentUser.id, // 先用自己的 user_id，RLS 比較單純
@@ -762,22 +779,18 @@
 
       contentEl.value = "";
       tagEl.value = "";
-
-      // 重新載入，會自動把「最新日期」設為目前篩選
-      const newDateKey = toDateKey(data.created_at);
-      currentFilterDate = newDateKey;
       await loadFeed();
     }
 
-    // 載入貼文 + 暱稱 + 讚 + 留言 + 排行榜（只打 DB 一次）然後用日期再切畫面
+    // 載入貼文 + 暱稱 + 讚 + 留言 + 排行榜
     async function loadFeed(){
       if(loadingFeed) return;
       loadingFeed = true;
 
       const feedEl = document.getElementById("feed");
+      const filterInfo = document.getElementById("feedFilterInfo");
+      const filterNameEl = document.getElementById("feedFilterName");
       feedEl.innerHTML = '<li class="feed-empty">載入中…</li>';
-
-      const prevFilter = currentFilterDate;
 
       // 1) 貼文
       const { data: posts, error } = await sb
@@ -790,24 +803,18 @@
         console.error("load posts error", error);
         feedEl.innerHTML = '<li class="feed-empty">載入貼文失敗。</li>';
         updateRankingFromData([], []);
+        if(filterInfo) filterInfo.style.display = "none";
         loadingFeed = false;
         return;
       }
 
       if(!posts || posts.length === 0){
-        allPosts = [];
         feedEl.innerHTML = '<li class="feed-empty">還沒有任何貼文，當第一個分享今天自律紀錄的人吧。</li>';
         updateRankingFromData([], []);
-        buildDateFilterBar(); // 清空日期列
+        if(filterInfo) filterInfo.style.display = "none";
         loadingFeed = false;
         return;
       }
-
-      // 處理 dateKey
-      posts.forEach(p => {
-        p._dateKey = toDateKey(p.created_at);
-      });
-      allPosts = posts;
 
       // 2) 一次查所有 user 的暱稱
       const userIds = [...new Set(posts.map(p => p.user_id).filter(Boolean))];
@@ -830,9 +837,6 @@
       // 3) likes
       const postIds = posts.map(p => p.id);
       let likes = [];
-      likesByPostGlobal = {};
-      likedByMeGlobal = new Set();
-
       if(postIds.length){
         const { data: likesData, error: likesError } = await sb
           .from("likes")
@@ -846,17 +850,19 @@
         }
       }
 
+      const likesByPost = {};
+      const likedByMe = new Set();
       if(likes && likes.length){
         likes.forEach(l => {
-          likesByPostGlobal[l.post_id] = (likesByPostGlobal[l.post_id] || 0) + 1;
+          likesByPost[l.post_id] = (likesByPost[l.post_id] || 0) + 1;
           if(currentUser && l.user_id === currentUser.id){
-            likedByMeGlobal.add(l.post_id);
+            likedByMe.add(l.post_id);
           }
         });
       }
 
       // 4) comments
-      commentsByPostGlobal = {};
+      let commentsByPost = {};
       if(postIds.length){
         const { data: comments, error: cError } = await sb
           .from("comments")
@@ -868,8 +874,8 @@
           console.error("load comments error", cError);
         }else if(comments){
           comments.forEach(c => {
-            if(!commentsByPostGlobal[c.post_id]) commentsByPostGlobal[c.post_id] = [];
-            commentsByPostGlobal[c.post_id].push(c);
+            if(!commentsByPost[c.post_id]) commentsByPost[c.post_id] = [];
+            commentsByPost[c.post_id].push(c);
           });
         }
       }
@@ -877,76 +883,44 @@
       // 5) 更新排行榜（順便填 rankByUser）
       updateRankingFromData(posts, likes || []);
 
-      // 6) 整理所有有貼文的日期，用來做右上角的按鈕
-      availableDates = [...new Set(allPosts.map(p => p._dateKey))].sort((a,b) => b.localeCompare(a)); // 新到舊
-      if(!availableDates.length){
-        buildDateFilterBar();
-        document.getElementById("feed").innerHTML =
-          '<li class="feed-empty">目前沒有符合條件的貼文。</li>';
+      // 6) 根據篩選狀態決定要顯示哪些貼文
+      let renderPosts = posts;
+      if(filterUserId){
+        renderPosts = posts.filter(p => p.user_id === filterUserId);
+      }
+
+      // 更新篩選提示 UI
+      if(filterInfo){
+        if(filterUserId){
+          const display =
+            profileMapGlobal[filterUserId] ||
+            filterUserName ||
+            (filterUserId ? `User #${filterUserId.slice(0,4)}` : "某位使用者");
+          filterNameEl.textContent = display;
+          filterInfo.style.display = "flex";
+        }else{
+          filterInfo.style.display = "none";
+        }
+      }
+
+      // 7) 組畫面
+      feedEl.innerHTML = "";
+
+      if(renderPosts.length === 0){
+        const liEmpty = document.createElement("li");
+        liEmpty.className = "feed-empty";
+        liEmpty.textContent = "這位使用者目前還沒有貼文。";
+        feedEl.appendChild(liEmpty);
         loadingFeed = false;
         return;
       }
 
-      // 如果之前有選過某個日期，而且這次仍然存在，就維持；否則就改成最新那天
-      if(prevFilter && availableDates.includes(prevFilter)){
-        currentFilterDate = prevFilter;
-      }else if(!currentFilterDate || !availableDates.includes(currentFilterDate)){
-        currentFilterDate = availableDates[0];
-      }
-
-      buildDateFilterBar();
-      renderFeedForDate(currentFilterDate);
-
-      loadingFeed = false;
-    }
-
-    // 右上角日期按鈕列
-    function buildDateFilterBar(){
-      const bar = document.getElementById("dateFilterBar");
-      if(!bar) return;
-      bar.innerHTML = "";
-
-      if(!availableDates || availableDates.length === 0){
-        return;
-      }
-
-      availableDates.forEach(dateKey => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "date-chip" + (dateKey === currentFilterDate ? " date-chip-active" : "");
-        btn.innerHTML = `<span>${formatDateLabel(dateKey)}</span>`;
-        btn.onclick = () => {
-          currentFilterDate = dateKey;
-          renderFeedForDate(dateKey);
-          buildDateFilterBar();
-        };
-        bar.appendChild(btn);
-      });
-    }
-
-    // 依日期 render 貼文區
-    function renderFeedForDate(dateKey){
-      const feedEl = document.getElementById("feed");
-      if(!feedEl){
-        return;
-      }
-
-      const posts = allPosts.filter(p => p._dateKey === dateKey);
-
-      if(!posts || posts.length === 0){
-        feedEl.innerHTML =
-          '<li class="feed-empty">這一天還沒有貼文，留一篇給未來回來看的自己吧。</li>';
-        return;
-      }
-
-      feedEl.innerHTML = "";
-
-      posts.forEach(p => {
+      renderPosts.forEach(p => {
         const li = document.createElement("li");
         li.className = "post";
 
-        const likeCount = likesByPostGlobal[p.id] || 0;
-        const isLiked = likedByMeGlobal.has(p.id);
+        const likeCount = likesByPost[p.id] || 0;
+        const isLiked = likedByMe.has(p.id);
 
         const header = document.createElement("div");
         header.className = "post-header";
@@ -960,12 +934,12 @@
 
         const rank = rankByUser[p.user_id];
         const nameClass = rank ? `name name-rank-${rank}` : "name";
-        const rankBadge = rank && rank <= 3
-          ? `<span class="rank-tag">TOP ${rank}</span>`
+        const rankBadgeInline = rank && rank <= 3
+          ? `<span class="rank-tag-inline">TOP ${rank}</span>`
           : "";
 
         userLabel.innerHTML =
-          `<span class="${nameClass}">${baseName}</span>${rankBadge} · 自律使用者`;
+          `<span class="${nameClass}">${baseName}</span>${rankBadgeInline} · 自律使用者`;
 
         const timeLabel = document.createElement("div");
         timeLabel.className = "post-time";
@@ -1015,7 +989,7 @@
         const list = document.createElement("ul");
         list.className = "comment-list";
 
-        const comments = commentsByPostGlobal[p.id] || [];
+        const comments = commentsByPost[p.id] || [];
         if(comments.length === 0){
           const emptyLi = document.createElement("li");
           emptyLi.className = "comment-item";
@@ -1084,6 +1058,8 @@
 
         feedEl.appendChild(li);
       });
+
+      loadingFeed = false;
     }
 
     async function createComment(postId, inputEl){
@@ -1117,8 +1093,6 @@
         return;
       }
 
-      const keepDate = currentFilterDate;
-
       if(alreadyLiked){
         const { error } = await sb
           .from("likes")
@@ -1141,11 +1115,10 @@
         }
       }
 
-      currentFilterDate = keepDate;
       await loadFeed();
     }
 
-    // 排行榜 + 排名記錄
+    // 排行榜 + 排名記錄（＋暱稱＋小頭像＋點擊篩選）
     function updateRankingFromData(posts, likes){
       const rankListEl  = document.getElementById("rankList");
       const rankEmptyEl = document.getElementById("rankEmpty");
@@ -1193,11 +1166,23 @@
         const dot = document.createElement("div");
         dot.className = "rank-dot";
 
-        const span = document.createElement("span");
-span.textContent = profileMapGlobal[e.userId] || `User #${e.userId.slice(0,4)}`;
+        const avatar = document.createElement("div");
+        avatar.className = "rank-avatar";
 
+        const displayName =
+          profileMapGlobal[e.userId] ||
+          `User #${e.userId.slice(0,4)}`;
+
+        // avatar 文字：顯示第一個字
+        avatar.textContent = displayName.charAt(0);
+
+        const span = document.createElement("span");
+        span.className = "rank-name-span";
+        // 暱稱文字
+        span.textContent = displayName;
 
         nameDiv.appendChild(dot);
+        nameDiv.appendChild(avatar);
         nameDiv.appendChild(span);
 
         const scoreDiv = document.createElement("div");
@@ -1206,6 +1191,21 @@ span.textContent = profileMapGlobal[e.userId] || `User #${e.userId.slice(0,4)}`;
 
         li.appendChild(nameDiv);
         li.appendChild(scoreDiv);
+
+        // 🔥 點整列 or 名字 = 篩選該使用者貼文
+        li.addEventListener("click", () => {
+          filterUserId = e.userId;
+          filterUserName = displayName;
+          loadFeed();
+          const mainEl = document.querySelector(".main");
+          if(mainEl){
+            window.scrollTo({
+              top: mainEl.offsetTop - 12,
+              behavior: "smooth"
+            });
+          }
+        });
+
         rankListEl.appendChild(li);
       });
 
@@ -1216,5 +1216,3 @@ span.textContent = profileMapGlobal[e.userId] || `User #${e.userId.slice(0,4)}`;
   </script>
 </body>
 </html>
-
-
