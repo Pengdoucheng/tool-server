@@ -466,19 +466,20 @@
       color:#b91c1c;
       white-space:nowrap;
     }
-    /* === 私訊浮動聊天室（右下角） =================================== */
+   /* === 私訊浮動聊天室（右下角） =================================== */
 .dm-root{
   position:fixed;
   right:16px;
   bottom:16px;
-  z-index:50;
+  z-index:9999;
   font-size:12px;
 }
 
+/* 開關按鈕 */
 .dm-toggle{
   border-radius:999px;
   border:none;
-  padding:8px 14px;
+  padding:10px 16px;
   background:#111827;
   color:#f9fafb;
   font-size:12px;
@@ -493,90 +494,92 @@
   width:10px;height:10px;border-radius:999px;
   background:var(--red);
 }
-.dm-root.open .dm-toggle{
-  border-radius:999px 999px 0 0;
-}
 
+/* 主面板 */
 .dm-panel{
-  display:none;
-  width:280px;
-  height:340px;
+  width:300px;
+  height:380px;
   background:#ffffff;
   border-radius:18px;
   border:1px solid #e5e7eb;
   box-shadow:0 18px 40px rgba(15,23,42,.32);
   overflow:hidden;
+  display:none;
   flex-direction:column;
 }
+
 .dm-root.open .dm-panel{
   display:flex;
 }
 
 /* header */
 .dm-header{
-  padding:8px 10px;
+  padding:10px;
   background:#111827;
   color:#f9fafb;
   display:flex;
   flex-direction:column;
-  gap:4px;
-}
-.dm-header-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
+  gap:6px;
 }
 .dm-header-title{
-  font-size:12px;
+  font-size:13px;
   font-weight:700;
 }
 .dm-header-sub{
-  font-size:10px;
-  color:#e5e7eb;
-}
-.dm-target-select{
-  width:100%;
-  border-radius:999px;
-  border:1px solid rgba(249,250,251,.25);
-  background:rgba(15,23,42,.9);
-  color:#f9fafb;
   font-size:11px;
-  padding:4px 8px;
-  outline:none;
-}
-.dm-header-hint{
-  font-size:10px;
-  color:#9ca3af;
+  color:#d1d5db;
 }
 
-/* body */
+/* 聊天列表 */
+.dm-chatlist{
+  background:#f3f4f6;
+  padding:6px;
+  max-height:100px;
+  overflow-y:auto;
+  border-bottom:1px solid #e5e7eb;
+}
+.dm-chat-item{
+  padding:6px;
+  border-radius:8px;
+  background:#fff;
+  font-size:12px;
+  cursor:pointer;
+  margin-bottom:4px;
+  border:1px solid #e5e7eb;
+}
+.dm-chat-item:hover{
+  background:#fef2f2;
+  border-color:#fecaca;
+}
+
+/* 對話區 */
 .dm-body{
   flex:1;
   display:flex;
   flex-direction:column;
-  padding:8px;
   background:#f9fafb;
 }
+
 .dm-messages{
   flex:1;
   overflow-y:auto;
-  padding-right:2px;
+  padding:8px;
   display:flex;
   flex-direction:column;
   gap:6px;
 }
-.dm-empty{
-  font-size:11px;
-  color:#9ca3af;
-  padding-top:8px;
-  text-align:center;
+
+/* 滾動條 */
+.dm-messages::-webkit-scrollbar{
+  width:6px;
+}
+.dm-messages::-webkit-scrollbar-thumb{
+  background:#cbd5e1;
+  border-radius:3px;
 }
 
-/* message bubble */
-.dm-row{
-  display:flex;
-}
+/* 氣泡 */
+.dm-row{ display:flex; }
 .dm-row.me{ justify-content:flex-end; }
 .dm-row.other{ justify-content:flex-start; }
 
@@ -607,36 +610,29 @@
   text-align:right;
 }
 
-/* footer (輸入區) */
+/* 輸入區 */
 .dm-input-row{
-  margin-top:6px;
+  padding:6px;
   display:flex;
   gap:6px;
+  background:#fff;
+  border-top:1px solid #e5e7eb;
 }
 .dm-input{
   flex:1;
   border-radius:999px;
   border:1px solid #d4d4d8;
-  padding:4px 8px;
+  padding:6px 8px;
   font-size:11px;
 }
 .dm-send-btn{
   border-radius:999px;
   border:1px solid #111827;
   background:#111827;
-  color:#f9fafb;
+  color:#fff;
   font-size:11px;
-  padding:4px 10px;
+  padding:6px 12px;
   cursor:pointer;
-}
-.dm-send-btn:disabled{
-  opacity:.5;
-  cursor:not-allowed;
-}
-.dm-warning{
-  margin-top:4px;
-  font-size:10px;
-  color:#b91c1c;
 }
 
   </style>
@@ -1217,6 +1213,7 @@
 
         const userLabel = document.createElement("div");
         userLabel.className = "post-user";
+        userLabel.dataset.user = p.user_id;
 
         const baseName =
           profileMapGlobal[p.user_id] ||
@@ -1347,10 +1344,13 @@
         li.appendChild(commentsWrapper);
 
         feedEl.appendChild(li);
-      });
+    });
 
-      loadingFeed = false;
-    }
+    // ✅ 在這裡加：貼文全部畫完之後，幫每個作者加「私訊」按鈕
+    addDmButtonsToPosts();
+
+    loadingFeed = false;
+}
 
     async function createComment(postId, inputEl){
       if(!currentUser){
@@ -1502,262 +1502,225 @@
         rankEmptyEl.style.display = "block";
       }
     }
-    // === 私訊小聊天室：使用 direct_messages 表 ===========================
-let dmCurrentUser = null;
-let dmTargetId = null;
-let dmProfilesCache = [];
+    /* =========================================================
+   私訊系統 Direct Message
+========================================================= */
+let dmUser = null;
+let dmTarget = null;
 
-// 初始化
-document.addEventListener("DOMContentLoaded", initDirectMessageChat);
+/* 初始化：在頁面讀取後跑 */
+document.addEventListener("DOMContentLoaded", async () => {
+  await initDmAuth();
+  await loadDmChatList();
 
-async function initDirectMessageChat(){
-  const root   = document.getElementById("dmRoot");
-  const toggle = document.getElementById("dmToggle");
-  const panel  = document.getElementById("dmPanel");
-  const select = document.getElementById("dmTargetSelect");
-  const sendBtn= document.getElementById("dmSendBtn");
-  const input  = document.getElementById("dmInput");
-  const headerStatus = document.getElementById("dmHeaderStatus");
-  const warning = document.getElementById("dmWarning");
-
-  if(!root || !toggle || !panel) return; // 安全檢查
-
-  // 打開 / 關閉
-  toggle.addEventListener("click", () => {
-    root.classList.toggle("open");
+  document.getElementById("dmToggle").addEventListener("click", () => {
+    document.getElementById("dmRoot").classList.toggle("open");
   });
 
-  // 取得目前登入者
-  const { data, error } = await sb.auth.getUser();
-  if(error){
-    console.error("dm getUser error", error);
-  }
-  dmCurrentUser = data?.user || null;
+  document.getElementById("dmSendBtn").addEventListener("click", sendDm);
+});
 
-  if(!dmCurrentUser){
-    headerStatus.textContent = "尚未登入，無法使用私訊。";
-    warning.style.display = "block";
-    warning.textContent = "請先在上方按「登入後才能發文」完成登入。";
-    sendBtn.disabled = true;
-    select.disabled = true;
+/* 取得登入者 */
+async function initDmAuth(){
+  const { data } = await sb.auth.getUser();
+  dmUser = data?.user || null;
+
+  if(!dmUser){
+    document.getElementById("dmHeaderSub").textContent = "尚未登入 · 無法使用私訊";
+    document.getElementById("dmSendBtn").disabled = true;
     return;
   }
-
-  headerStatus.textContent = `已登入：${dmCurrentUser.email}`;
-  warning.style.display = "none";
-  sendBtn.disabled = false;
-  select.disabled = false;
-
-  // 載入所有可以私訊的對象（從 profiles 抓暱稱）
-  await loadDmProfiles();
-
-  // 選擇對象發生變化
-  select.addEventListener("change", async (e) => {
-    dmTargetId = e.target.value || null;
-    await loadDmMessages();
-  });
-
-  // 送出訊息
-  sendBtn.addEventListener("click", async () => {
-    await sendDirectMessage();
-  });
-
-  // Enter 送出
-  input.addEventListener("keydown", async (e) => {
-    if(e.key === "Enter"){
-      e.preventDefault();
-      await sendDirectMessage();
-    }
-  });
 }
 
-// 抓所有使用者（暱稱）當成可選對象
-async function loadDmProfiles(){
-  const select = document.getElementById("dmTargetSelect");
-  if(!select) return;
+/* 聊天列表（只顯示有對話紀錄的人） */
+async function loadDmChatList(){
+  const el = document.getElementById("dmChatList");
+  el.innerHTML = "";
 
-  const { data, error } = await sb
-    .from("profiles")
-    .select("id, display_name")
-    .order("display_name", { ascending:true })
-    .limit(50);
-
-  if(error){
-    console.error("loadDmProfiles error", error);
+  if(!dmUser){
+    el.innerHTML = `<div class="dm-chat-item">請先登入</div>`;
     return;
   }
 
-  dmProfilesCache = data || [];
-
-  // 清空 & 重建 options
-  select.innerHTML = "";
-  const optDefault = document.createElement("option");
-  optDefault.value = "";
-  optDefault.textContent = "選擇聊天對象";
-  select.appendChild(optDefault);
-
-  (dmProfilesCache || []).forEach(p => {
-    if(!dmCurrentUser || p.id === dmCurrentUser.id) return; // 不顯示自己
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.display_name || ("User #" + p.id.slice(0,4));
-    select.appendChild(opt);
-  });
-}
-
-// 讀取目前選中對象的對話紀錄
-async function loadDmMessages(){
-  const messagesEl = document.getElementById("dmMessages");
-  const warning = document.getElementById("dmWarning");
-  const input  = document.getElementById("dmInput");
-
-  if(!messagesEl) return;
-
-  if(!dmCurrentUser){
-    messagesEl.innerHTML = '<div class="dm-empty">請先登入才能使用私訊。</div>';
-    return;
-  }
-
-  if(!dmTargetId){
-    messagesEl.innerHTML = '<div class="dm-empty">尚未選擇對象。</div>';
-    return;
-  }
-
-  warning.style.display = "none";
-
-  messagesEl.innerHTML = '<div class="dm-empty">載入中…</div>';
-
-  // 查詢雙方的訊息（from = 我 & to = 對方 OR from = 對方 & to = 我）
   const { data, error } = await sb
     .from("direct_messages")
-    .select("id, from_user, to_user, content, created_at")
-    .or(
-      `and(from_user.eq.${dmCurrentUser.id},to_user.eq.${dmTargetId}),` +
-      `and(from_user.eq.${dmTargetId},to_user.eq.${dmCurrentUser.id})`
-    )
-    .order("created_at", { ascending:true });
+    .select("from_user, to_user")
+    .or(`from_user.eq.${dmUser.id},to_user.eq.${dmUser.id}`);
 
   if(error){
-    console.error("loadDmMessages error", error);
-    messagesEl.innerHTML = '<div class="dm-empty">載入對話失敗。</div>';
-    warning.style.display = "block";
-    warning.textContent = "請確認 Supabase 有建 direct_messages 表與 RLS。";
+    console.error(error);
+    el.innerHTML = `<div class="dm-chat-item">讀取失敗</div>`;
     return;
   }
 
-  const rows = data || [];
-  if(rows.length === 0){
-    messagesEl.innerHTML = '<div class="dm-empty">還沒有任何對話，可以先打一句打招呼 :)</div>';
+  const userSet = new Set();
+  (data || []).forEach(m => {
+    const other = (m.from_user === dmUser.id) ? m.to_user : m.from_user;
+    userSet.add(other);
+  });
+
+  if(userSet.size === 0){
+    el.innerHTML = `<div class="dm-chat-item">尚未開始任何對話</div>`;
     return;
   }
 
-  messagesEl.innerHTML = "";
+  const userIds = [...userSet];
+  const { data: profiles } = await sb
+    .from("profiles")
+    .select("id, display_name")
+    .in("id", userIds);
 
-  rows.forEach(msg => {
-    const isMe = msg.from_user === dmCurrentUser.id;
+  profiles.forEach(p => {
+    const item = document.createElement("div");
+    item.className = "dm-chat-item";
+    item.textContent = p.display_name;
+    item.onclick = () => openChatWith(p.id, p.display_name);
+    el.appendChild(item);
+  });
+}
+
+/* 打開對某人的聊天室 */
+async function openChatWith(userId, name){
+  dmTarget = userId;
+  document.getElementById("dmHeaderSub").textContent = `與 ${name} 的對話`;
+
+  await loadDmMessages();
+  document.getElementById("dmRoot").classList.add("open"); // 自動展開
+}
+
+/* 讀取訊息 */
+async function loadDmMessages(){
+  const el = document.getElementById("dmMessages");
+  if(!dmTarget){
+    el.innerHTML = `<div class="dm-empty">請選擇對象</div>`;
+    return;
+  }
+
+  el.innerHTML = "載入中…";
+
+  const { data, error } = await sb
+    .from("direct_messages")
+    .select("*")
+    .or(
+      `and(from_user.eq.${dmUser.id},to_user.eq.${dmTarget}),`+
+      `and(from_user.eq.${dmTarget},to_user.eq.${dmUser.id})`
+    )
+    .order("created_at", { ascending: true });
+
+  if(error){
+    console.error(error);
+    el.innerHTML = `<div class="dm-empty">載入失敗</div>`;
+    return;
+  }
+
+  el.innerHTML = "";
+  (data || []).forEach(msg => {
     const row = document.createElement("div");
-    row.className = "dm-row " + (isMe ? "me" : "other");
+    row.className = "dm-row " + (msg.from_user === dmUser.id ? "me" : "other");
 
     const bubble = document.createElement("div");
-    bubble.className = "dm-bubble " + (isMe ? "me" : "other");
+    bubble.className = "dm-bubble " + (msg.from_user === dmUser.id ? "me" : "other");
     bubble.textContent = msg.content;
 
     const time = document.createElement("div");
     time.className = "dm-time";
-    const t = new Date(msg.created_at);
-    time.textContent = t.toLocaleTimeString("zh-TW", {
-      hour:"2-digit", minute:"2-digit"
-    });
+    time.textContent = new Date(msg.created_at).toLocaleTimeString("zh-TW", {hour:"2-digit", minute:"2-digit"});
 
     bubble.appendChild(time);
     row.appendChild(bubble);
-    messagesEl.appendChild(row);
+    el.appendChild(row);
   });
 
-  // 捲到最底
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  el.scrollTop = el.scrollHeight; // 捲到最底
 }
 
-// 送出一則訊息
-async function sendDirectMessage(){
+/* 送出訊息 */
+async function sendDm(){
   const input = document.getElementById("dmInput");
-  const warning = document.getElementById("dmWarning");
-  const btn = document.getElementById("dmSendBtn");
-
-  if(!input || !btn) return;
-
   const text = (input.value || "").trim();
-  if(!text) return;
-
-  if(!dmCurrentUser){
-    warning.style.display = "block";
-    warning.textContent = "請先登入才能私訊。";
-    return;
-  }
-  if(!dmTargetId){
-    warning.style.display = "block";
-    warning.textContent = "請先在上方選擇聊天對象。";
-    return;
-  }
-
-  btn.disabled = true;
-  warning.style.display = "none";
+  if(!text || !dmTarget) return;
 
   const { error } = await sb
     .from("direct_messages")
     .insert({
-      from_user: dmCurrentUser.id,
-      to_user: dmTargetId,
+      from_user: dmUser.id,
+      to_user: dmTarget,
       content: text
     });
 
-  btn.disabled = false;
-
   if(error){
-    console.error("sendDirectMessage error", error);
-    warning.style.display = "block";
-    warning.textContent = "送出失敗：" + error.message;
+    alert("發送失敗：" + error.message);
     return;
   }
 
   input.value = "";
   await loadDmMessages();
+  await loadDmChatList();
 }
+
+/* 在貼文名字旁加入「私訊」按鈕 */
+function addDmButtonsToPosts(){
+  document.querySelectorAll(".post-user").forEach(userEl => {
+    const userId = userEl.dataset.user;
+    if(!userId || userId === dmUser?.id) return;
+
+    const btn = document.createElement("button");
+    btn.textContent = "✉ 私訊";
+    btn.style.marginLeft = "6px";
+    btn.style.fontSize = "10px";
+    btn.style.padding = "2px 6px";
+    btn.style.borderRadius = "6px";
+    btn.style.border = "1px solid #111827";
+    btn.style.background = "#fff";
+    btn.style.cursor = "pointer";
+
+    btn.onclick = async () => {
+      /* 取得暱稱 */
+      const { data } = await sb.from("profiles").select("*").eq("id", userId).maybeSingle();
+      const name = data?.display_name || ("User#" + userId.slice(0,4));
+      openChatWith(userId, name);
+    };
+
+    userEl.appendChild(btn);
+  });
+}
+
 
   </script>
     <!-- 🔔 右下角私訊小聊天室 -->
-    <div id="dmRoot" class="dm-root">
-        <button id="dmToggle" class="dm-toggle" type="button">
-          <span class="dm-toggle-dot"></span>
-          私訊
-        </button>
-        <div id="dmPanel" class="dm-panel">
-          <div class="dm-header">
-            <div class="dm-header-top">
-              <div>
-                <div class="dm-header-title">私訊 · 自律聊天室</div>
-                <div class="dm-header-sub" id="dmHeaderStatus">請先登入才能使用私訊</div>
-              </div>
-            </div>
-            <select id="dmTargetSelect" class="dm-target-select">
-              <option value="">選擇聊天對象</option>
-            </select>
-            <div class="dm-header-hint">
-              目前先做一對一私訊，選一個對象就會載入你們的對話紀錄。
-            </div>
-          </div>
-          <div class="dm-body">
-            <div id="dmMessages" class="dm-messages">
-              <div class="dm-empty">尚未選擇對象。</div>
-            </div>
-            <div class="dm-input-row">
-              <input id="dmInput" class="dm-input" type="text" placeholder="輸入訊息..." />
-              <button id="dmSendBtn" class="dm-send-btn" type="button">送出</button>
-            </div>
-            <div id="dmWarning" class="dm-warning" style="display:none;"></div>
-          </div>
+<div id="dmRoot" class="dm-root">
+    <button id="dmToggle" class="dm-toggle">
+      <span class="dm-toggle-dot"></span>
+      私訊
+    </button>
+  
+    <div id="dmPanel" class="dm-panel">
+  
+      <div class="dm-header">
+        <div class="dm-header-title">私訊 · Direct Message</div>
+        <div id="dmHeaderSub" class="dm-header-sub">請選擇聊天對象</div>
+      </div>
+  
+      <!-- 聊天列表 -->
+      <div id="dmChatList" class="dm-chatlist">
+        <div class="dm-chat-item">尚未開始任何對話</div>
+      </div>
+  
+      <!-- 對話區 -->
+      <div class="dm-body">
+        <div id="dmMessages" class="dm-messages">
+          <div class="dm-empty">請從上方列表選擇對象</div>
+        </div>
+  
+        <div class="dm-input-row">
+          <input id="dmInput" class="dm-input" placeholder="輸入訊息…" />
+          <button id="dmSendBtn" class="dm-send-btn">送出</button>
         </div>
       </div>
+  
+    </div>
+  </div>
+  
     
 </body>
 </html>
