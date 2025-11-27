@@ -799,20 +799,56 @@
     }
 
     // 假 AI 評語生成器（之後可以改成真的 AI）
-    function makeAiComment(content, habitTag){
-      const base = content.length > 80 ? "看得出來你今天寫得蠻詳細的，" : "雖然篇幅不長，";
-      let tagPart = "";
-      switch(habitTag){
-        case "讀書": tagPart = "在讀書這塊能維持紀律很不容易，"; break;
-        case "早起": tagPart = "調整作息會很痛苦，但你有在動，"; break;
-        case "運動": tagPart = "有動就贏過一大票人了，"; break;
-        case "專注": tagPart = "專注是所有進步的根本，"; break;
-        case "整理": tagPart = "把環境整理好真的會讓心情安靜很多，"; break;
-        default: tagPart = "";
-      }
-      const tail = "明天不一定要更好，但至少維持今天這個版型就很強。";
-      return base + tagPart + tail;
+  // AI 評語：優先呼叫後端 /api/analyze，失敗再用備用罐頭
+async function makeAiComment(content, habitTag){
+  // 先組 prompt 給後端
+  const tagText = habitTag ? `（主題標籤：${habitTag}）` : "";
+  const prompt =
+    "你是一個友善、具體、講話像大學生朋友的 AI，會針對時間管理與自律貼文給回饋。" +
+    "請用繁體中文寫 2～3 句話，語氣自然，不要太官腔、不要說『使用者』這個字。\n\n" +
+    `貼文內容${tagText}：\n` +
+    "--------------------\n" +
+    content +
+    "\n--------------------\n" +
+    "請直接輸出回覆文字，不要加標題或條列。";
+
+  try{
+    const res = await fetch("/api/analyze", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ prompt })
+    });
+
+    if(!res.ok){
+      throw new Error("HTTP " + res.status);
     }
+
+    const data = await res.json();
+    if(data && data.result){
+      return data.result.trim();
+    }
+  }catch(err){
+    console.error("AI 評語呼叫失敗，改用備用文字：", err);
+  }
+
+  // ⬇ 後備罐頭（真的掛掉才用）
+  const base = content.length > 80
+    ? "看得出來你今天寫得蠻詳細的，"
+    : "雖然篇幅不長，";
+
+  let tagPart = "";
+  switch(habitTag){
+    case "讀書": tagPart = "在讀書這塊能維持紀律很不容易，"; break;
+    case "早起": tagPart = "調整作息會很痛苦，但你有在動，"; break;
+    case "運動": tagPart = "有動就贏過一大票人了，"; break;
+    case "專注": tagPart = "專注是所有進步的根本，"; break;
+    case "整理": tagPart = "把環境整理好真的會讓心情安靜很多，"; break;
+    default: tagPart = "";
+  }
+  const tail = "明天不一定要更好，但至少維持今天這個版型就很強。";
+  return base + tagPart + tail;
+}
+
 
     function formatDateKey(dt){
       const y = dt.getFullYear();
@@ -991,13 +1027,26 @@
       const postId = data.id;
 
       // 2) 插入一則 AI 評語到 comments
-      const aiText = makeAiComment(content, habitTag);
-      const { error: cError } = await sb.from("comments").insert({
-        post_id: postId,
-        user_id: currentUser.id, // 先用自己的 user_id，RLS 比較單純
-        content: aiText,
-        is_ai: true
-      });
+      // 2) 插入一則 AI 評語到 comments（改成真的 AI）
+let aiText = "";
+try{
+  aiText = await makeAiComment(content, habitTag);
+}catch(e){
+  console.error("makeAiComment 執行錯誤：", e);
+}
+
+if(aiText){
+  const { error: cError } = await sb.from("comments").insert({
+    post_id: postId,
+    user_id: currentUser.id, // 先用自己的 user_id，RLS 比較單純
+    content: aiText,
+    is_ai: true
+  });
+  if(cError){
+    console.error("insert ai comment error", cError);
+  }
+}
+
       if(cError){
         console.error("insert ai comment error", cError);
       }
