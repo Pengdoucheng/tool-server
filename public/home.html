@@ -475,6 +475,36 @@
   margin: 0 auto;   /* 左右自動，按鈕會置中 */
 }
 
+#openTimeChatBtn {
+  animation: pulseGlow 2.4s ease-in-out infinite, floatUp 3s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 呼吸亮光 */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0px rgba(255, 75, 75, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(255, 75, 75, 0.85); }
+  100% { box-shadow: 0 0 0px rgba(255, 75, 75, 0.4); }
+}
+
+/* 微上浮 */
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* 亮點同步閃爍 */
+#openTimeChatBtn .btn-primary-dot {
+  animation: dotBlink 1.6s infinite;
+}
+
+@keyframes dotBlink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+
 
   </style>
 </head>
