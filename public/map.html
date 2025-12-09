@@ -441,6 +441,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) 70px 48px;
       gap: 2px;
+      align-items: center;
     }
 
     .event-add-input {
@@ -448,6 +449,7 @@
       border: 1px solid var(--border);
       font-size: 10px;
       padding: 2px 4px;
+      width: 100%;
     }
 
     .event-add-select {
@@ -680,8 +682,8 @@
     }
 
     function formatYearMonth(date) {
-      var y = date.getFullYear();
-      var m = String(date.getMonth() + 1).padStart(2, "0");
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
       return y + " 年 " + m + " 月";
     }
 
@@ -695,9 +697,7 @@
 
     // 讀取登入使用者
     async function initAccount() {
-      const res = await sb.auth.getUser();
-      const data = res.data;
-      const error = res.error;
+      const { data, error } = await sb.auth.getUser();
 
       if (error) {
         console.log("getUser error", error);
@@ -705,8 +705,8 @@
 
       if (data && data.user) {
         currentUser = data.user;
-        var email = currentUser.email || "";
-        var name = email ? email.split("@")[0] : "使用者";
+        const email = currentUser.email || "";
+        const name = email ? email.split("@")[0] : "使用者";
         accountNameEl.textContent = name;
         accountEmailEl.textContent = email || "";
         accountAvatarEl.textContent = name.charAt(0).toUpperCase();
@@ -724,23 +724,16 @@
         monthEvents = [];
         return;
       }
-      var year = currentMonth.getFullYear();
-      var month = currentMonth.getMonth();
-      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      var startStr =
-        year +
-        "-" +
-        String(month + 1).padStart(2, "0") +
-        "-01";
-      var endStr =
-        year +
-        "-" +
-        String(month + 1).padStart(2, "0") +
-        "-" +
-        String(daysInMonth).padStart(2, "0");
+      const startStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      const endStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        daysInMonth
+      ).padStart(2, "0")}`;
 
-      const res = await sb
+      const { data, error } = await sb
         .from("calendar_events")
         .select("id, title, date, color")
         .eq("user_id", currentUser.id)
@@ -748,16 +741,16 @@
         .lte("date", endStr)
         .order("date", { ascending: true });
 
-      if (res.error) {
-        console.log("load events error", res.error);
+      if (error) {
+        console.log("load events error", error);
         monthEvents = [];
         return;
       }
-      monthEvents = res.data || [];
+      monthEvents = data || [];
     }
 
     function getEventsForDate(dateObj) {
-      var key = dateObj.toISOString().slice(0, 10);
+      const key = dateObj.toISOString().slice(0, 10);
       return (monthEvents || []).filter(function (e) {
         return e.date === key;
       });
@@ -771,28 +764,28 @@
 
     // 渲染行事曆
     function renderCalendar() {
-      var year = currentMonth.getFullYear();
-      var month = currentMonth.getMonth();
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
 
       monthLabelEl.textContent = formatYearMonth(currentMonth);
 
-      var today = new Date();
-      var firstDay = new Date(year, month, 1);
-      var firstWeekday = firstDay.getDay(); // 0=Sun
-      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      const firstDay = new Date(year, month, 1);
+      const firstWeekday = firstDay.getDay(); // 0=Sun
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      var prevMonthDays = firstWeekday;
-      var totalCells = Math.ceil((prevMonthDays + daysInMonth) / 7) * 7;
+      const prevMonthDays = firstWeekday;
+      const totalCells = Math.ceil((prevMonthDays + daysInMonth) / 7) * 7;
 
       calendarGridEl.innerHTML = "";
 
-      for (var i = 0; i < totalCells; i++) {
-        var cell = document.createElement("div");
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement("div");
         cell.className = "day-cell";
 
-        var dayIndex = i - prevMonthDays + 1;
-        var cellDate;
-        var isOtherMonth = false;
+        const dayIndex = i - prevMonthDays + 1;
+        let cellDate;
+        let isOtherMonth = false;
 
         if (dayIndex <= 0) {
           cellDate = new Date(year, month, dayIndex);
@@ -805,15 +798,15 @@
         }
 
         // 頂部日期列
-        var headerRow = document.createElement("div");
+        const headerRow = document.createElement("div");
         headerRow.className = "day-header-row";
 
-        var numberSpan = document.createElement("div");
+        const numberSpan = document.createElement("div");
         numberSpan.className =
           "day-number" + (isOtherMonth ? " other-month" : "");
         numberSpan.textContent = cellDate.getDate();
 
-        var badgeSpan = document.createElement("div");
+        const badgeSpan = document.createElement("div");
         badgeSpan.className = "day-badge";
         if (sameDay(cellDate, today)) {
           badgeSpan.classList.add("day-badge-today");
@@ -827,28 +820,28 @@
         cell.appendChild(headerRow);
 
         // 事件區塊
-        var eventsCol = document.createElement("div");
+        const eventsCol = document.createElement("div");
         eventsCol.className = "events-column";
 
-        var inner = document.createElement("div");
+        const inner = document.createElement("div");
         inner.className = "events-list-inner";
 
-        var dayEvents = getEventsForDate(cellDate);
+        const dayEvents = getEventsForDate(cellDate);
 
         if (dayEvents.length === 0 && !isOtherMonth) {
-          var empty = document.createElement("div");
+          const empty = document.createElement("div");
           empty.className = "event-empty";
           empty.textContent = "（無任務）";
           inner.appendChild(empty);
         } else {
           dayEvents.forEach(function (e) {
-            var pill = document.createElement("div");
-            var colorKey = e.color || "red";
+            const pill = document.createElement("div");
+            const colorKey = e.color || "red";
             pill.className =
               "event-pill event-color-" + colorKey.replace(/[^a-z]/g, "");
-            var dot = document.createElement("span");
+            const dot = document.createElement("span");
             dot.className = "event-dot";
-            var text = document.createElement("span");
+            const text = document.createElement("span");
             text.textContent = e.title;
             pill.appendChild(dot);
             pill.appendChild(text);
@@ -858,16 +851,16 @@
 
         eventsCol.appendChild(inner);
 
-        // ⭐ 每一格都可以新增任務（包含灰色的前後月）
-        var addRow = document.createElement("div");
+        // 新增任務列
+        const addRow = document.createElement("div");
         addRow.className = "event-add-row";
 
-        var input = document.createElement("input");
+        const input = document.createElement("input");
         input.type = "text";
         input.placeholder = "新增任務…";
         input.className = "event-add-input";
 
-        var select = document.createElement("select");
+        const select = document.createElement("select");
         select.className = "event-add-select";
         select.innerHTML =
           '<option value="red">紅色</option>' +
@@ -878,13 +871,13 @@
           '<option value="purple">紫色</option>' +
           '<option value="gray">灰色</option>';
 
-        var saveBtn = document.createElement("button");
+        const saveBtn = document.createElement("button");
         saveBtn.className = "event-add-btn";
         saveBtn.textContent = "儲存";
 
-        saveBtn.onclick = async function (e) {
+        saveBtn.onclick = async (e) => {
           e.stopPropagation();
-          var title = (input.value || "").trim();
+          const title = (input.value || "").trim();
           if (!title) return;
 
           if (!currentUser) {
@@ -892,18 +885,18 @@
             return;
           }
 
-          var dateStr = cellDate.toISOString().slice(0, 10);
-          var color = select.value || "red";
+          const dateStr = cellDate.toISOString().slice(0, 10);
+          const color = select.value || "red";
 
-          const resInsert = await sb.from("calendar_events").insert({
+          const { error } = await sb.from("calendar_events").insert({
             user_id: currentUser.id,
             title: title,
             date: dateStr,
             color: color
           });
 
-          if (resInsert.error) {
-            alert("新增任務失敗：" + resInsert.error.message);
+          if (error) {
+            alert("新增任務失敗：" + error.message);
             return;
           }
 
@@ -916,9 +909,9 @@
         addRow.appendChild(saveBtn);
         eventsCol.appendChild(addRow);
 
-        // ⭐ 點整個格子 → 自動 focus 到輸入框
-        cell.addEventListener("click", function (evt) {
-          var tag = evt.target.tagName;
+        // 點整格 → focus 輸入框
+        cell.addEventListener("click", (evt) => {
+          const tag = evt.target.tagName;
           if (tag === "INPUT" || tag === "SELECT" || tag === "BUTTON") return;
           input.focus();
         });
@@ -964,4 +957,5 @@
   </script>
 </body>
 </html>
+
 
