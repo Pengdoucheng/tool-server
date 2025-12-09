@@ -193,7 +193,7 @@
       }
     }
 
-    /* 圓形區：預設灰圈，開始後才啟用紅色進度 */
+    /* 圓形區：開始前完全沒有圈圈，只有文字；開始後才有紅圈＋白底 */
     .time-circle-wrap {
       display: flex;
       justify-content: center;
@@ -206,19 +206,14 @@
       width: 220px;
       height: 220px;
       border-radius: 999px;
-      background: #e5e7eb; /* 預設只有灰圈，不顯示紅色進度 */
+      /* 預設：沒有圈圈、沒有底色、不明顯的容器 */
+      background: transparent;
+      box-shadow: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
       position: relative;
       transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-    }
-
-    /* 按開始後才加上的紅色進度圈效果 */
-    .time-circle.active {
-      background:
-        conic-gradient(from 270deg, var(--accent-red) var(--progress), #e5e7eb var(--progress));
     }
 
     .time-circle::after {
@@ -226,15 +221,25 @@
       position: absolute;
       inset: 14px;
       border-radius: 999px;
+      background: transparent;
+    }
+
+    /* 開始後才啟用的紅色進度圈 + 卡片感 */
+    .time-circle.active {
+      background:
+        conic-gradient(from 270deg, var(--accent-red) var(--progress), #e5e7eb var(--progress));
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    .time-circle.active::after {
       background: radial-gradient(circle at 30% 20%, #fef2f2, #ffffff);
     }
 
-    .time-circle.blind {
+    .time-circle.active.blind {
       background: #e5e7eb;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
     }
 
-    .time-circle.blind::after {
+    .time-circle.active.blind::after {
       background: #ffffff;
     }
 
@@ -243,14 +248,20 @@
       width: 172px;
       height: 172px;
       border-radius: 999px;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
+      /* 預設：只有文字，沒有邊線、沒有底色 */
+      background: transparent;
+      border: none;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 4px;
       padding: 8px;
+    }
+
+    .time-circle-inner.active {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
     }
 
     .target-label {
@@ -596,10 +607,10 @@
       </div>
 
       <div class="main-layout">
-        <!-- 圓形顯示區 -->
+        <!-- 圓形顯示區（開始前只有文字） -->
         <div class="time-circle-wrap">
           <div class="time-circle" id="timeCircle" style="--progress: 0deg;">
-            <div class="time-circle-inner">
+            <div class="time-circle-inner" id="timeCircleInner">
               <div class="target-label">目標秒數</div>
               <div class="target-value" id="targetValue">10s</div>
               <div class="elapsed-label" id="elapsedLabel">經過時間（前 3 秒可見）</div>
@@ -712,6 +723,7 @@
     const stateLabelEl = document.getElementById("stateLabel");
     const hintTextEl = document.getElementById("hintText");
     const timeCircleEl = document.getElementById("timeCircle");
+    const timeCircleInnerEl = document.getElementById("timeCircleInner");
     const elapsedValueEl = document.getElementById("elapsedValue");
     const elapsedLabelEl = document.getElementById("elapsedLabel");
 
@@ -856,7 +868,8 @@
         elapsedValueEl.textContent = "0.0s";
         timeCircleEl.style.setProperty("--progress", "0deg");
         timeCircleEl.classList.remove("blind");
-        timeCircleEl.classList.remove("active"); // 還沒開始時不要有紅圈
+        timeCircleEl.classList.remove("active");
+        timeCircleInnerEl.classList.remove("active");
       }
     }
 
@@ -877,7 +890,8 @@
       btnStart.disabled = true;
       btnStop.disabled = false;
       timeCircleEl.classList.remove("blind");
-      timeCircleEl.classList.add("active"); // 開始時才顯示紅色進度圈
+      timeCircleEl.classList.add("active");        // 顯示紅圈與卡片
+      timeCircleInnerEl.classList.add("active");   // 顯示白底與邊線
 
       let frameId;
       function tick() {
@@ -940,6 +954,7 @@
       // 顯示完整讀條（依照實際時間比例）
       timeCircleEl.classList.remove("blind");
       timeCircleEl.classList.add("active");
+      timeCircleInnerEl.classList.add("active");
       const ratio = Math.min(elapsedSeconds / targetSeconds, 1.6);
       const progressDeg = 360 * ratio;
       timeCircleEl.style.setProperty("--progress", progressDeg + "deg");
@@ -990,7 +1005,8 @@
       elapsedValueEl.textContent = "0.0s";
       timeCircleEl.style.setProperty("--progress", "0deg");
       timeCircleEl.classList.remove("blind");
-      timeCircleEl.classList.remove("active"); // 重置後也回到無紅圈
+      timeCircleEl.classList.remove("active");
+      timeCircleInnerEl.classList.remove("active");
       resultBoxEl.style.display = "none";
     }
 
@@ -1031,5 +1047,6 @@
   </script>
 </body>
 </html>
+
 
 
