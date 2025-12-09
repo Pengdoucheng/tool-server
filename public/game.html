@@ -193,7 +193,7 @@
       }
     }
 
-    /* 圓形區：白底紅圈讀秒 */
+    /* 圓形區：預設灰圈，開始後才啟用紅色進度 */
     .time-circle-wrap {
       display: flex;
       justify-content: center;
@@ -206,14 +206,19 @@
       width: 220px;
       height: 220px;
       border-radius: 999px;
-      background:
-        conic-gradient(from 270deg, var(--accent-red) var(--progress), #e5e7eb var(--progress));
+      background: #e5e7eb; /* 預設只有灰圈，不顯示紅色進度 */
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
       position: relative;
       transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    /* 按開始後才加上的紅色進度圈效果 */
+    .time-circle.active {
+      background:
+        conic-gradient(from 270deg, var(--accent-red) var(--progress), #e5e7eb var(--progress));
     }
 
     .time-circle::after {
@@ -851,6 +856,7 @@
         elapsedValueEl.textContent = "0.0s";
         timeCircleEl.style.setProperty("--progress", "0deg");
         timeCircleEl.classList.remove("blind");
+        timeCircleEl.classList.remove("active"); // 還沒開始時不要有紅圈
       }
     }
 
@@ -871,6 +877,7 @@
       btnStart.disabled = true;
       btnStop.disabled = false;
       timeCircleEl.classList.remove("blind");
+      timeCircleEl.classList.add("active"); // 開始時才顯示紅色進度圈
 
       let frameId;
       function tick() {
@@ -931,10 +938,11 @@
       elapsedValueEl.textContent = elapsedSeconds.toFixed(1) + "s";
 
       // 顯示完整讀條（依照實際時間比例）
+      timeCircleEl.classList.remove("blind");
+      timeCircleEl.classList.add("active");
       const ratio = Math.min(elapsedSeconds / targetSeconds, 1.6);
       const progressDeg = 360 * ratio;
       timeCircleEl.style.setProperty("--progress", progressDeg + "deg");
-      timeCircleEl.classList.remove("blind");
 
       resultMainEl.textContent =
         "你覺得的「" +
@@ -982,6 +990,7 @@
       elapsedValueEl.textContent = "0.0s";
       timeCircleEl.style.setProperty("--progress", "0deg");
       timeCircleEl.classList.remove("blind");
+      timeCircleEl.classList.remove("active"); // 重置後也回到無紅圈
       resultBoxEl.style.display = "none";
     }
 
@@ -1022,4 +1031,5 @@
   </script>
 </body>
 </html>
+
 
