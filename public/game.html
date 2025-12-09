@@ -593,7 +593,7 @@
         </div>
         <div class="pill">
           <span class="pill-dot"></span>
-          <span>紅 · 白 · 簡約專注</span>
+          <span>掌握時間感</span>
         </div>
       </header>
 
@@ -864,8 +864,8 @@
         stateLabelEl.textContent = "尚未開始";
         hintTextEl.textContent =
           "按下「開始測驗」後，前 3 秒會顯示讀秒。3 秒之後讀條會消失，只能靠感覺，在你覺得時間到了時按「我覺得到了」。";
-        elapsedLabelEl.textContent = "經過時間（前 3 秒可見）";
-        elapsedValueEl.textContent = "0.0s";
+        elapsedLabelEl.textContent = "";
+        elapsedValueEl.textContent = "";
         timeCircleEl.style.setProperty("--progress", "0deg");
         timeCircleEl.classList.remove("blind");
         timeCircleEl.classList.remove("active");
