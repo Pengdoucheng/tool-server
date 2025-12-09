@@ -856,66 +856,74 @@
         eventsCol.appendChild(eventsList);
 
         // 只有本月日期可以新增任務
-        if (!isOtherMonth) {
-          const addRow = document.createElement("div");
-          addRow.className = "event-add-row";
+     // ⭐ 每一格（包含灰色的前後月）都可以新增任務
+const addRow = document.createElement("div");
+addRow.className = "event-add-row";
 
-          const input = document.createElement("input");
-          input.type = "text";
-          input.placeholder = "新增任務…";
-          input.className = "event-add-input";
+const input = document.createElement("input");
+input.type = "text";
+input.placeholder = "新增任務…";
+input.className = "event-add-input";
 
-          const select = document.createElement("select");
-          select.className = "event-add-select";
-          select.innerHTML = `
-            <option value="red">紅色</option>
-            <option value="orange">橘色</option>
-            <option value="yellow">黃色</option>
-            <option value="green">綠色</option>
-            <option value="blue">藍色</option>
-            <option value="purple">紫色</option>
-            <option value="gray">灰色</option>
-          `;
+const select = document.createElement("select");
+select.className = "event-add-select";
+select.innerHTML = `
+  <option value="red">紅色</option>
+  <option value="orange">橘色</option>
+  <option value="yellow">黃色</option>
+  <option value="green">綠色</option>
+  <option value="blue">藍色</option>
+  <option value="purple">紫色</option>
+  <option value="gray">灰色</option>
+`;
 
-          const saveBtn = document.createElement("button");
-          saveBtn.className = "event-add-btn";
-          saveBtn.textContent = "儲存";
+const saveBtn = document.createElement("button");
+saveBtn.className = "event-add-btn";
+saveBtn.textContent = "儲存";
 
-          saveBtn.onclick = async (e) => {
-            e.stopPropagation();
-            const title = (input.value || "").trim();
-            if (!title) return;
+saveBtn.onclick = async (e) => {
+  e.stopPropagation();
+  const title = (input.value || "").trim();
+  if (!title) return;
 
-            if (!currentUser) {
-              alert("請先登入才能新增任務。");
-              return;
-            }
+  if (!currentUser) {
+    alert("請先登入才能新增任務。");
+    return;
+  }
 
-            const dateStr = cellDate.toISOString().slice(0, 10);
-            const color = select.value || "red";
+  const dateStr = cellDate.toISOString().slice(0, 10);
+  const color = select.value || "red";
 
-            const { error } = await sb.from("calendar_events").insert({
-              user_id: currentUser.id,
-              title,
-              date: dateStr,
-              color,
-            });
+  const { error } = await sb.from("calendar_events").insert({
+    user_id: currentUser.id,
+    title,
+    date: dateStr,
+    color,
+  });
 
-            if (error) {
-              console.error(error);
-              alert("新增任務失敗：" + error.message);
-              return;
-            }
+  if (error) {
+    console.error(error);
+    alert("新增任務失敗：" + error.message);
+    return;
+  }
 
-            input.value = "";
-            await loadAndRenderCalendar();
-          };
+  input.value = "";
+  await loadAndRenderCalendar();
+};
 
-          addRow.appendChild(input);
-          addRow.appendChild(select);
-          addRow.appendChild(saveBtn);
-          eventsCol.appendChild(addRow);
-        }
+addRow.appendChild(input);
+addRow.appendChild(select);
+addRow.appendChild(saveBtn);
+eventsCol.appendChild(addRow);
+
+/* ⭐ 再加一個：點整格 cell 就幫你把焦點放到輸入框 */
+cell.addEventListener("click", (evt) => {
+  // 如果本來就點在 input / select / button 上，就不要搶焦點
+  const tag = evt.target.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "BUTTON") return;
+  input.focus();
+});
+
 
         cell.appendChild(eventsCol);
         calendarGridEl.appendChild(cell);
