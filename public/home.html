@@ -75,7 +75,6 @@
   }
 }
 
-
     :root {
       --accent-red: #ff4b4b;
       --accent-red-dark: #d93636;
@@ -96,12 +95,75 @@
       margin: 0;
       background: var(--bg-main);
       color: var(--text-main);
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* 🔴 柔和紅色極光背景（上方） */
+    body::before {
+      content: "";
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: -140px;
+      height: 360px;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(248, 113, 113, 0.35), transparent 60%),
+        radial-gradient(circle at 82% 18%, rgba(248, 113, 113, 0.25), transparent 60%),
+        radial-gradient(circle at 50% 110%, rgba(220, 38, 38, 0.22), transparent 65%);
+      opacity: 0.85;
+      filter: blur(14px);
+      pointer-events: none;
+      z-index: -1;
+      animation: auroraTop 22s ease-in-out infinite alternate;
+      mix-blend-mode: multiply;
+    }
+
+    /* 🔴 柔和紅色極光背景（下方，像時間軸亮起） */
+    body::after {
+      content: "";
+      position: fixed;
+      left: -10%;
+      right: -10%;
+      bottom: -180px;
+      height: 320px;
+      background:
+        radial-gradient(circle at 20% 80%, rgba(239, 68, 68, 0.2), transparent 60%),
+        radial-gradient(circle at 78% 60%, rgba(248, 113, 113, 0.18), transparent 60%),
+        linear-gradient(
+          90deg,
+          rgba(248, 250, 252, 0) 0%,
+          rgba(248, 113, 113, 0.14) 12%,
+          rgba(248, 113, 113, 0.18) 50%,
+          rgba(248, 113, 113, 0.12) 88%,
+          rgba(248, 250, 252, 0) 100%
+        );
+      opacity: 0.75;
+      filter: blur(20px);
+      pointer-events: none;
+      z-index: -1;
+      animation: auroraBottom 26s ease-in-out infinite alternate;
+    }
+
+    @keyframes auroraTop {
+      0%   { transform: translateX(0) translateY(0); }
+      50%  { transform: translateX(10px) translateY(8px); }
+      100% { transform: translateX(-12px) translateY(2px); }
+    }
+
+    @keyframes auroraBottom {
+      0%   { transform: translateX(0) translateY(0); }
+      50%  { transform: translateX(-14px) translateY(-6px); }
+      100% { transform: translateX(10px) translateY(4px); }
     }
 
     .page {
       max-width: 1120px;
       margin: 0 auto;
       padding: 28px 16px 56px;
+      position: relative;
+      z-index: 1; /* 壓在極光前面 */
     }
 
     /* 頂部導覽列 */
@@ -123,6 +185,7 @@
       height: 22px;
       border-radius: 8px;
       background: linear-gradient(135deg, #111111, var(--accent-red));
+      box-shadow: 0 0 12px rgba(248, 113, 113, 0.7);
     }
 
     .logo-text-main {
@@ -150,6 +213,40 @@
       border-radius: 999px;
       border: 1px solid rgba(17, 17, 17, 0.1);
       background: #ffffff;
+    }
+
+    .auth-area {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--text-sub);
+      max-width: 220px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      padding: 9px 16px;
+      border: 1px solid rgba(17, 17, 17, 0.16);
+      background: #ffffff;
+      font-size: 13px;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+    }
+
+    .btn-ghost.btn-ghost-small {
+      padding: 6px 10px;
+      font-size: 12px;
     }
 
     /* Hero 區 */
@@ -215,19 +312,6 @@
       transform: translateY(-1px);
       box-shadow: 0 18px 38px rgba(15, 23, 42, 0.45);
       background: #000000;
-    }
-
-    .btn-ghost {
-      border-radius: 999px;
-      padding: 9px 16px;
-      border: 1px solid rgba(17, 17, 17, 0.16);
-      background: #ffffff;
-      font-size: 13px;
-      color: var(--text-sub);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
     }
 
     .hero-tags {
@@ -397,8 +481,9 @@
         grid-template-columns: minmax(0, 1fr);
       }
     }
-        /* 浮動視窗樣式 */
-        .overlay {
+
+    /* 浮動視窗樣式 */
+    .overlay {
       position: fixed;
       inset: 0;
       display: none;
@@ -470,41 +555,38 @@
         height: 72vh;
       }
     }
+
+    /* AI 小助手按鈕置中 + 呼吸動畫 */
     #openTimeChatBtn {
-  display: block;
-  margin: 0 auto;   /* 左右自動，按鈕會置中 */
-}
+      display: block;
+      margin: 0 auto;
+      animation: pulseGlow 2.4s ease-in-out infinite, floatUp 3s ease-in-out infinite;
+      position: relative;
+      overflow: hidden;
+    }
 
-#openTimeChatBtn {
-  animation: pulseGlow 2.4s ease-in-out infinite, floatUp 3s ease-in-out infinite;
-  position: relative;
-  overflow: hidden;
-}
+    /* 呼吸亮光 */
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0px rgba(255, 75, 75, 0.4); }
+      50% { box-shadow: 0 0 14px rgba(255, 75, 75, 0.85); }
+      100% { box-shadow: 0 0 0px rgba(255, 75, 75, 0.4); }
+    }
 
-/* 呼吸亮光 */
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 0px rgba(255, 75, 75, 0.4); }
-  50% { box-shadow: 0 0 14px rgba(255, 75, 75, 0.85); }
-  100% { box-shadow: 0 0 0px rgba(255, 75, 75, 0.4); }
-}
+    /* 微上浮 */
+    @keyframes floatUp {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
 
-/* 微上浮 */
-@keyframes floatUp {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
+    /* 亮點同步閃爍 */
+    #openTimeChatBtn .btn-primary-dot {
+      animation: dotBlink 1.6s infinite;
+    }
 
-/* 亮點同步閃爍 */
-#openTimeChatBtn .btn-primary-dot {
-  animation: dotBlink 1.6s infinite;
-}
-
-@keyframes dotBlink {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-
+    @keyframes dotBlink {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
 
   </style>
 </head>
@@ -521,10 +603,11 @@
       </div>
       <div class="topbar-right">
         <span class="pill">時間自律工具</span>
-        <a href="/supabase-test.html?redirect=/home.html" class="btn-ghost">登入 / 管理帳號</a>
-
+        <!-- 🔐 登入狀態顯示區 -->
+        <div id="authArea" class="auth-area">
+          <!-- 由 JS 根據 Supabase 狀態填入內容 -->
+        </div>
       </div>
-      
     </header>
 
     <!-- Hero 區 -->
@@ -540,8 +623,6 @@
           <span class="btn-primary-dot"></span>
           AI聊天小助手！
         </button>
-        
-       
       </div>
       <div class="hero-tags">
         <span class="hero-tag">控時間 · 控節奏 · 控肉飯</span>
@@ -574,19 +655,15 @@
           </div>
           <div class="task-footer">
             <span class="task-tag">模式：AI 節奏</span>
-        
-            <!-- 改這裡！！！ -->
             <a class="task-link"
-   href="#"
-   data-url="/tool.html"
-   data-title="AI 排程工具"
-   data-require-login="true">
-   進入工具
-</a>
-
-         
+               href="#"
+               data-url="/tool.html"
+               data-title="AI 排程工具"
+               data-require-login="true">
+               進入工具
+            </a>
+          </div>
         </article>
-        
 
         <!-- 卡片 2：番茄鐘專注模式 -->
         <article class="task-card">
@@ -604,13 +681,11 @@
           <div class="task-footer">
             <span class="task-tag">模式：專注練習</span>
             <a class="task-link"
-   href="#"
-   data-url="/pomodoro.html"
-   data-title="番茄鐘">
-   開始專注
-</a>
-
-         
+               href="#"
+               data-url="/pomodoro.html"
+               data-title="番茄鐘">
+               開始專注
+            </a>
           </div>
         </article>
 
@@ -630,11 +705,11 @@
           <div class="task-footer">
             <span class="task-tag">模式：回顧分析</span>
             <a class="task-link"
-            href="#"
-            data-url="/cloud-sync-widget.html"
-            data-title="雲端工具">
-            進行紀錄
-         </a>
+               href="#"
+               data-url="/cloud-sync-widget.html"
+               data-title="雲端工具">
+               進行紀錄
+            </a>
           </div>
         </article>
 
@@ -673,11 +748,11 @@
           <div class="task-footer">
             <span class="task-tag">模式：測驗系統</span>
             <a class="task-link"
-   href="#"
-   data-url="/game.html"
-   data-title="時間測驗">
-   開始遊玩
-</a>
+               href="#"
+               data-url="/game.html"
+               data-title="時間測驗">
+               開始遊玩
+            </a>
           </div>
         </article>
 
@@ -694,10 +769,8 @@
               <span>適合：需要一點陪伴感的晚上</span>
             </div>
           </div>
-        
           <div class="task-footer">
             <span class="task-tag">模式：社群互動</span>
-          
             <!-- 這顆完全不走 overlay，直接開新分頁 -->
             <a class="task-link"
                href="/community.html"
@@ -706,9 +779,7 @@
                前往社群牆
             </a>
           </div>
-          
         </article>
-        
       </div>
     </section>
 
@@ -716,163 +787,191 @@
       自律控肉飯製作 2025 彭彭工程師敬上
     </p>
   </div>
-    <!-- 浮動視窗：疊在同一頁上 -->
-    <div id="overlay" class="overlay">
-      <div class="overlay-backdrop"></div>
-      <div class="overlay-dialog">
-        <div class="overlay-header">
-          <span id="overlay-title">載入中…</span>
-          <button id="overlay-close" class="overlay-close">✕</button>
-        </div>
-        <iframe id="overlay-frame" class="overlay-frame" src="about:blank" loading="lazy"></iframe>
+
+  <!-- 浮動視窗：疊在同一頁上 -->
+  <div id="overlay" class="overlay">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-dialog">
+      <div class="overlay-header">
+        <span id="overlay-title">載入中…</span>
+        <button id="overlay-close" class="overlay-close">✕</button>
       </div>
+      <iframe id="overlay-frame" class="overlay-frame" src="about:blank" loading="lazy"></iframe>
     </div>
-  
+  </div>
 
-    <script>
-      const overlay = document.getElementById('overlay');
-      const frame = document.getElementById('overlay-frame');
-      const title = document.getElementById('overlay-title');
-      const btnClose = document.getElementById('overlay-close');
-  
-      function openOverlay(label, url) {
-        if (!url) return; // 沒給 url 就不做事
-        title.textContent = label || '載入中…';
-        frame.src = url;
-        overlay.classList.add('show');
-      }
-  
-      function closeOverlay() {
-        overlay.classList.remove('show');
-        // 視情況決定要不要清空 src（清空會讓內頁重載）
-        // frame.src = 'about:blank';
-      }
-  
-      // 關閉按鈕
-      btnClose.addEventListener('click', closeOverlay);
-  
-      // 點背景關閉
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay || e.target.classList.contains('overlay-backdrop')) {
-          closeOverlay();
-        }
-      });
-  
-      // 綁定卡片按鈕
-    // 只綁定「有 data-url 的 task-link」→ 用 overlay 開
- 
+  <script>
+    const overlay = document.getElementById('overlay');
+    const frame = document.getElementById('overlay-frame');
+    const title = document.getElementById('overlay-title');
+    const btnClose = document.getElementById('overlay-close');
 
-    </script>
+    function openOverlay(label, url) {
+      if (!url) return; // 沒給 url 就不做事
+      title.textContent = label || '載入中…';
+      frame.src = url;
+      overlay.classList.add('show');
+    }
+
+    function closeOverlay() {
+      overlay.classList.remove('show');
+      // 視情況決定要不要清空 src（清空會讓內頁重載）
+      // frame.src = 'about:blank';
+    }
+
+    // 關閉按鈕
+    btnClose.addEventListener('click', closeOverlay);
+
+    // 點背景關閉
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay || e.target.classList.contains('overlay-backdrop')) {
+        closeOverlay();
+      }
+    });
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const sb = supabase.createClient(
       "https://rbtevdmunkjjevoeooli.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw"
     );
-  
+
     // ✅ 只綁「有 data-url 的」→ overlay + 登入檢查
     document.querySelectorAll('.task-link[data-url]').forEach(link => {
       link.addEventListener('click', async function(e) {
         e.preventDefault();
-  
+
         const requireLogin = link.getAttribute('data-require-login') === 'true';
-  
+
         if (requireLogin) {
-          const { data: { user } } = await sb.auth.getUser();
+          const { data: { user } = { user: null } } = await sb.auth.getUser().catch(() => ({ data: { user: null } }));
           if (!user) {
             if (confirm("要先登入才能使用這個工具，現在要去登入嗎？")) {
-              // 可以順便加 redirect 參數
               window.location.href = "/supabase-test.html?redirect=/home.html";
             }
             return;
           }
         }
-  
+
         const url = link.getAttribute('data-url');
         const label =
           link.getAttribute('data-title') ||
           link.closest('.task-card').querySelector('.task-title').textContent;
-  
+
         openOverlay(label, url);
       });
     });
+
+    // 🔐 頂部「登入狀態」顯示：已登入 email / 登出按鈕
+    document.addEventListener('DOMContentLoaded', async () => {
+      const authArea = document.getElementById('authArea');
+      if (!authArea) return;
+
+      let user = null;
+      try {
+        const res = await sb.auth.getUser();
+        user = res?.data?.user || null;
+      } catch (err) {
+        user = null;
+      }
+
+      if (user) {
+        const email = user.email || "已登入";
+        authArea.innerHTML = `
+          <span class="user-email">已登入：${email}</span>
+          <button id="logoutBtn" class="btn-ghost btn-ghost-small">登出</button>
+        `;
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.addEventListener('click', async () => {
+          try {
+            await sb.auth.signOut();
+          } catch (e) {}
+          // 登出後回到登入頁，順便讓他之後可以跳回 home
+          window.location.href = "/supabase-test.html?redirect=/home.html";
+        });
+      } else {
+        authArea.innerHTML = `
+          <a href="/supabase-test.html?redirect=/home.html" class="btn-ghost">登入 / 管理帳號</a>
+        `;
+      }
+    });
   </script>
-  
+
   <!-- 浮動時間管理聊天室 -->
-<div id="timeChatWindow" class="time-chat-window">
-  <div class="time-chat-header" id="timeChatHeader">
-    <span>Time Coach · 時間管理聊天室</span>
-    <button class="time-chat-close" id="closeTimeChatBtn">×</button>
+  <div id="timeChatWindow" class="time-chat-window">
+    <div class="time-chat-header" id="timeChatHeader">
+      <span>Time Coach · 時間管理聊天室</span>
+      <button class="time-chat-close" id="closeTimeChatBtn">×</button>
+    </div>
+    <iframe
+      src="/time-chat.html"
+      class="time-chat-iframe"
+      frameborder="0">
+    </iframe>
   </div>
-  <iframe
-    src="/time-chat.html" 
-    class="time-chat-iframe"
-    frameborder="0">
-  </iframe>
-</div>
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const openBtn = document.getElementById('openTimeChatBtn');
-    const chatWin = document.getElementById('timeChatWindow');
-    const closeBtn = document.getElementById('closeTimeChatBtn');
-    const header  = document.getElementById('timeChatHeader');
 
-    // 打開聊天室
-    openBtn.addEventListener('click', () => {
-      chatWin.style.display = 'block';
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const openBtn = document.getElementById('openTimeChatBtn');
+      const chatWin = document.getElementById('timeChatWindow');
+      const closeBtn = document.getElementById('closeTimeChatBtn');
+      const header  = document.getElementById('timeChatHeader');
+
+      // 打開聊天室
+      openBtn.addEventListener('click', () => {
+        chatWin.style.display = 'block';
+      });
+
+      // 關閉聊天室
+      closeBtn.addEventListener('click', () => {
+        chatWin.style.display = 'none';
+      });
+
+      // === 以下是拖移功能 ===
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let startLeft = 0;
+      let startTop = 0;
+
+      header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+
+        const rect = chatWin.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+
+        startX = e.clientX;
+        startY = e.clientY;
+
+        chatWin.style.left = startLeft + 'px';
+        chatWin.style.top = startTop + 'px';
+        chatWin.style.right = 'auto';
+        chatWin.style.bottom = 'auto';
+
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('mouseup', stopDrag);
+      });
+
+      function onDrag(e) {
+        if (!isDragging) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        chatWin.style.left = startLeft + dx + 'px';
+        chatWin.style.top  = startTop + dy + 'px';
+      }
+
+      function stopDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', stopDrag);
+      }
     });
-
-    // 關閉聊天室
-    closeBtn.addEventListener('click', () => {
-      chatWin.style.display = 'none';
-    });
-
-    // === 以下是拖移功能 ===
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let startLeft = 0;
-    let startTop = 0;
-
-    header.addEventListener('mousedown', (e) => {
-      isDragging = true;
-
-      // 目前的位置（固定座標）
-      const rect = chatWin.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-
-      startX = e.clientX;
-      startY = e.clientY;
-
-      // 拖動時，用 left/top 控制位置
-      chatWin.style.left = startLeft + 'px';
-      chatWin.style.top = startTop + 'px';
-      chatWin.style.right = 'auto';
-      chatWin.style.bottom = 'auto';
-
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', stopDrag);
-    });
-
-    function onDrag(e) {
-      if (!isDragging) return;
-
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-
-      chatWin.style.left = startLeft + dx + 'px';
-      chatWin.style.top  = startTop + dy + 'px';
-    }
-
-    function stopDrag() {
-      if (!isDragging) return;
-      isDragging = false;
-      document.removeEventListener('mousemove', onDrag);
-      document.removeEventListener('mouseup', stopDrag);
-    }
-  });
-</script>
+  </script>
 
 </body>
 </html>
