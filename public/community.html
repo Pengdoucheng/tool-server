@@ -238,6 +238,62 @@
       color:#f9fafb;
     }
 
+    /* === 最新貼文 日期篩選收合 === */
+.date-filter-wrapper{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+}
+
+.date-filter-toggle{
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  color:#4b5563;
+  font-size:11px;
+  padding:4px 8px;
+  cursor:pointer;
+}
+.date-filter-toggle:hover{
+  background:#fee2e2;
+  border-color:#fecaca;
+  color:#b91c1c;
+}
+
+/* 收合後就隱藏日期按鈕列 */
+.date-filter-bar.collapsed{
+  display:none;
+}
+
+/* === DM header 收合按鈕 === */
+.dm-header-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+
+.dm-header-toggle{
+  border-radius:999px;
+  border:1px solid #f9fafb;
+  background:transparent;
+  color:#f9fafb;
+  font-size:10px;
+  padding:3px 8px;
+  cursor:pointer;
+}
+.dm-header-toggle:hover{
+  background:#f9fafb;
+  color:#111827;
+}
+
+/* DM 聊天列表收合時隱藏 */
+.dm-chatlist.collapsed{
+  display:none;
+}
+
+
     /* 篩選提示區（最新貼文卡片內） */
     #feedFilterInfo{
       display:none;
@@ -755,14 +811,21 @@
 
         <!-- 最新貼文 -->
         <article class="card" style="margin-top:16px;" aria-label="最新貼文">
-          <header class="card-header">
-            <div>
-              <div class="card-title">最新貼文</div>
-              <div class="card-sub">依日期與使用者篩選 · 大家一起在這裡練自律。</div>
-            </div>
-            <!-- 日期按鈕列 -->
-            <div id="dateFilterBar" class="date-filter-bar"></div>
-          </header>
+            <header class="card-header">
+                <div>
+                  <div class="card-title">最新貼文</div>
+                  <div class="card-sub">依日期與使用者篩選 · 大家一起在這裡練自律。</div>
+                </div>
+              
+                <!-- 🔽 日期篩選收合區 -->
+                <div class="date-filter-wrapper">
+                  <button id="dateFilterToggle" class="date-filter-toggle">
+                    日期篩選 ▴
+                  </button>
+                  <div id="dateFilterBar" class="date-filter-bar"></div>
+                </div>
+              </header>
+              
           <div class="card-body">
             <!-- 篩選提示 -->
             <div id="feedFilterInfo">
@@ -889,29 +952,43 @@ async function makeAiComment(content, habitTag){
 
     // 初始化
     document.addEventListener("DOMContentLoaded", async () => {
-      const btnSaveName = document.getElementById("btnSaveName");
-      if(btnSaveName){
-        btnSaveName.addEventListener("click", updateDisplayName);
-      }
+  const btnSaveName = document.getElementById("btnSaveName");
+  if(btnSaveName){
+    btnSaveName.addEventListener("click", updateDisplayName);
+  }
 
-      const btnClearFilter = document.getElementById("btnClearFilter");
-      if(btnClearFilter){
-        btnClearFilter.addEventListener("click", () => {
-          filterUserId = null;
-          filterUserName = "";
-          // 日期篩選保留在目前選擇的那天不變，只清除使用者篩選
-          loadFeed();
-        });
-      }
-
-      await fetchUser();
-      await loadFeed();
-
-      sb.auth.onAuthStateChange(async () => {
-        await fetchUser();
-        await loadFeed();
-      });
+  const btnClearFilter = document.getElementById("btnClearFilter");
+  if(btnClearFilter){
+    btnClearFilter.addEventListener("click", () => {
+      filterUserId = null;
+      filterUserName = "";
+      // 日期篩選保留在目前選擇的那天不變，只清除使用者篩選
+      loadFeed();
     });
+  }
+
+  /* 🔽 日期篩選收合按鈕 */
+  const dateFilterToggle = document.getElementById("dateFilterToggle");
+  if(dateFilterToggle){
+    dateFilterToggle.addEventListener("click", () => {
+      const bar = document.getElementById("dateFilterBar");
+      if(!bar) return;
+      const collapsed = bar.classList.toggle("collapsed");
+      dateFilterToggle.textContent = collapsed
+        ? "日期篩選 ▾"
+        : "日期篩選 ▴";
+    });
+  }
+
+  await fetchUser();
+  await loadFeed();
+
+  sb.auth.onAuthStateChange(async () => {
+    await fetchUser();
+    await loadFeed();
+  });
+});
+
 
     async function fetchUser(){
       const heroStatus = document.getElementById("heroStatus");
@@ -1588,7 +1665,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("dmSendBtn").addEventListener("click", sendDm);
+
+  /* 🔽 DM 聊天列表收合按鈕 */
+  const dmChatToggleList = document.getElementById("dmChatToggleList");
+  if(dmChatToggleList){
+    dmChatToggleList.addEventListener("click", () => {
+      const list = document.getElementById("dmChatList");
+      if(!list) return;
+      const collapsed = list.classList.toggle("collapsed");
+      dmChatToggleList.textContent = collapsed
+        ? "展開列表 ▾"
+        : "收合列表 ▴";
+    });
+  }
 });
+
 
 /* 取得登入者 */
 async function initDmAuth(){
@@ -1766,10 +1857,16 @@ function addDmButtonsToPosts(){
   
     <div id="dmPanel" class="dm-panel">
   
-      <div class="dm-header">
-        <div class="dm-header-title">私訊 · Direct Message</div>
-        <div id="dmHeaderSub" class="dm-header-sub">請選擇聊天對象</div>
-      </div>
+        <div class="dm-header">
+            <div class="dm-header-top">
+              <div class="dm-header-title">私訊 · Direct Message</div>
+              <button id="dmChatToggleList" class="dm-header-toggle">
+                收合列表 ▴
+              </button>
+            </div>
+            <div id="dmHeaderSub" class="dm-header-sub">請選擇聊天對象</div>
+          </div>
+          
   
       <!-- 聊天列表 -->
       <div id="dmChatList" class="dm-chatlist">
