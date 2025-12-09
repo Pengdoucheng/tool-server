@@ -635,6 +635,27 @@
   cursor:pointer;
 }
 
+/* 讓 body 這一層可以壓縮高度，不要硬撐 */
+.dm-body{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  background:#f9fafb;
+  min-height:0;       /* 🔥 加這行 */
+}
+
+/* 讓訊息區可以縮，超出就用自己的捲軸 */
+.dm-messages{
+  flex:1;
+  overflow-y:auto;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-height:0;       /* 🔥 再加這行 */
+}
+
+
   </style>
 </head>
 <body>
