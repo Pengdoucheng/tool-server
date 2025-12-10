@@ -20,12 +20,32 @@
       --font:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
     *{box-sizing:border-box;font-family:var(--font);}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
-    body{
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-    }
+    html,body{
+  margin:0;
+  padding:0;
+  color:var(--text);
+}
+
+/* 用照片當整體背景 + 疊一層黑色讓它變暗、不搶眼 */
+body{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+
+  /* 第一層是深色遮罩、第二層是照片 */
+  background-image:
+    linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.75)),
+    url("img/DSC_1168.jpg");  /* ← 改成你實際的路徑 */
+
+  /* 讓照片寬度拉滿、維持比例，往下滾動會重複 */
+  background-size: auto, 100% auto;
+  background-repeat: no-repeat, repeat-y;
+  background-position: center top;
+
+  /* fallback 底色，避免載入前一片白 */
+  background-color:#020617;
+}
+
 
     /* Header + nav */
     .site-header{
