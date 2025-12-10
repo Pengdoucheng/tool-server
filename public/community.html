@@ -32,19 +32,18 @@ body{
   display:flex;
   flex-direction:column;
 
-  /* 第一層是深色遮罩、第二層是照片 */
+  /* 亮一些的黑色遮罩 */
   background-image:
-    linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.75)),
-    url("DSC_1168.JPG");  /* ← 改成你實際的路徑 */
+    linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.35)),
+    url("DSC_1168.JPG"); /* ← 記得換成正確路徑與大小寫 */
 
-  /* 讓照片寬度拉滿、維持比例，往下滾動會重複 */
   background-size: auto, 100% auto;
   background-repeat: no-repeat, repeat-y;
   background-position: center top;
 
-  /* fallback 底色，避免載入前一片白 */
-  background-color:#020617;
+  background-color:#0f172a; /* 深藍備用底色 */
 }
+
 
 
     /* Header + nav */
