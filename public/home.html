@@ -174,6 +174,38 @@
       margin-bottom: 24px;
     }
 
+    /* 左側：返回鍵 + Logo 排版 */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 左上角返回按鈕 */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 17, 17, 0.16);
+  background: #ffffff;
+  color: var(--text-main);
+  text-decoration: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.back-link:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.26);
+}
+
+
     .logo {
       display: flex;
       align-items: center;
@@ -594,13 +626,25 @@
   <div class="page">
     <!-- 頂部 -->
     <header class="topbar">
-      <div class="logo">
-        <div class="logo-mark"></div>
-        <div>
-          <div class="logo-text-main">ZILV · TOOLS</div>
-          <div class="logo-text-sub">自律控肉飯 · 時間任務主頁</div>
+      <div class="topbar-left">
+        <!-- 🔙 左上角返回按鈕：這裡的 href 換成你的主頁連結 -->
+        <a
+          href="/index.html"   <!-- 📝 這裡改成你想回去的主頁，例如 /index.html 或 /main.html -->
+          class="back-link"
+          aria-label="返回主頁"
+        >
+          ←
+        </a>
+    
+        <div class="logo">
+          <div class="logo-mark"></div>
+          <div>
+            <div class="logo-text-main">ZILV · TOOLS</div>
+            <div class="logo-text-sub">自律控肉飯 · 時間任務主頁</div>
+          </div>
         </div>
       </div>
+    
       <div class="topbar-right">
         <span class="pill">時間自律工具</span>
         <!-- 🔐 登入狀態顯示區 -->
@@ -609,6 +653,7 @@
         </div>
       </div>
     </header>
+    
 
     <!-- Hero 區 -->
     <section class="hero">
