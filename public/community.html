@@ -175,6 +175,12 @@ body{
       .grid{grid-template-columns: minmax(0,1fr);}
     }
 
+    /* 右側整欄（排行榜 + 熱門雜誌） */
+    .side-column{
+      display:flex;
+      flex-direction:column;
+    }
+
     /* composer & card */
     .card{
       background:var(--card);
@@ -730,6 +736,210 @@ body{
   min-height:0;       /* 🔥 再加這行 */
 }
 
+/* === 左側宣傳影片欄位 =================================== */
+.promo-video-panel{
+  position:fixed;
+  left:16px;
+  bottom:120px;   /* ← 往上移！你可以自己改 80px、100px、150px */
+  z-index:9998;
+  pointer-events:none;
+  display:none;
+}
+
+
+.promo-video-panel.is-active{
+  display:block;
+}
+
+.promo-video-inner{
+  pointer-events:auto;
+  width:320px;
+  max-width:70vw;
+  background:#020617;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid rgba(248,250,252,.08);
+  box-shadow:0 22px 50px rgba(15,23,42,.8);
+  transform:translateX(-120%);
+  opacity:0;
+  animation:promo-slide-in .6s cubic-bezier(.22,.82,.35,1.01) .8s forwards;
+}
+
+@media(max-width:720px){
+  .promo-video-panel{
+    display:none !important;
+  }
+}
+
+.promo-video-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 10px 4px;
+  color:#e5e7eb;
+  font-size:11px;
+}
+
+.promo-video-tag{
+  padding:2px 8px;
+  border-radius:999px;
+  background:rgba(248,113,113,.12);
+  border:1px solid rgba(248,113,113,.35);
+  color:#fecaca;
+}
+
+.promo-video-close{
+  border:none;
+  background:transparent;
+  color:#9ca3af;
+  font-size:14px;
+  cursor:pointer;
+  padding:2px 4px;
+}
+.promo-video-close:hover{
+  color:#f9fafb;
+}
+
+.promo-video-body{
+  padding:0 10px 10px;
+}
+
+.promo-video-wrapper{
+  position:relative;
+  border-radius:14px;
+  overflow:hidden;
+  background:#000;
+}
+
+.promo-video{
+  width:100%;
+  display:block;
+}
+
+/* 點整塊跳網址 */
+.promo-video-link{
+  position:absolute;
+  inset:0;
+  cursor:pointer;
+}
+
+.promo-video-cta{
+  margin-top:8px;
+  width:100%;
+  border-radius:999px;
+  border:1px solid #f97373;
+  background:#f97373;
+  color:#111827;
+  font-size:12px;
+  font-weight:600;
+  padding:6px 10px;
+  cursor:pointer;
+}
+.promo-video-cta:hover{
+  background:#fecaca;
+  border-color:#fecaca;
+}
+
+/* 滑入動畫 */
+@keyframes promo-slide-in{
+  from{
+    transform:translateX(-120%);
+    opacity:0;
+  }
+  to{
+    transform:translateX(0);
+    opacity:1;
+  }
+}
+
+/* 關閉動畫 */
+.promo-video-panel.is-closing .promo-video-inner{
+  animation:promo-slide-out .35s ease forwards;
+}
+@keyframes promo-slide-out{
+  to{
+    transform:translateX(-130%);
+    opacity:0;
+  }
+}
+
+/* === 排行榜展開/收合按鈕 & 隱藏項目 === */
+.rank-item.hidden{
+  display:none;
+}
+.rank-toggle-btn{
+  margin-top:8px;
+  width:100%;
+  border-radius:999px;
+  border:1px solid #d4d4d8;
+  background:#f9fafb;
+  color:#4b5563;
+  font-size:11px;
+  padding:6px 10px;
+  cursor:pointer;
+}
+.rank-toggle-btn:hover{
+  background:#fff;
+  border-color:#cbd5e1;
+}
+
+/* === 熱門雜誌區塊 =================================================== */
+
+.mag-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+  margin-top:10px;
+}
+
+.mag-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-decoration:none;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#ffffff;
+  transition:0.15s ease;
+  box-shadow:var(--shadow-soft);
+}
+
+.mag-item:hover{
+  background:#f9fafb;
+  border-color:#d1d5db;
+  transform:translateY(-2px);
+}
+
+.mag-thumb{
+  width:70px;
+  height:70px;
+  border-radius:10px;
+  overflow:hidden;
+  background:#eee;
+  flex-shrink:0;
+}
+
+.mag-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.mag-title{
+  font-size:14px;
+  color:var(--text);
+  font-weight:600;
+  line-height:1.3;
+}
+
+/* 電腦版：三欄 */
+@media(min-width:840px){
+  .mag-grid{
+    grid-template-columns:1fr;
+  }
+}
+
 
   </style>
 </head>
@@ -858,23 +1068,69 @@ body{
         </article>
       </section>
 
-      <!-- 右：排行榜 -->
-      <aside class="card" aria-label="排行榜">
-        <div class="card-body">
-          <div class="side-title">本週被按讚最多的使用者</div>
-          <div class="side-sub">統計最近貼文的按讚數，只是小小榮耀，不是壓力。</div>
-          <span class="badge" id="badgeCount">尚未載入</span>
+      <!-- 右：排行榜 + 熱門雜誌在同一欄 -->
+      <div class="side-column">
+        <!-- 排行榜 -->
+        <aside class="card" aria-label="排行榜">
+          <div class="card-body">
+            <div class="side-title">本週被按讚最多的使用者</div>
+            <div class="side-sub">統計最近貼文的按讚數，只是小小榮耀，不是壓力。</div>
+            <span class="badge" id="badgeCount">尚未載入</span>
 
-          <ul id="rankList" class="rank-list"></ul>
-          <div id="rankEmpty" class="rank-empty" style="display:none;">
-            目前還沒有讚的紀錄，先去幫別人按個讚，說不定你也會被回訪。
-          </div>
+            <ul id="rankList" class="rank-list"></ul>
+            <div id="rankEmpty" class="rank-empty" style="display:none;">
+              目前還沒有讚的紀錄，先去幫別人按個讚，說不定你也會被回訪。
+            </div>
 
-          <div class="side-footer">
-            點排行榜使用者可直接篩選他的貼文。
+            <!-- 🔽 排行榜展開 / 收合按鈕 -->
+            <button id="rankToggleBtn" class="rank-toggle-btn" style="display:none;">
+              展開更多 ▾
+            </button>
+
+            <div class="side-footer">
+              點排行榜使用者可直接篩選他的貼文。
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+
+        <!-- 🔥 熱門雜誌區 -->
+        <aside class="card" aria-label="熱門雜誌推薦" style="margin-top:16px;">
+          <div class="card-body">
+        
+            <h2 class="sec-title">熱門雜誌推薦</h2>
+        
+            <div class="mag-grid">
+              
+              <!-- 第一篇 -->
+              <a class="mag-item" href="https://pengdoucheng.github.io/tony.html" target="_blank">
+                <div class="mag-thumb">
+                  <img src="kobe1.png" alt="Magazine 1">
+                </div>
+                <div class="mag-title">你看過凌晨四點的洛杉磯嗎？</div>
+              </a>
+        
+              <!-- 第二篇 -->
+              <a class="mag-item" href="https://pengdoucheng.github.io/euoy.html" target="_blank">
+                <div class="mag-thumb">
+                  <img src="jolin1.png" alt="Magazine 2">
+                </div>
+                <div class="mag-title">自律對我而言是為了獲得自由</div>
+              </a>
+        
+              <!-- 第三篇 -->
+              <a class="mag-item" href="https://pengdoucheng.github.io/ty.html" target="_blank">
+                <div class="mag-thumb">
+                  <img src="owner1.png" alt="Magazine 3">
+                </div>
+                <div class="mag-title">從頭開始做起的服飾店老闆：冠云</div>
+              </a>
+        
+            </div>
+        
+          </div>
+        </aside>
+      </div>
+  
     </div>
   </main>
 
@@ -996,6 +1252,31 @@ async function makeAiComment(content, habitTag){
       dateFilterToggle.textContent = collapsed
         ? "日期篩選 ▾"
         : "日期篩選 ▴";
+    });
+  }
+
+  /* 🔽 排行榜展開 / 收合按鈕 */
+  const rankToggleBtn = document.getElementById("rankToggleBtn");
+  if(rankToggleBtn){
+    rankToggleBtn.addEventListener("click", () => {
+      const items = document.querySelectorAll("#rankList .rank-item");
+      const expanded = rankToggleBtn.dataset.expanded === "true";
+
+      if(!expanded){
+        // 展開：顯示全部（前 3 名本來就會顯示，第 4 名之後移除 hidden）
+        items.forEach((li, idx) => {
+          if(idx >= 3) li.classList.remove("hidden");
+        });
+        rankToggleBtn.dataset.expanded = "true";
+        rankToggleBtn.textContent = "收合 ▴";
+      }else{
+        // 收合：只顯示前三名
+        items.forEach((li, idx) => {
+          if(idx >= 3) li.classList.add("hidden");
+        });
+        rankToggleBtn.dataset.expanded = "false";
+        rankToggleBtn.textContent = "展開更多 ▾";
+      }
     });
   }
 
@@ -1579,6 +1860,7 @@ if(aiText){
       const rankListEl  = document.getElementById("rankList");
       const rankEmptyEl = document.getElementById("rankEmpty");
       const badgeEl     = document.getElementById("badgeCount");
+      const toggleBtn   = document.getElementById("rankToggleBtn");
 
       rankListEl.innerHTML = "";
       rankByUser = {};
@@ -1589,6 +1871,9 @@ if(aiText){
       if(!likes || likes.length === 0){
         badgeEl.textContent = "沒有讚的紀錄";
         rankEmptyEl.style.display = "block";
+        if(toggleBtn){
+          toggleBtn.style.display = "none";
+        }
         return;
       }
 
@@ -1615,6 +1900,11 @@ if(aiText){
 
         const li = document.createElement("li");
         li.className = "rank-item rank-" + rank;
+
+        // 🔽 預設只顯示前三名，其餘先加上 hidden
+        if(rank > 3){
+          li.classList.add("hidden");
+        }
 
         const nameDiv = document.createElement("div");
         nameDiv.className = "rank-name";
@@ -1663,6 +1953,17 @@ if(aiText){
 
         rankListEl.appendChild(li);
       });
+
+      // 🔽 根據是否超過 3 名，決定要不要顯示按鈕 & 重設成「收合」狀態
+      if(toggleBtn){
+        if(entries.length > 3){
+          toggleBtn.style.display = "block";
+          toggleBtn.dataset.expanded = "false";
+          toggleBtn.textContent = "展開更多 ▾";
+        }else{
+          toggleBtn.style.display = "none";
+        }
+      }
 
       if(entries.length === 0){
         rankEmptyEl.style.display = "block";
@@ -1865,6 +2166,45 @@ function addDmButtonsToPosts(){
   });
 }
 
+/* =========================================================
+   左側宣傳影片欄位
+========================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+
+const panel = document.getElementById("promoVideoPanel");
+const closeBtn = document.getElementById("promoVideoClose");
+const ctaBtn = document.getElementById("promoVideoCta");
+const linkLayer = document.getElementById("promoVideoLink");
+const videoEl = document.getElementById("promoVideo");
+
+if(!panel) return;
+
+// 🔗 按影片或按鈕要開啟的網址（你自己改）
+const targetUrl = "https://www.instagram.com/kongro__lab/";
+
+// 進頁後自動 1.5 秒滑出（可調整）
+setTimeout(() => {
+  panel.classList.add("is-active");
+}, 1500);
+
+// 點 ✕ 關掉
+closeBtn.addEventListener("click", () => {
+  panel.classList.add("is-closing");
+  if(videoEl) videoEl.pause();
+  setTimeout(() => {
+    panel.style.display = "none";
+  }, 350);
+});
+
+// 點影片 or CTA → 跳網址
+function openLanding(){
+  window.open(targetUrl, "_blank");
+}
+ctaBtn.addEventListener("click", openLanding);
+linkLayer.addEventListener("click", openLanding);
+});
+
+
 
   </script>
     <!-- 🔔 右下角私訊小聊天室 -->
@@ -1907,6 +2247,38 @@ function addDmButtonsToPosts(){
     </div>
   </div>
   
-    
+   <!-- 🔔 左側宣傳影片欄位 -->
+<div id="promoVideoPanel" class="promo-video-panel" aria-label="宣傳影片欄位">
+    <div class="promo-video-inner">
+  
+      <div class="promo-video-header">
+        <span class="promo-video-tag">最新影片</span>
+        <button class="promo-video-close" id="promoVideoClose">✕</button>
+      </div>
+  
+      <div class="promo-video-body">
+        <div class="promo-video-wrapper">
+          <video
+            id="promoVideo"
+            class="promo-video"
+            src="igvideo.mp4"
+            autoplay
+            muted
+            loop
+            playsinline
+          ></video>
+  
+          <!-- 透明可點區域：整塊影片可跳網址 -->
+          <div class="promo-video-link" id="promoVideoLink"></div>
+        </div>
+  
+        <button class="promo-video-cta" id="promoVideoCta">完整資訊 →</button>
+      </div>
+  
+    </div>
+  </div>
+   
+
 </body>
 </html>
+
