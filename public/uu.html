@@ -2,120 +2,163 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>跟著滑鼠看的小生物</title>
+  <title>時間環四圈動畫</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #ffffff;
+    }
     body {
-      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8f2ec;
-      font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif;
     }
 
-    /* 生物本體（先做一個橘色半圓） */
-    .creature {
-      position: relative;
-      width: 260px;
-      height: 160px;
-      background: #ff914d;
-      border-radius: 160px 160px 0 0; /* 上半圓 */
-      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 40px;
+    svg {
+      width: 700px;
+      height: 700px;
     }
 
-    /* 一對眼睛容器 */
-    .eyes {
-      display: flex;
-      gap: 24px;
+    /* 每一圈的基礎樣式 */
+    .ring-outline {
+      fill: none;
+      stroke: #f7bcc0;         /* 淺粉紅圈 */
+      stroke-width: 4;
+    }
+    .tick {
+      stroke: #f58c92;         /* 稍微深一點的紅 */
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+    .number {
+      fill: #c81523;           /* 數字顏色 */
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", system-ui, sans-serif;
+      font-size: 30px;
+      font-weight: 600;
     }
 
-    .eye {
-      width: 46px;
-      height: 46px;
-      background: #fff;
-      border-radius: 50%;
-      position: relative;
-      overflow: hidden;
+    /* 讓 CSS 動畫的旋轉以自己的包圍盒中點為中心 */
+    .ring-group {
+      transform-box: fill-box;
+      transform-origin: 50% 50%;
     }
 
-    .pupil {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: #111;
-      border-radius: 50%;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      transition: transform 0.08s ease-out; /* 讓動作比較順 */
+    /* 四個圈，各自不同轉速、方向 */
+    .spin1 {
+      animation: spin-cw 30s linear infinite;      /* 順時針 */
+    }
+    .spin2 {
+      animation: spin-ccw 40s linear infinite;     /* 逆時針 */
+    }
+    .spin3 {
+      animation: spin-cw 55s linear infinite;      /* 順時針，慢一點 */
+    }
+    .spin4 {
+      animation: spin-ccw 70s linear infinite;     /* 逆時針，更慢 */
     }
 
-    /* 嘴巴隨便畫一下 */
-    .mouth {
-      position: absolute;
-      width: 50px;
-      height: 24px;
-      border-radius: 0 0 50px 50px;
-      border-bottom: 4px solid #111;
-      border-left: 4px solid #111;
-      border-right: 4px solid #111;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
+    @keyframes spin-cw {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes spin-ccw {
+      from { transform: rotate(360deg); }
+      to   { transform: rotate(0deg); }
     }
   </style>
 </head>
 <body>
-  <div class="creature">
-    <div class="eyes">
-      <div class="eye">
-        <div class="pupil"></div>
-      </div>
-      <div class="eye">
-        <div class="pupil"></div>
-      </div>
-    </div>
-    <div class="mouth"></div>
-  </div>
+  <svg viewBox="0 0 600 600">
+    <!-- 這個 group 負責「整體傾斜」，四個圈都朝同一側 -->
+    <g id="scene" transform="translate(300,300) skewX(-18) rotate(-20)">
+      <!-- JS 會把四個圈的內容插進來 -->
+    </g>
+  </svg>
 
   <script>
-    const eyes = document.querySelectorAll('.eye');
+    const svgNS = "http://www.w3.org/2000/svg";
+    const scene = document.getElementById("scene");
 
-    window.addEventListener('mousemove', (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
+    /**
+     * 建立一個時間圈：
+     *  - r：基準半徑（圈的大小）
+     *  - tickCount：刻度數量
+     *  - withNumbers：是否要畫 1–12
+     *  - groupClass：ring-group + 動畫 class（例如 "ring-group spin1"）
+     */
+    function createTimeRing({ r, tickCount, withNumbers, groupClass }) {
+      const g = document.createElementNS(svgNS, "g");
+      g.setAttribute("class", groupClass);
 
-      eyes.forEach(eye => {
-        const pupil = eye.querySelector('.pupil');
-        const rect = eye.getBoundingClientRect();
+      // 圓圈本體（會被外層 skew + rotate 成傾斜橢圓）
+      const ellipse = document.createElementNS(svgNS, "ellipse");
+      ellipse.setAttribute("cx", 0);
+      ellipse.setAttribute("cy", 0);
+      ellipse.setAttribute("rx", r);
+      ellipse.setAttribute("ry", r * 0.65); // 比例調整成比較扁
+      ellipse.setAttribute("class", "ring-outline");
+      g.appendChild(ellipse);
 
-        // 眼球中心座標
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+      // 刻度
+      const innerR = r - 25;
+      const outerR = r + 10;
 
-        // 算向量 + 角度
-        const dx = mouseX - centerX;
-        const dy = mouseY - centerY;
-        const angle = Math.atan2(dy, dx);
+      for (let i = 0; i < tickCount; i++) {
+        const angle = (Math.PI * 2 / tickCount) * i - Math.PI / 2; // 從上方開始
+        const isHour = tickCount === 60 ? (i % 5 === 0) : false;  // 只有 60 刻度圈有「較長刻度」
 
-        // 瞳孔最多可以偏移的距離（不要超出白眼球）
-        const maxOffset = (rect.width / 2) - (pupil.offsetWidth / 2) - 2;
+        const r1 = isHour ? innerR - 5 : innerR;
+        const r2 = isHour ? outerR + 6 : outerR;
 
-        const offsetX = Math.cos(angle) * maxOffset;
-        const offsetY = Math.sin(angle) * maxOffset;
+        const x1 = Math.cos(angle) * r1;
+        const y1 = Math.sin(angle) * r1;
+        const x2 = Math.cos(angle) * r2;
+        const y2 = Math.sin(angle) * r2;
 
-        pupil.style.transform =
-          `translate(${offsetX}px, ${offsetY}px)`;
-      });
-    });
+        const line = document.createElementNS(svgNS, "line");
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        line.setAttribute("class", "tick");
+        g.appendChild(line);
+      }
+
+      // 數字只畫在最外圈（或你想要的那圈）
+      if (withNumbers) {
+        const numberR = r + 55; // 數字距離中心的半徑
+        for (let n = 1; n <= 12; n++) {
+          const angle = (Math.PI * 2 / 12) * n - Math.PI / 2;
+
+          const x = Math.cos(angle) * numberR;
+          const y = Math.sin(angle) * numberR;
+
+          const text = document.createElementNS(svgNS, "text");
+          text.textContent = n.toString();
+          text.setAttribute("x", x);
+          text.setAttribute("y", y);
+          text.setAttribute("class", "number");
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("dominant-baseline", "middle");
+
+          g.appendChild(text);
+        }
+      }
+
+      scene.appendChild(g);
+    }
+
+    // 四個圈的設定（你可以微調 r、tickCount、動畫 class）
+    const ringsConfig = [
+      { r: 80,  tickCount: 40, withNumbers: false, groupClass: "ring-group spin1" }, // 最裡面
+      { r: 125, tickCount: 60, withNumbers: false, groupClass: "ring-group spin2" },
+      { r: 165, tickCount: 60, withNumbers: true,  groupClass: "ring-group spin3" }, // 有數字的一圈
+      { r: 210, tickCount: 30, withNumbers: false, groupClass: "ring-group spin4" }  // 最外圈
+    ];
+
+    ringsConfig.forEach(cfg => createTimeRing(cfg));
   </script>
 </body>
 </html>
-
-  
