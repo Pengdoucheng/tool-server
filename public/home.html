@@ -620,9 +620,91 @@
       50% { opacity: 1; }
     }
 
+    /* 👀 左上角跟著滑鼠看的紅色小生物 */
+    .creature-buddy {
+      position: fixed;
+      top: 88px;      /* 可以依照感覺再微調 */
+      left: 24px;
+      width: 190px;
+      height: 130px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      pointer-events: none; /* 不擋到點擊 */
+      z-index: 2;
+    }
+
+    .creature-body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--accent-red);
+      border-radius: 90px 90px 30px 30px;
+      box-shadow: 0 18px 35px rgba(248, 113, 113, 0.55);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 26px;
+    }
+
+    .creature-eyes {
+      display: flex;
+      gap: 18px;
+    }
+
+    .creature-eye {
+      width: 38px;
+      height: 38px;
+      background: #fff;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .creature-pupil {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #111;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease-out;
+    }
+
+    .creature-mouth {
+      position: absolute;
+      width: 46px;
+      height: 22px;
+      border-radius: 0 0 46px 46px;
+      border-bottom: 4px solid #111;
+      border-left: 4px solid #111;
+      border-right: 4px solid #111;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- 👀 左上角紅色小生物 -->
+  <div class="creature-buddy" aria-hidden="true">
+    <div class="creature-body">
+      <div class="creature-eyes">
+        <div class="creature-eye">
+          <div class="creature-pupil"></div>
+        </div>
+        <div class="creature-eye">
+          <div class="creature-pupil"></div>
+        </div>
+      </div>
+      <div class="creature-mouth"></div>
+    </div>
+  </div>
+
   <div class="page">
     <!-- 頂部 -->
     <header class="topbar">
@@ -1024,5 +1106,38 @@
     });
   </script>
 
+  <!-- 👀 眼睛跟著滑鼠走的邏輯 -->
+  <script>
+    (function () {
+      const eyes = document.querySelectorAll('.creature-eye');
+      if (!eyes.length) return;
+
+      window.addEventListener('mousemove', function (e) {
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        eyes.forEach(function (eye) {
+          const pupil = eye.querySelector('.creature-pupil');
+          const rect = eye.getBoundingClientRect();
+
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+
+          const dx = mouseX - centerX;
+          const dy = mouseY - centerY;
+          const angle = Math.atan2(dy, dx);
+
+          const maxOffset = (rect.width / 2) - (pupil.offsetWidth / 2) - 2;
+
+          const offsetX = Math.cos(angle) * maxOffset;
+          const offsetY = Math.sin(angle) * maxOffset;
+
+          pupil.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+        });
+      });
+    })();
+  </script>
+
 </body>
 </html>
+

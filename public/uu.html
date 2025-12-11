@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>跟著滑鼠看的小生物</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f2ec;
+      font-family: system-ui, -apple-system, "Noto Sans TC", sans-serif;
+    }
+
+    /* 生物本體（先做一個橘色半圓） */
+    .creature {
+      position: relative;
+      width: 260px;
+      height: 160px;
+      background: #ff914d;
+      border-radius: 160px 160px 0 0; /* 上半圓 */
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 40px;
+    }
+
+    /* 一對眼睛容器 */
+    .eyes {
+      display: flex;
+      gap: 24px;
+    }
+
+    .eye {
+      width: 46px;
+      height: 46px;
+      background: #fff;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pupil {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #111;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease-out; /* 讓動作比較順 */
+    }
+
+    /* 嘴巴隨便畫一下 */
+    .mouth {
+      position: absolute;
+      width: 50px;
+      height: 24px;
+      border-radius: 0 0 50px 50px;
+      border-bottom: 4px solid #111;
+      border-left: 4px solid #111;
+      border-right: 4px solid #111;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  </style>
+</head>
+<body>
+  <div class="creature">
+    <div class="eyes">
+      <div class="eye">
+        <div class="pupil"></div>
+      </div>
+      <div class="eye">
+        <div class="pupil"></div>
+      </div>
+    </div>
+    <div class="mouth"></div>
+  </div>
+
+  <script>
+    const eyes = document.querySelectorAll('.eye');
+
+    window.addEventListener('mousemove', (e) => {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      eyes.forEach(eye => {
+        const pupil = eye.querySelector('.pupil');
+        const rect = eye.getBoundingClientRect();
+
+        // 眼球中心座標
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // 算向量 + 角度
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        const angle = Math.atan2(dy, dx);
+
+        // 瞳孔最多可以偏移的距離（不要超出白眼球）
+        const maxOffset = (rect.width / 2) - (pupil.offsetWidth / 2) - 2;
+
+        const offsetX = Math.cos(angle) * maxOffset;
+        const offsetY = Math.sin(angle) * maxOffset;
+
+        pupil.style.transform =
+          `translate(${offsetX}px, ${offsetY}px)`;
+      });
+    });
+  </script>
+</body>
+</html>
+
+  
