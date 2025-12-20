@@ -498,14 +498,25 @@
 
   async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
 
+  // ✅ 新增：統一未登入跳轉（避免同頁多段 script 有的只 return 不跳）
+  function redirectToLogin(message = "請先登入") {
+    // 避免重複 alert / 重複跳轉（例如多段 code 同時觸發）
+    if (sessionStorage.getItem("__redirecting_to_login__") === "1") return;
+    sessionStorage.setItem("__redirecting_to_login__", "1");
+    try { alert(message); } catch(e) {}
+    location.href = LOGIN_PAGE;
+  }
+
   async function fetchToday(){
-    const u = await getUser(); if(!u) return [];
+    const u = await getUser();
+    if(!u) { redirectToLogin(); return []; }
     const { data, error } = await sb.from("cloud_tasks")
       .select("*").eq("user_id", u.id).eq("date", todayStr()).order("start_min");
     if(error) throw error; return data || [];
   }
   async function addToday(start_min, end_min, title){
-    const u = await getUser(); if(!u) throw new Error("未登入");
+    const u = await getUser();
+    if(!u) { redirectToLogin(); throw new Error("未登入"); }
     const { error } = await sb.from("cloud_tasks").insert([{ user_id: u.id, date: todayStr(), start_min, end_min, title, done:false }]);
     if(error) throw error;
   }
@@ -518,7 +529,8 @@
     if(error) throw error;
   }
   async function archiveToday(){
-    const u = await getUser(); if(!u) throw new Error("未登入");
+    const u = await getUser();
+    if(!u) { redirectToLogin(); throw new Error("未登入"); }
     const rows = await fetchToday(); if(!rows.length) return 0;
     await sb.from("cloud_tasks_archive").delete().eq("user_id", u.id).eq("date", todayStr());
     const payload = rows.map(r=>({ user_id:u.id, date:r.date, start_min:r.start_min, end_min:r.end_min, title:r.title, done:r.done }));
@@ -527,13 +539,15 @@
     return payload.length;
   }
   async function fetchRange(from, to){
-    const u = await getUser(); if(!u) return [];
+    const u = await getUser();
+    if(!u) { redirectToLogin(); return []; }
     const { data, error } = await sb.from("cloud_tasks_archive")
       .select("date, done").eq("user_id", u.id).gte("date", from).lte("date", to);
     if(error) throw error; return data || [];
   }
   async function fetchDayArchive(dateStr){
-    const u = await getUser(); if(!u) return [];
+    const u = await getUser();
+    if(!u) { redirectToLogin(); return []; }
     const { data, error } = await sb.from("cloud_tasks_archive")
       .select("*").eq("user_id", u.id).eq("date", dateStr).order("start_min");
     if(error) throw error; return data || [];
@@ -617,7 +631,7 @@
 
   (async () => {
     const u = await getUser();
-    if(!u) { location.href = LOGIN_PAGE; return; }
+    if(!u) { redirectToLogin(); return; }   // ✅ 改成統一的跳轉（含提示）
     $("#who").textContent = u.email + "（已登入）";
     $("#pickDay").value = todayStr();
     await loadToday();
@@ -636,18 +650,18 @@
   // ====== 週/月完成率 + 成就（使用 cloud_tasks_archive） ======
   (function(){
     const el = id => document.getElementById(id);
-  
+
     const mondayOf = (d) => { const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; };
     const sundayOf = (d) => { const m=mondayOf(d); const x=new Date(m); x.setDate(m.getDate()+6); x.setHours(23,59,59,999); return x; };
     const iso = (d) => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-  
+
     function monthRange(base=new Date()){
       const s = new Date(base.getFullYear(), base.getMonth(), 1, 0,0,0,0);
       const e = new Date(base.getFullYear(), base.getMonth()+1, 0, 23,59,59,999);
       return {s, e};
     }
     function weekRange(base=new Date()){ return { s: mondayOf(base), e: sundayOf(base) }; }
-  
+
     async function fetchArchiveRange(userId, from, to){
       const { data, error } = await sb.from("cloud_tasks_archive")
         .select("date, done")
@@ -657,16 +671,16 @@
       if (error) { console.warn("[KPI] query error", error); return []; }
       return data || [];
     }
-  
+
     function computeRate(rows){
       const total = rows.length;
       const done  = rows.filter(r => r.done).length;
       const ratio = total ? Math.round(done*100/total) : 0;
       return { total, done, ratio };
     }
-  
+
     function renderBar(barEl, pct){ barEl.style.width = (pct||0) + "%"; }
-  
+
     function renderAchievements({ month, week }){
       const list = [];
       list.push({ id:"m10",  title:"暖身完成者", desc:"本月完成 ≥ 10 件", ok: month.done >= 10, need:10 });
@@ -674,7 +688,7 @@
       list.push({ id:"m50",  title:"效率達人",   desc:"本月完成 ≥ 50 件", ok: month.done >= 50, need:50 });
       list.push({ id:"m70",  title:"本月七成達標", desc:"本月完成率 ≥ 70%", ok: month.ratio >= 70, need:"70%" });
       list.push({ id:"w80",  title:"本週八成達標", desc:"本週完成率 ≥ 80%", ok: week.ratio >= 80, need:"80%" });
-  
+
       const { s:ms, e:me } = monthRange(new Date());
       const days = new Map();
       month.rows.forEach(r=>{
@@ -692,7 +706,7 @@
       }
       list.push({ id:"s3", title:"連三好日子", desc:"連續 3 天有完成（本月）", ok: streak >= 3, need:"3天" });
       list.push({ id:"s7", title:"一週穩穩來", desc:"連續 7 天有完成（本月）", ok: streak >= 7, need:"7天" });
-  
+
       const grid = el("achGrid");
       if (!grid) return;
       grid.innerHTML = "";
@@ -712,39 +726,41 @@
       });
       el("achDbg").textContent = `本月 ${month.done}/${month.total}，本週 ${week.done}/${week.total}`;
     }
-  
+
     async function refreshKPI(){
       const u = await (typeof getUser === "function" ? getUser() : (await sb.auth.getUser()).data.user);
-      if (!u) return;
-  
+
+      // ✅ 原本是 if(!u) return; 改成：沒登入也直接跳登入頁
+      if (!u) { redirectToLogin(); return; }
+
       const now = new Date();
       const { s:ms, e:me } = monthRange(now);
       const mRows = await fetchArchiveRange(u.id, ms, me);
       const mStat = computeRate(mRows);
-  
+
       const { s:ws, e:we } = weekRange(now);
       const wRows = await fetchArchiveRange(u.id, ws, we);
       const wStat = computeRate(wRows);
-  
+
       el("mRatio").textContent = mStat.ratio + "%";
       el("mDone").textContent  = mStat.done;
       el("mTotal").textContent = mStat.total;
       renderBar(el("mBar"), mStat.ratio);
-  
+
       el("wRatio").textContent = wStat.ratio + "%";
       el("wDone").textContent  = wStat.done;
       el("wTotal").textContent = wStat.total;
       renderBar(el("wBar"), wStat.ratio);
-  
+
       renderAchievements({ month: { ...mStat, rows: mRows }, week: wStat });
-  
+
       el("kpiMonthLabel").textContent = `本月 ${iso(ms)} ~ ${iso(me)}`;
       el("kpiWeekLabel").textContent  = `本週 ${iso(ws)} ~ ${iso(we)}`;
     }
-  
+
     document.addEventListener("DOMContentLoaded", ()=>{
       setTimeout(refreshKPI, 300);
-  
+
       const oldArchive = window.archiveToday;
       if (typeof oldArchive === "function"){
         window.archiveToday = async function(){
@@ -753,16 +769,15 @@
           return n;
         };
       }
-  
+
       const btnW = document.getElementById("showWeek");
       const btnM = document.getElementById("showMonth");
       btnW && btnW.addEventListener("click", ()=> setTimeout(refreshKPI, 100));
       btnM && btnM.addEventListener("click", ()=> setTimeout(refreshKPI, 100));
-  
+
       setInterval(refreshKPI, 5000);
     });
   })();
 </script>
 </body>
 </html>
-
