@@ -72,9 +72,7 @@
   }
 
   @media (max-width: 768px) {
-    .grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
+    .grid { grid-template-columns: minmax(0, 1fr); }
   }
 
   .card {
@@ -117,15 +115,8 @@
     opacity: 0.10;
   }
 
-  .sub {
-    color: var(--sub);
-    font-size: 12px;
-  }
-
-  .muted {
-    color: var(--sub);
-    font-size: 12px;
-  }
+  .sub { color: var(--sub); font-size: 12px; }
+  .muted { color: var(--sub); font-size: 12px; }
 
   .row {
     display: flex;
@@ -168,18 +159,9 @@
     transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, background 0.15s;
   }
 
-  input[type=time] {
-    width: 110px;
-  }
-
-  input[type=text] {
-    flex: 1;
-    min-width: 180px;
-  }
-
-  input[type=date] {
-    border-radius: 999px;
-  }
+  input[type=time] { width: 110px; }
+  input[type=text] { flex: 1; min-width: 180px; }
+  input[type=date] { border-radius: 999px; }
 
   input:focus {
     border-color: var(--pri);
@@ -200,31 +182,18 @@
     transition: background 0.15s ease-out, color 0.15s, border-color 0.15s, transform 0.08s;
   }
 
-  button:hover {
-    background: #f5f5f7;
-    transform: translateY(-0.5px);
-  }
+  button:hover { background: #f5f5f7; transform: translateY(-0.5px); }
 
   .btn-pri {
     background: var(--pri);
     color: #fff;
     border-color: transparent;
   }
+  .btn-pri:hover { background: #b00000; transform: translateY(-1px); }
 
-  .btn-pri:hover {
-    background: #b00000;
-    transform: translateY(-1px);
-  }
+  .btn-outlined { border-radius: 999px; }
 
-  .btn-outlined {
-    border-radius: 999px;
-  }
-
-  .list {
-    display: grid;
-    gap: 8px;
-    margin-top: 6px;
-  }
+  .list { display: grid; gap: 8px; margin-top: 6px; }
 
   .item {
     display: flex;
@@ -237,19 +206,10 @@
     gap: 8px;
   }
 
-  .item b {
-    font-size: 13px;
-  }
+  .item b { font-size: 13px; }
+  .item .sub { font-size: 11px; }
 
-  .item .sub {
-    font-size: 11px;
-  }
-
-  .empty {
-    color: var(--sub);
-    padding: 8px;
-    font-size: 12px;
-  }
+  .empty { color: var(--sub); padding: 8px; font-size: 12px; }
 
   .pill {
     display: inline-block;
@@ -290,15 +250,9 @@
     background: #fff7f7;
   }
 
-  .right .card {
-    height: fit-content;
-  }
+  .right .card { height: fit-content; }
 
-  .sep {
-    height: 1px;
-    background: var(--line);
-    margin: 10px 0;
-  }
+  .sep { height: 1px; background: var(--line); margin: 10px 0; }
 
   /* KPI 卡片專用：progress bar 改成紅色 */
   .bar {
@@ -326,27 +280,17 @@
     padding-block: 8px;
   }
 
-  #achGrid .item .row {
-    margin: 0;
-  }
+  #achGrid .item .row { margin: 0; }
 
   /* 小螢幕優化：把下半部按鈕排整齊 */
   @media (max-width: 640px) {
-    .row-actions-bottom {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .history-list {
-      max-height: 260px;
-    }
-
-    .card {
-      padding-inline: 12px;
-    }
+    .row-actions-bottom { flex-direction: column; align-items: flex-start; }
+    .history-list { max-height: 260px; }
+    .card { padding-inline: 12px; }
   }
 </style>
 </head>
+
 <body>
 <div class="wrap">
   <div class="toolbar">
@@ -486,12 +430,19 @@
 <script>
   const SUPABASE_URL = "https://rbtevdmunkjjevoeooli.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJidGV2ZG11bmtqamV2b2Vvb2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNzMxMjIsImV4cCI6MjA3NTg0OTEyMn0.XjWId9AynP3TrJJEKIXZcsvmAW4kHLgH4dGDGqBH9dw";
+
+  // ✅ 你指定的新登入頁（含 redirect）
   const LOGIN_PAGE = "https://tool-server-d695.onrender.com/supabase-test.html?redirect=/home.html";
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const $ = sel => document.querySelector(sel);
-  const el = (tag, attrs={}, html="") => { const x=document.createElement(tag); Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v)); if(html) x.innerHTML=html; return x; };
+  const el = (tag, attrs={}, html="") => {
+    const x = document.createElement(tag);
+    Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,v));
+    if(html) x.innerHTML = html;
+    return x;
+  };
 
   const todayStr = () => new Date().toISOString().slice(0,10);
   const toMin = (hhmm) => { const [h,m] = hhmm.split(":").map(Number); return h*60+m; };
@@ -499,64 +450,149 @@
 
   async function getUser(){ return (await sb.auth.getUser()).data.user || null; }
 
-  // ✅ 新增：統一未登入跳轉（避免同頁多段 script 有的只 return 不跳）
-  function redirectToLogin(message = "請先登入") {
-    // 避免重複 alert / 重複跳轉（例如多段 code 同時觸發）
-    if (sessionStorage.getItem("__redirecting_to_login__") === "1") return;
-    sessionStorage.setItem("__redirecting_to_login__", "1");
-    try { alert(message); } catch(e) {}
-    location.href = LOGIN_PAGE;
+  // ✅ 取代 alert/confirm：頁面內通知（遮罩）+ 按「好」用新分頁開登入頁
+  function showLoginGate(message = "要先登入才能使用這個工具，現在要去登入嗎？") {
+    // 避免重複生成
+    if (document.getElementById("__loginGate__")) return;
+
+    // 半透明背景
+    const overlay = document.createElement("div");
+    overlay.id = "__loginGate__";
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.background = "rgba(0,0,0,.45)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = "999999";
+
+    // 對話框
+    const box = document.createElement("div");
+    box.style.width = "min(560px, calc(100vw - 32px))";
+    box.style.background = "#fff";
+    box.style.borderRadius = "14px";
+    box.style.border = "1px solid rgba(0,0,0,.08)";
+    box.style.boxShadow = "0 22px 60px rgba(0,0,0,.28)";
+    box.style.padding = "18px 18px 14px";
+
+    const msg = document.createElement("div");
+    msg.textContent = message;
+    msg.style.fontSize = "14px";
+    msg.style.color = "#111";
+    msg.style.lineHeight = "1.6";
+
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.justifyContent = "flex-end";
+    actions.style.gap = "12px";
+    actions.style.marginTop = "14px";
+
+    const btnCancel = document.createElement("button");
+    btnCancel.textContent = "取消";
+    btnCancel.style.borderRadius = "999px";
+    btnCancel.style.padding = "7px 12px";
+    btnCancel.style.border = "1px solid #e1e2e7";
+    btnCancel.style.background = "#fff";
+    btnCancel.style.cursor = "pointer";
+    btnCancel.addEventListener("click", ()=>{
+      overlay.remove();
+    });
+
+    const btnOK = document.createElement("button");
+    btnOK.textContent = "好";
+    btnOK.style.borderRadius = "999px";
+    btnOK.style.padding = "7px 12px";
+    btnOK.style.border = "1px solid transparent";
+    btnOK.style.background = "#e10600";
+    btnOK.style.color = "#fff";
+    btnOK.style.cursor = "pointer";
+    btnOK.addEventListener("click", ()=>{
+      // 盡量用新分頁（Google OAuth 需要頂層頁面）
+      const w = window.open(LOGIN_PAGE, "_blank", "noopener,noreferrer");
+      // 如果瀏覽器擋了新分頁（少見，但以防），就改同頁跳轉，至少能登入
+      if (!w) location.href = LOGIN_PAGE;
+    });
+
+    actions.appendChild(btnCancel);
+    actions.appendChild(btnOK);
+    box.appendChild(msg);
+    box.appendChild(actions);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
   }
 
   async function fetchToday(){
     const u = await getUser();
-    if(!u) { redirectToLogin(); return []; }
+    if(!u) { showLoginGate(); return []; }
     const { data, error } = await sb.from("cloud_tasks")
       .select("*").eq("user_id", u.id).eq("date", todayStr()).order("start_min");
-    if(error) throw error; return data || [];
+    if(error) throw error;
+    return data || [];
   }
+
   async function addToday(start_min, end_min, title){
     const u = await getUser();
-    if(!u) { redirectToLogin(); throw new Error("未登入"); }
-    const { error } = await sb.from("cloud_tasks").insert([{ user_id: u.id, date: todayStr(), start_min, end_min, title, done:false }]);
+    if(!u) { showLoginGate(); throw new Error("未登入"); }
+    const { error } = await sb.from("cloud_tasks").insert([{
+      user_id: u.id, date: todayStr(), start_min, end_min, title, done:false
+    }]);
     if(error) throw error;
   }
+
   async function toggleDone(id, done){
     const { error } = await sb.from("cloud_tasks").update({ done }).eq("id", id);
     if(error) throw error;
   }
+
   async function removeToday(id){
     const { error } = await sb.from("cloud_tasks").delete().eq("id", id);
     if(error) throw error;
   }
+
   async function archiveToday(){
     const u = await getUser();
-    if(!u) { redirectToLogin(); throw new Error("未登入"); }
-    const rows = await fetchToday(); if(!rows.length) return 0;
-    await sb.from("cloud_tasks_archive").delete().eq("user_id", u.id).eq("date", todayStr());
-    const payload = rows.map(r=>({ user_id:u.id, date:r.date, start_min:r.start_min, end_min:r.end_min, title:r.title, done:r.done }));
+    if(!u) { showLoginGate(); throw new Error("未登入"); }
+    const rows = await fetchToday();
+    if(!rows.length) return 0;
+
+    await sb.from("cloud_tasks_archive").delete()
+      .eq("user_id", u.id).eq("date", todayStr());
+
+    const payload = rows.map(r=>({
+      user_id:u.id, date:r.date, start_min:r.start_min, end_min:r.end_min,
+      title:r.title, done:r.done
+    }));
+
     const { error } = await sb.from("cloud_tasks_archive").insert(payload);
     if(error) throw error;
     return payload.length;
   }
+
   async function fetchRange(from, to){
     const u = await getUser();
-    if(!u) { redirectToLogin(); return []; }
+    if(!u) { showLoginGate(); return []; }
     const { data, error } = await sb.from("cloud_tasks_archive")
       .select("date, done").eq("user_id", u.id).gte("date", from).lte("date", to);
-    if(error) throw error; return data || [];
+    if(error) throw error;
+    return data || [];
   }
+
   async function fetchDayArchive(dateStr){
     const u = await getUser();
-    if(!u) { redirectToLogin(); return []; }
+    if(!u) { showLoginGate(); return []; }
     const { data, error } = await sb.from("cloud_tasks_archive")
       .select("*").eq("user_id", u.id).eq("date", dateStr).order("start_min");
-    if(error) throw error; return data || [];
+    if(error) throw error;
+    return data || [];
   }
 
   function renderList(rows){
     const list = $("#todayList");
-    if(!rows.length) { list.innerHTML = '<div class="empty">今天還沒有任務，先在上方新增吧。</div>'; updateRate(0,0); return; }
+    if(!rows.length) {
+      list.innerHTML = '<div class="empty">今天還沒有任務，先在上方新增吧。</div>';
+      updateRate(0,0);
+      return;
+    }
     list.innerHTML = "";
     let done=0;
     rows.forEach(r=>{
@@ -575,10 +611,11 @@
     });
     updateRate(rows.length, done);
   }
+
   function updateRate(total, done){
     $("#totalCnt").textContent = total;
     $("#doneCnt").textContent = done;
-    $("#rate").textContent = total? Math.round(done*100/total)+'%':'0%';
+    $("#rate").textContent = total ? Math.round(done*100/total)+'%' : '0%';
   }
 
   async function loadToday(){
@@ -593,16 +630,36 @@
     if(mode==='week') from.setDate(now.getDate()-6);
     if(mode==='month') from.setDate(now.getDate()-29);
     const dstr = (d)=> d.toISOString().slice(0,10);
+
     const data = await fetchRange(dstr(from), dstr(to));
     const agg = new Map();
-    data.forEach(r=>{ const k=r.date; const v=agg.get(k)||{total:0,done:0}; v.total++; if(r.done) v.done++; agg.set(k,v); });
+    data.forEach(r=>{
+      const k=r.date;
+      const v=agg.get(k)||{total:0,done:0};
+      v.total++;
+      if(r.done) v.done++;
+      agg.set(k,v);
+    });
+
     const days = Array.from(agg.keys()).sort((a,b)=> b.localeCompare(a));
-    const box = $("#history"); box.innerHTML = "";
-    if(!days.length) { box.innerHTML = '<div class="empty">尚無歷史資料，先把今天「存入歷史」吧。</div>'; return; }
+    const box = $("#history");
+    box.innerHTML = "";
+
+    if(!days.length) {
+      box.innerHTML = '<div class="empty">尚無歷史資料，先把今天「存入歷史」吧。</div>';
+      return;
+    }
+
     days.forEach(d=>{
-      const v = agg.get(d); const pct = v.total? Math.round(v.done*100/v.total) : 0;
-      const row = el("div", { class:"history-item" }, '<div><b>'+d+'</b>　<span class="pill">完成率 '+pct+'%</span></div><div class="sub">('+v.done+'/'+v.total+')</div>');
-      row.addEventListener("click", async ()=>{ const items = await fetchDayArchive(d); showPicked(d, items); });
+      const v = agg.get(d);
+      const pct = v.total ? Math.round(v.done*100/v.total) : 0;
+      const row = el("div", { class:"history-item" },
+        '<div><b>'+d+'</b>　<span class="pill">完成率 '+pct+'%</span></div><div class="sub">('+v.done+'/'+v.total+')</div>'
+      );
+      row.addEventListener("click", async ()=>{
+        const items = await fetchDayArchive(d);
+        showPicked(d, items);
+      });
       box.append(row);
     });
   }
@@ -610,10 +667,16 @@
   function showPicked(dateStr, rows){
     const list = $("#pickedList");
     if(!rows.length) { list.innerHTML = '<div class="empty">'+dateStr+' 沒有存檔紀錄。</div>'; return; }
-    list.innerHTML = rows.map(r=>'<div class="item"><div><b>'+toHHMM(r.start_min)+'–'+toHHMM(r.end_min)+'</b>　'+escapeHtml(r.title)+'</div><div class="sub">'+(r.done?'✔ 完成':'— 未完成')+'</div></div>').join("");
+    list.innerHTML = rows.map(r=>
+      '<div class="item"><div><b>'+toHHMM(r.start_min)+'–'+toHHMM(r.end_min)+'</b>　'+escapeHtml(r.title)+'</div><div class="sub">'+(r.done?'✔ 完成':'— 未完成')+'</div></div>'
+    ).join("");
   }
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
 
   $("#add").addEventListener("click", async ()=>{
     const s = $("#start").value, e = $("#end").value, t = $("#title").value.trim();
@@ -623,16 +686,26 @@
     $("#title").value = "";
     await loadToday();
   });
+
   $("#reload").addEventListener("click", loadToday);
   $("#saveDone").addEventListener("click", async ()=>{ await loadToday(); alert("完成情況已儲存到雲端。"); });
-  $("#archive").addEventListener("click", async ()=>{ const n = await archiveToday(); await renderHistory('week'); alert(n? ("已存入今日："+n+" 筆"):"今天沒有任務可存入"); });
+  $("#archive").addEventListener("click", async ()=>{
+    const n = await archiveToday();
+    await renderHistory('week');
+    alert(n ? ("已存入今日："+n+" 筆") : "今天沒有任務可存入");
+  });
   $("#showWeek").addEventListener("click", ()=> renderHistory('week'));
   $("#showMonth").addEventListener("click", ()=> renderHistory('month'));
-  $("#viewPicked").addEventListener("click", async ()=>{ const d = $("#pickDay").value; if(!d) return; const rows = await fetchDayArchive(d); showPicked(d, rows); });
+  $("#viewPicked").addEventListener("click", async ()=>{
+    const d = $("#pickDay").value;
+    if(!d) return;
+    const rows = await fetchDayArchive(d);
+    showPicked(d, rows);
+  });
 
   (async () => {
     const u = await getUser();
-    if(!u) { redirectToLogin(); return; }   // ✅ 改成統一的跳轉（含提示）
+    if(!u) { showLoginGate(); return; }   // ✅ 未登入：顯示遮罩通知（按好→新分頁登入）
     $("#who").textContent = u.email + "（已登入）";
     $("#pickDay").value = todayStr();
     await loadToday();
@@ -698,6 +771,7 @@
         v.total++; if (r.done) v.done++;
         days.set(k, v);
       });
+
       let streak = 0;
       for (let d=me.getDate(); d>=1; d--){
         const k = iso(new Date(ms.getFullYear(), ms.getMonth(), d));
@@ -705,6 +779,7 @@
         if (rec && rec.done > 0) streak++;
         else break;
       }
+
       list.push({ id:"s3", title:"連三好日子", desc:"連續 3 天有完成（本月）", ok: streak >= 3, need:"3天" });
       list.push({ id:"s7", title:"一週穩穩來", desc:"連續 7 天有完成（本月）", ok: streak >= 7, need:"7天" });
 
@@ -725,14 +800,15 @@
         `;
         grid.appendChild(card);
       });
+
       el("achDbg").textContent = `本月 ${month.done}/${month.total}，本週 ${week.done}/${week.total}`;
     }
 
     async function refreshKPI(){
       const u = await (typeof getUser === "function" ? getUser() : (await sb.auth.getUser()).data.user);
 
-      // ✅ 原本是 if(!u) return; 改成：沒登入也直接跳登入頁
-      if (!u) { redirectToLogin(); return; }
+      // ✅ 未登入：顯示遮罩通知（按好→新分頁登入）
+      if (!u) { showLoginGate(); return; }
 
       const now = new Date();
       const { s:ms, e:me } = monthRange(now);
@@ -782,3 +858,4 @@
 </script>
 </body>
 </html>
+
